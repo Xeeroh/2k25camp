@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Search, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import AttendeeModal from "./attendee-modal";
 import { 
   AlertDialog,
@@ -105,8 +105,7 @@ export default function AttendeesTable() {
       
       if (error) throw error;
       
-      toast({
-        title: "Asistente eliminado",
+      toast.success("Asistente eliminado", {
         description: "El asistente ha sido eliminado con éxito",
       });
       
@@ -114,10 +113,8 @@ export default function AttendeesTable() {
       fetchAttendees();
     } catch (error) {
       console.error('Error al eliminar asistente:', error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo eliminar el asistente",
-        variant: "destructive",
       });
     } finally {
       setIsDeleteDialogOpen(false);
@@ -144,8 +141,7 @@ export default function AttendeesTable() {
 
       if (error) throw error;
       
-      toast({
-        title: "Asistente actualizado",
+      toast.success("Asistente actualizado", {
         description: "La información del asistente ha sido actualizada con éxito",
       });
       
@@ -154,10 +150,8 @@ export default function AttendeesTable() {
       closeModal();
     } catch (err) {
       console.error('Error al actualizar asistente:', err);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo actualizar la información del asistente",
-        variant: "destructive",
       });
     }
   };
