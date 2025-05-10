@@ -39,17 +39,19 @@ const formSchema = z.object({
     .email("Correo electrónico no válido")
     .refine(async (email) => {
       try {
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
           .from('attendees')
-          .select('id')
+          .select('id', { count: 'exact' })
           .eq('email', email)
-          .maybeSingle();
+          .limit(1);
         
         if (error) {
-          console.error('Error al verificar email:', error);
+          console.error('Error al verificar email:', error.message || error);
           return true; // Permitir el registro si hay error en la verificación
         }
         
+        console.log("Registros encontrados:", count);
+
         return !data; // Retorna true si el email no existe
       } catch (error) {
         console.error('Error en la validación del email:', error);
@@ -65,21 +67,24 @@ const formSchema = z.object({
   paymentAmount: z.coerce.number()
     .min(1, "El monto debe ser mayor a 0")
     .max(10000, "El monto no puede ser mayor a $10,000"),
-  paymentFile: z
-    .instanceof(FileList)
-    .refine((files) => files.length > 0, "El comprobante de pago es requerido")
-    .refine(
-      (files) => {
-        const file = files[0];
+    paymentFile: z.custom((value) => {
+      if (value instanceof FileList && value.length > 0) {
+        const file = value[0];
         const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-        return validTypes.includes(file.type);
-      },
-      "El archivo debe ser JPG, PNG o PDF"
-    )
-    .refine(
-      (files) => files[0].size <= 5 * 1024 * 1024,
-      "El archivo debe ser menor a 5MB"
-    ),
+        
+        if (!validTypes.includes(file.type)) {
+          throw new Error("El archivo debe ser JPG, PNG o PDF");
+        }
+  
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error("El archivo debe ser menor a 5MB");
+        }
+  
+        return true;
+      }
+  
+      throw new Error("El comprobante de pago es requerido");
+    })
 });
 
 type FormValues = z.infer<typeof formSchema>;
