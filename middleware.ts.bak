@@ -1,0 +1,14 @@
+// Este middleware está desactivado porque no es compatible con output:export
+/*
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  // Ya no hacemos redirecciones, mantenemos la ruta /comite
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [],
+};
+*/ 

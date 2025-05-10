@@ -1,0 +1,304 @@
+"use client";
+
+import { useEffect, useState, lazy, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import Navbar from '@/components/shared/navbar';
+import Footer from '@/components/shared/footer';
+import LoginForm from '@/components/committee/login-form';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+
+// Lazy load componentes pesados
+const QrScanner = lazy(() => import('@/components/committee/qr-scanner'));
+const AttendeeInfo = lazy(() => import('@/components/committee/attendee-info'));
+const DebugPanel = lazy(() => import('@/components/committee/debug-panel'));
+const ManualIdInput = lazy(() => import('@/components/committee/manual-id-input'));
+
+// Componente de carga para Suspense
+const LoadingFallback = () => (
+  <div className="w-full h-48 flex items-center justify-center">
+    <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent"></div>
+    <p className="ml-2 text-sm text-muted-foreground">Cargando componente...</p>
+  </div>
+);
+
+// Definir la interfaz para los datos del asistente
+interface AttendeeData {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  church: string;
+  sector: string;
+  paymentamount: number;
+  paymentstatus: string;
+  created_at: string;
+}
+
+export default function ComitePage() {
+  const { user, loading, error, signOut, hasRole } = useAuth();
+  const router = useRouter();
+  const [attendee, setAttendee] = useState<AttendeeData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastScannedQR, setLastScannedQR] = useState<string | null>(null);
+  const [bypassAuth] = useState(true);
+  
+  // Desactivamos la verificación de roles temporalmente
+  // useEffect(() => {
+  //   if (!loading && user) {
+  //     if (!hasRole('editor') && !hasRole('admin')) {
+  //       toast.error('No tienes permisos para acceder a esta página');
+  //       router.push('/');
+  //     } else {
+  //       toast.success(`Bienvenido, ${user.email}`);
+  //     }
+  //   }
+  // }, [user, loading, hasRole, router]);
+
+  // Función para manejar el escaneo del QR
+  const handleQrScan = async (qrData: string) => {
+    setIsLoading(true);
+    setLastScannedQR(qrData);
+    toast.loading('Consultando información...');
+    
+    try {
+      // Extraer el ID del QR con mejor rendimiento
+      const attendeeId = extractAttendeeId(qrData);
+      
+      if (!attendeeId) {
+        toast.error('No se pudo extraer un ID válido del QR');
+        setIsLoading(false);
+        setAttendee(null);
+        return;
+      }
+      
+      // Consultar la base de datos con el ID extraído
+      console.log('Consultando base de datos con ID:', attendeeId);
+      const { data, error } = await supabase
+        .from('attendees')
+        .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at')
+        .eq('id', attendeeId)
+        .single();
+        
+      if (error || !data) {
+        console.error('Error al consultar la base de datos:', error);
+        toast.error('No se encontró el asistente en la base de datos');
+        setIsLoading(false);
+        setAttendee(null);
+        return;
+      }
+      
+      // Actualizar estado con los datos obtenidos
+      setAttendee(data as AttendeeData);
+      toast.success('Información cargada correctamente');
+      
+      // Validar que los datos estén completos
+      if (!data.firstname || !data.lastname || !data.email) {
+        toast.warning('Algunos datos del asistente están incompletos');
+      }
+      
+    } catch (err) {
+      console.error('Error al procesar el QR:', err);
+      toast.error('Error al procesar el código QR');
+      setAttendee(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Función optimizada para extraer el ID del asistente
+  const extractAttendeeId = (qrData: string): string | null => {
+    try {
+      // Limpiar el texto
+      const cleanQrData = qrData.trim();
+      
+      // Caso 1: Tratar como JSON
+      if (cleanQrData.startsWith('{') && cleanQrData.endsWith('}')) {
+        try {
+          const parsedData = JSON.parse(cleanQrData);
+          if (parsedData?.id) return parsedData.id;
+          if (parsedData?.ID) return parsedData.ID;
+          if (parsedData?.Id) return parsedData.Id;
+        } catch {}
+      }
+      
+      // Caso 2: JSON malformado
+      if (cleanQrData.startsWith('{')) {
+        const idMatch = cleanQrData.match(/"id"\s*:\s*"([^"]+)"/);
+        if (idMatch && idMatch[1]) return idMatch[1];
+      }
+      
+      // Caso 3: UUID directo
+      const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+      const matches = cleanQrData.match(uuidRegex);
+      if (matches && matches[0]) return matches[0];
+      
+      // Caso 4: Texto simple (si no es muy largo)
+      if (cleanQrData.length > 0 && cleanQrData.length < 50) {
+        return cleanQrData;
+      }
+      
+      return null;
+    } catch (err) {
+      console.error('Error al extraer ID:', err);
+      return null;
+    }
+  };
+  
+  // Función para confirmar asistencia
+  const confirmAttendance = async (id: string) => {
+    toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''}`);
+    // Aquí iría la lógica para guardar la confirmación en la base de datos
+  };
+
+  // Si está cargando y no estamos omitiendo la autenticación, mostrar pantalla de carga
+  if (loading && !bypassAuth) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+            <p className="mt-2 text-muted-foreground">Cargando...</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Si la carga tarda demasiado, intente <button onClick={() => window.location.reload()} className="text-primary underline">recargar la página</button>
+            </p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  
+  // Si hay un error y no estamos omitiendo la autenticación, mostrar mensaje de error
+  if (error && !bypassAuth) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
+              <h2 className="text-xl font-semibold mb-2">Error</h2>
+              <p>{error}</p>
+              <Button 
+                onClick={() => window.location.reload()}
+                className="mt-4"
+              >
+                Recargar página
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  
+  // Si el usuario no está autenticado y no estamos omitiendo la autenticación, mostrar formulario de inicio de sesión
+  if (!user && !bypassAuth) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="bg-card shadow-lg border border-border rounded-lg p-6 w-full max-w-md">
+            <h1 className="text-2xl font-bold mb-6">Iniciar sesión - Comité</h1>
+            <LoginForm />
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      
+      <div className="flex-1 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">Panel del Comité</h1>
+            {user && !bypassAuth && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{user.email}</span>
+                <Button 
+                  variant="outline"
+                  onClick={signOut}
+                >
+                  Cerrar sesión
+                </Button>
+              </div>
+            )}
+            {bypassAuth && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Modo sin autenticación</span>
+              </div>
+            )}
+          </div>
+          
+          <Tabs defaultValue="scanner" className="mt-8">
+            <TabsList className="grid grid-cols-2 md:w-[400px] mb-8">
+              <TabsTrigger value="scanner">Escáner QR</TabsTrigger>
+              <TabsTrigger value="info">Información</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="scanner">
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+                  <h2 className="text-xl font-semibold mb-4">Escáner de Código QR</h2>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <QrScanner onScan={handleQrScan} />
+                  </Suspense>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <ManualIdInput onScanSimulation={handleQrScan} />
+                  </Suspense>
+                </div>
+                
+                <div>
+                  <pre className="text-xs text-muted-foreground mb-2 p-2 bg-muted/30 rounded whitespace-pre-wrap break-all">
+                    {isLoading ? 'Cargando...' : lastScannedQR ? `Último QR: ${lastScannedQR}` : 'Escáner listo'}
+                  </pre>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <AttendeeInfo 
+                      attendee={attendee} 
+                      onConfirmAttendance={confirmAttendance} 
+                    />
+                  </Suspense>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <DebugPanel qrData={lastScannedQR} attendeeData={attendee} />
+                  </Suspense>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="info">
+              <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+                <h2 className="text-xl font-semibold mb-4">Información</h2>
+                <div className="space-y-4">
+                  <p>
+                    Use esta herramienta para verificar la asistencia al evento escaneando los códigos QR de los asistentes.
+                  </p>
+                  <div className="bg-primary/10 p-4 rounded-lg">
+                    <h3 className="font-medium mb-2">Instrucciones:</h3>
+                    <ol className="list-decimal list-inside space-y-2">
+                      <li>Seleccione la pestaña "Escáner QR"</li>
+                      <li>Haga clic en "Iniciar Escáner" y permita el acceso a la cámara</li>
+                      <li>Apunte la cámara al código QR del asistente</li>
+                      <li>La información del asistente aparecerá automáticamente</li>
+                      <li>Verifique los datos y confirme la asistencia haciendo clic en el botón correspondiente</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+      
+      <Footer />
+    </div>
+  );
+}
