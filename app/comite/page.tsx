@@ -14,8 +14,6 @@ import { toast } from 'sonner';
 // Lazy load componentes pesados
 const QrScanner = lazy(() => import('@/components/committee/qr-scanner'));
 const AttendeeInfo = lazy(() => import('@/components/committee/attendee-info'));
-const DebugPanel = lazy(() => import('@/components/committee/debug-panel'));
-const ManualIdInput = lazy(() => import('@/components/committee/manual-id-input'));
 
 // Componente de carga para Suspense
 const LoadingFallback = () => (
@@ -44,19 +42,16 @@ export default function ComitePage() {
   const [attendee, setAttendee] = useState<AttendeeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastScannedQR, setLastScannedQR] = useState<string | null>(null);
-  const [bypassAuth] = useState(true);
   
-  // Desactivamos la verificación de roles temporalmente
-  // useEffect(() => {
-  //   if (!loading && user) {
-  //     if (!hasRole('editor') && !hasRole('admin')) {
-  //       toast.error('No tienes permisos para acceder a esta página');
-  //       router.push('/');
-  //     } else {
-  //       toast.success(`Bienvenido, ${user.email}`);
-  //     }
-  //   }
-  // }, [user, loading, hasRole, router]);
+  // Verificación de permisos simplificada
+  useEffect(() => {
+    if (user && !hasRole('editor') && !hasRole('admin')) {
+      toast.error('No tienes permisos para acceder a esta página');
+      router.push('/');
+    } else if (user) {
+      toast.success(`Bienvenido, ${user.email}`);
+    }
+  }, [user, hasRole, router]);
 
   // Función para manejar el escaneo del QR
   const handleQrScan = async (qrData: string) => {
@@ -80,23 +75,30 @@ export default function ComitePage() {
       const { data, error } = await supabase
         .from('attendees')
         .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at')
-        .eq('id', attendeeId)
-        .single();
+        .eq('id', attendeeId);
         
-      if (error || !data) {
+      if (error) {
         console.error('Error al consultar la base de datos:', error);
+        toast.error('Error al consultar la base de datos');
+        setIsLoading(false);
+        setAttendee(null);
+        return;
+      }
+      
+      if (!data || data.length === 0) {
+        console.log('No se encontró asistente con ID:', attendeeId);
         toast.error('No se encontró el asistente en la base de datos');
         setIsLoading(false);
         setAttendee(null);
         return;
       }
       
-      // Actualizar estado con los datos obtenidos
-      setAttendee(data as AttendeeData);
+      // Actualizar estado con los datos obtenidos (primer resultado)
+      setAttendee(data[0] as AttendeeData);
       toast.success('Información cargada correctamente');
       
       // Validar que los datos estén completos
-      if (!data.firstname || !data.lastname || !data.email) {
+      if (!data[0].firstname || !data[0].lastname || !data[0].email) {
         toast.warning('Algunos datos del asistente están incompletos');
       }
       
@@ -154,18 +156,15 @@ export default function ComitePage() {
     // Aquí iría la lógica para guardar la confirmación en la base de datos
   };
 
-  // Si está cargando y no estamos omitiendo la autenticación, mostrar pantalla de carga
-  if (loading && !bypassAuth) {
+  // Si el usuario no está autenticado, mostrar formulario de inicio de sesión
+  if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-            <p className="mt-2 text-muted-foreground">Cargando...</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Si la carga tarda demasiado, intente <button onClick={() => window.location.reload()} className="text-primary underline">recargar la página</button>
-            </p>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="bg-card shadow-lg border border-border rounded-lg p-6 w-full max-w-md">
+            <h1 className="text-2xl font-bold mb-6">Iniciar sesión - Comité</h1>
+            <LoginForm />
           </div>
         </div>
         <Footer />
@@ -173,8 +172,8 @@ export default function ComitePage() {
     );
   }
   
-  // Si hay un error y no estamos omitiendo la autenticación, mostrar mensaje de error
-  if (error && !bypassAuth) {
+  // Si hay un error de autenticación, mostrar mensaje
+  if (error) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -197,22 +196,6 @@ export default function ComitePage() {
     );
   }
   
-  // Si el usuario no está autenticado y no estamos omitiendo la autenticación, mostrar formulario de inicio de sesión
-  if (!user && !bypassAuth) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="bg-card shadow-lg border border-border rounded-lg p-6 w-full max-w-md">
-            <h1 className="text-2xl font-bold mb-6">Iniciar sesión - Comité</h1>
-            <LoginForm />
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -221,22 +204,15 @@ export default function ComitePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold">Panel del Comité</h1>
-            {user && !bypassAuth && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{user.email}</span>
-                <Button 
-                  variant="outline"
-                  onClick={signOut}
-                >
-                  Cerrar sesión
-                </Button>
-              </div>
-            )}
-            {bypassAuth && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Modo sin autenticación</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <Button 
+                variant="outline"
+                onClick={signOut}
+              >
+                Cerrar sesión
+              </Button>
+            </div>
           </div>
           
           <Tabs defaultValue="scanner" className="mt-8">
@@ -252,9 +228,6 @@ export default function ComitePage() {
                   <Suspense fallback={<LoadingFallback />}>
                     <QrScanner onScan={handleQrScan} />
                   </Suspense>
-                  <Suspense fallback={<LoadingFallback />}>
-                    <ManualIdInput onScanSimulation={handleQrScan} />
-                  </Suspense>
                 </div>
                 
                 <div>
@@ -266,9 +239,6 @@ export default function ComitePage() {
                       attendee={attendee} 
                       onConfirmAttendance={confirmAttendance} 
                     />
-                  </Suspense>
-                  <Suspense fallback={<LoadingFallback />}>
-                    <DebugPanel qrData={lastScannedQR} attendeeData={attendee} />
                   </Suspense>
                 </div>
               </div>

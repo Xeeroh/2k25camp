@@ -8,230 +8,101 @@ const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Iniciar como false
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Verificar la sesión actual
-    const checkSession = async () => {
-      // Reducir el timeout a 5 segundos (era 10)
-      const timeoutId = setTimeout(() => {
-        console.log('Timeout de seguridad: forzando fin de carga');
-        setLoading(false);
-      }, 5000);
-      
+    // Función simplificada para obtener perfil
+    const fetchUserProfile = async (userId: string, userEmail: string) => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          throw sessionError;
+        // Verificar caché primero
+        const cachedProfile = profileCache.get(userId);
+        if (cachedProfile && (Date.now() - cachedProfile.timestamp < CACHE_EXPIRY)) {
+          return cachedProfile.role as UserRole;
         }
+
+        // Consultar perfil
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', userId)
+          .single();
+
+        // Si existe, usarlo
+        if (profile) {
+          const role = profile.role || 'viewer';
+          profileCache.set(userId, { role, timestamp: Date.now() });
+          return role as UserRole;
+        }
+
+        // Si no existe, crear perfil por defecto
+        if (profileError && profileError.code === 'PGRST116') {
+          await supabase
+            .from('profiles')
+            .insert([{ id: userId, email: userEmail, role: 'viewer' }]);
+          
+          profileCache.set(userId, { role: 'viewer', timestamp: Date.now() });
+          return 'viewer' as UserRole;
+        }
+
+        // Perfil por defecto
+        return 'viewer' as UserRole;
+      } catch (err) {
+        console.error('Error al obtener perfil:', err);
+        return 'viewer' as UserRole;
+      }
+    };
+
+    // Comprobar sesión actual de forma simplificada
+    const checkCurrentSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          try {
-            const userId = session.user.id;
-            const userEmail = session.user.email!;
-            
-            // Verificar si hay datos en caché
-            const cachedProfile = profileCache.get(userId);
-            if (cachedProfile && (Date.now() - cachedProfile.timestamp < CACHE_EXPIRY)) {
-              // Usar datos en caché si son recientes
-              setUser({
-                id: userId,
-                email: userEmail,
-                role: cachedProfile.role as UserRole
-              });
-              setLoading(false);
-              clearTimeout(timeoutId);
-              return;
-            }
-            
-            // Seleccionar solo los campos necesarios de la base de datos
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', userId)
-              .single();
-              
-            if (profileError) {
-              if (profileError.code === 'PGRST116') {
-                // Si el perfil no existe, crear uno básico con role 'viewer'
-                const { data: newProfile, error: createError } = await supabase
-                  .from('profiles')
-                  .insert([{ id: userId, email: userEmail, role: 'viewer' }])
-                  .select('role')
-                  .single();
-                  
-                if (createError) {
-                  throw createError;
-                }
-                
-                const role = newProfile?.role || 'viewer';
-                
-                // Guardar en caché
-                profileCache.set(userId, {
-                  role,
-                  timestamp: Date.now()
-                });
-                
-                setUser({
-                  id: userId,
-                  email: userEmail,
-                  role: role as UserRole
-                });
-              } else {
-                throw profileError;
-              }
-            } else if (profile) {
-              const role = profile.role || 'viewer';
-              
-              // Guardar en caché
-              profileCache.set(userId, {
-                role,
-                timestamp: Date.now()
-              });
-              
-              setUser({
-                id: userId,
-                email: userEmail,
-                role: role as UserRole
-              });
-            } else {
-              setUser({
-                id: userId,
-                email: userEmail,
-                role: 'viewer' as UserRole
-              });
-            }
-          } catch (profileError) {
-            console.error('Error al cargar el perfil:', profileError);
-            setError('Error al cargar el perfil del usuario');
-            
-            // A pesar del error, establecer el usuario con rol por defecto
-            setUser({
-              id: session.user.id,
-              email: session.user.email!,
-              role: 'viewer' as UserRole
-            });
-          }
+          const userId = session.user.id;
+          const userEmail = session.user.email || '';
+          
+          // Obtener rol
+          const role = await fetchUserProfile(userId, userEmail);
+          
+          // Establecer usuario
+          setUser({
+            id: userId,
+            email: userEmail,
+            role
+          });
         } else {
           setUser(null);
         }
       } catch (err) {
-        console.error('Error al verificar la sesión:', err);
-        setError('Error al verificar la autenticación');
+        console.error('Error al verificar sesión:', err);
         setUser(null);
+        setError('Error al verificar autenticación');
       } finally {
         setLoading(false);
-        clearTimeout(timeoutId);
       }
     };
 
-    checkSession();
+    // Verificar sesión al cargar
+    checkCurrentSession();
 
-    // Escuchar cambios en la autenticación con optimizaciones
+    // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        setLoading(true);
+        const userId = session.user.id;
+        const userEmail = session.user.email || '';
         
-        // Reducir el timeout a 5 segundos (era 10)
-        const timeoutId = setTimeout(() => {
-          console.log('Timeout de seguridad en onAuthStateChange: forzando fin de carga');
-          setLoading(false);
-        }, 5000);
+        // Obtener rol
+        const role = await fetchUserProfile(userId, userEmail);
         
-        try {
-          const userId = session.user.id;
-          const userEmail = session.user.email!;
-          
-          // Verificar si hay datos en caché
-          const cachedProfile = profileCache.get(userId);
-          if (cachedProfile && (Date.now() - cachedProfile.timestamp < CACHE_EXPIRY)) {
-            // Usar datos en caché si son recientes
-            setUser({
-              id: userId,
-              email: userEmail,
-              role: cachedProfile.role as UserRole
-            });
-            setLoading(false);
-            clearTimeout(timeoutId);
-            return;
-          }
-          
-          // Seleccionar solo los campos necesarios
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', userId)
-            .single();
-            
-          if (profileError) {
-            if (profileError.code === 'PGRST116') {
-              // Si el perfil no existe, crear uno básico
-              const { data: newProfile, error: createError } = await supabase
-                .from('profiles')
-                .insert([{ id: userId, email: userEmail, role: 'viewer' }])
-                .select('role')
-                .single();
-                
-              if (createError) {
-                throw createError;
-              }
-              
-              const role = newProfile?.role || 'viewer';
-              
-              // Guardar en caché
-              profileCache.set(userId, {
-                role,
-                timestamp: Date.now()
-              });
-              
-              setUser({
-                id: userId,
-                email: userEmail,
-                role: role as UserRole
-              });
-            } else {
-              throw profileError;
-            }
-          } else if (profile) {
-            const role = profile.role || 'viewer';
-            
-            // Guardar en caché
-            profileCache.set(userId, {
-              role,
-              timestamp: Date.now()
-            });
-            
-            setUser({
-              id: userId,
-              email: userEmail,
-              role: role as UserRole
-            });
-          } else {
-            setUser({
-              id: userId,
-              email: userEmail,
-              role: 'viewer' as UserRole
-            });
-          }
-        } catch (err) {
-          console.error('Error al actualizar el perfil:', err);
-          setError('Error al actualizar el perfil del usuario');
-          
-          // A pesar del error, establecer el usuario como autenticado
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            role: 'viewer' as UserRole
-          });
-        } finally {
-          setLoading(false);
-          clearTimeout(timeoutId);
-        }
+        // Establecer usuario
+        setUser({
+          id: userId,
+          email: userEmail,
+          role
+        });
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        // Limpiar caché al cerrar sesión
         profileCache.clear();
       }
     });
@@ -245,53 +116,41 @@ export function useAuth() {
     setLoading(true);
     setError(null);
     
-    // Timeout de 8 segundos para evitar que se quede cargando indefinidamente
-    const timeoutId = setTimeout(() => {
-      console.log('Timeout de seguridad en signIn: forzando fin de carga');
-      setLoading(false);
-      setError('La operación tardó demasiado tiempo. Por favor, intente nuevamente.');
-    }, 8000); // 8 segundos para dar más tiempo
-    
     try {
-      // Proceder directamente con el inicio de sesión sin verificación previa
-      // que estaba causando el error 401 Unauthorized
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       });
       
-      if (error) {
-        console.error('Error al iniciar sesión:', error);
-        throw error;
+      if (error) throw error;
+      
+      // No necesitamos establecer el usuario aquí, lo hará onAuthStateChange
+      return data;
+    } catch (err: any) {
+      setLoading(false);
+      console.error('Error al iniciar sesión:', err);
+      
+      // Establecer mensaje de error más descriptivo
+      if (err.message?.includes('Invalid login credentials')) {
+        setError('Credenciales inválidas');
+      } else if (err.message?.includes('Email not confirmed')) {
+        setError('Email no confirmado');
+      } else {
+        setError(err.message || 'Error desconocido al iniciar sesión');
       }
       
-      // Iniciar sesión exitoso (no desactivamos loading aquí porque onAuthStateChange lo hará)
-      console.log('Inicio de sesión exitoso, esperando actualización de estado...');
-      
-      // Limpiamos el timeout para evitar problemas
-      clearTimeout(timeoutId);
-      
-      // No hacemos setLoading(false) aquí para permitir que onAuthStateChange maneje la actualización completa
-    } catch (err) {
-      console.error('Error al iniciar sesión:', err);
-      setLoading(false);
-      clearTimeout(timeoutId);
       throw err;
     }
   };
 
   const signOut = async () => {
     try {
-      setError(null);
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
+      await supabase.auth.signOut();
       setUser(null);
-      // Limpiar caché al cerrar sesión
       profileCache.clear();
     } catch (err) {
       console.error('Error al cerrar sesión:', err);
+      setError('Error al cerrar sesión');
       throw err;
     }
   };
@@ -299,7 +158,6 @@ export function useAuth() {
   const hasRole = (requiredRole: UserRole) => {
     if (!user) return false;
     
-    // Map para hacer búsqueda O(1) en vez de comparaciones repetidas
     const roleHierarchy: Record<UserRole, number> = {
       'admin': 3,
       'editor': 2,
