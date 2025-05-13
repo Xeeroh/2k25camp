@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -36,26 +36,7 @@ const formSchema = z.object({
     .min(2, "El apellido debe tener al menos 2 caracteres")
     .max(50, "El apellido no puede tener más de 50 caracteres"),
   email: z.string()
-    .email("Correo electrónico no válido")
-    .refine(async (email) => {
-      try {
-        const { data, error } = await supabase
-          .from('attendees')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
-        
-        if (error) {
-          console.error('Error al verificar email:', error);
-          return true; // Permitir el registro si hay error en la verificación
-        }
-        
-        return !data; // Retorna true si el email no existe
-      } catch (error) {
-        console.error('Error en la validación del email:', error);
-        return true; // Permitir el registro si hay error
-      }
-    }, "Este correo electrónico ya está registrado"),
+    .email("Correo electrónico no válido"),
   phone: z.string()
     .min(10, "El teléfono debe tener al menos 10 dígitos")
     .max(15, "El teléfono no puede tener más de 15 dígitos")
@@ -63,23 +44,9 @@ const formSchema = z.object({
   sector: z.string({ required_error: "Por favor seleccione un sector" }),
   church: z.string({ required_error: "Por favor seleccione una iglesia" }),
   paymentAmount: z.coerce.number()
-    .min(1, "El monto debe ser mayor a 0")
+    .min(400, "El monto mínimo para apartar el campamento es de $400")
     .max(10000, "El monto no puede ser mayor a $10,000"),
-  paymentFile: z
-    .instanceof(FileList)
-    .refine((files) => files.length > 0, "El comprobante de pago es requerido")
-    .refine(
-      (files) => {
-        const file = files[0];
-        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-        return validTypes.includes(file.type);
-      },
-      "El archivo debe ser JPG, PNG o PDF"
-    )
-    .refine(
-      (files) => files[0].size <= 5 * 1024 * 1024,
-      "El archivo debe ser menor a 5MB"
-    ),
+  paymentFile: z.any(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -95,6 +62,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const [qrData, setQrData] = useState<string | null>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -106,10 +74,65 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       phone: '',
       sector: '',
       church: '',
-      paymentAmount: 0,
+      paymentAmount: 400,
       paymentFile: undefined
     }
   });
+
+  // Verificar correo electrónico en tiempo real
+  const watchedEmail = form.watch("email");
+  const [emailExists, setEmailExists] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Solo verificar si el email tiene un formato válido
+    if (watchedEmail && watchedEmail.includes('@') && watchedEmail.includes('.')) {
+      setIsCheckingEmail(true);
+      
+      // Limpiar timeout previo
+      if (emailCheckTimeoutRef.current) {
+        clearTimeout(emailCheckTimeoutRef.current);
+      }
+      
+      // Debounce para no hacer muchas peticiones
+      emailCheckTimeoutRef.current = setTimeout(async () => {
+        try {
+          const { data, error } = await supabase
+            .from('attendees')
+            .select('id')
+            .eq('email', watchedEmail)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error al verificar email:', error);
+            setEmailExists(false);
+          } else {
+            setEmailExists(!!data);
+            
+            if (data) {
+              form.setError("email", { 
+                type: "manual", 
+                message: "Este correo electrónico ya está registrado" 
+              });
+            } else {
+              form.clearErrors("email");
+            }
+          }
+        } catch (error) {
+          console.error('Error en la validación del email:', error);
+        } finally {
+          setIsCheckingEmail(false);
+        }
+      }, 500);
+    }
+    
+    return () => {
+      if (emailCheckTimeoutRef.current) {
+        clearTimeout(emailCheckTimeoutRef.current);
+      }
+    };
+  }, [watchedEmail, form]);
 
   // Función para formatear el número de teléfono
   const formatPhoneNumber = (value: string) => {
@@ -120,153 +143,148 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   };
   
   const onSubmit = async (data: FormValues) => {
+    console.log("Iniciando onSubmit con datos:", data);
+    
     try {
+      // Prevenir envíos duplicados
+      if (isSubmitting) {
+        console.log("Formulario ya está siendo enviado, abortando envío duplicado");
+        return;
+      }
+      
+      // Activar primero los estados para bloquear interfaz
+      setIsSubmitting(true);
       setIsLoading(true);
       setIsSuccess(false);
       setError(null);
+      
+      console.log("Estado de formulario actualizado, procediendo con el registro");
 
       // Subir el comprobante de pago si existe
       let paymentReceiptUrl = '';
-      if (data.paymentFile && data.paymentFile[0]) {
-        const file = data.paymentFile[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `payment-receipts/${fileName}`;
+      try {
+        if (data.paymentFile && data.paymentFile instanceof FileList && data.paymentFile.length > 0) {
+          console.log("Iniciando subida de archivo");
+          
+          const file = data.paymentFile[0];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `payment-${Date.now()}.${fileExt}`;
+          const filePath = `payment-receipts/${fileName}`;
 
-        try {
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          console.log("Subiendo archivo:", fileName);
+          const { error: uploadError } = await supabase.storage
             .from('payment-receipts')
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false
-            });
+            .upload(filePath, file);
 
           if (uploadError) {
             console.error('Error al subir archivo:', uploadError);
-            throw new Error(`Error al subir el archivo: ${uploadError.message}`);
-          }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('payment-receipts')
-            .getPublicUrl(filePath);
-
-          paymentReceiptUrl = publicUrl;
-        } catch (uploadError) {
-          console.error('Error en la subida:', uploadError);
-          throw new Error('Error al subir el archivo');
-        }
-      }
-
-      // Versión simplificada: Usar directamente Supabase para crear el registro
-      const { data: attendeeData, error } = await supabase
-        .from('attendees')
-        .insert([
-          {
-            firstname: data.firstName,
-            lastname: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            church: data.church,
-            sector: data.sector,
-            paymentamount: data.paymentAmount,
-            paymentstatus: 'Pendiente',
-            registrationdate: new Date().toISOString(),
-            paymentreceipturl: paymentReceiptUrl
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error al crear registro:', error);
-        throw new Error(`Error al crear el registro: ${error.message}`);
-      }
-
-      // Generar datos para el QR
-      const qrData = {
-        id: attendeeData.id,
-        nombre: `${data.firstName} ${data.lastName}`,
-        email: data.email,
-        iglesia: data.church,
-        sector: data.sector,
-        monto: data.paymentAmount,
-        estado: 'Pendiente',
-        fecha: new Date().toISOString()
-      };
-
-      // Convertir a JSON string para el QR
-      const qrValue = JSON.stringify(qrData);
-      console.log('QR Data generado:', qrValue);
-      
-      // Enviar correo de confirmación usando la Edge Function
-      try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseAnonKey) {
-          console.error('Faltan variables de entorno para Supabase');
-          throw new Error('Error en la configuración');
-        }
-
-        console.log('Enviando correo con los siguientes datos:', {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          church: data.church,
-          sector: data.sector,
-          paymentAmount: data.paymentAmount,
-          qrData: qrValue
-        });
-
-        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-confirmation-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseAnonKey}`
-          },
-          body: JSON.stringify({
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            church: data.church,
-            sector: data.sector,
-            paymentAmount: data.paymentAmount,
-            qrData: qrValue
-          })
-        });
-
-        if (!emailResponse.ok) {
-          const errorData = await emailResponse.json();
-          console.error('Error al enviar el correo:', errorData);
-          // Mostrar toast con error pero continuar con el registro
-          toast.error(`No se pudo enviar el correo de confirmación: ${errorData.error || 'Error desconocido'}`);
-        } else {
-          const emailResult = await emailResponse.json();
-          console.log('Respuesta del servicio de correo:', emailResult);
-          if (emailResult.success) {
-            toast.success(`Correo de confirmación enviado a ${data.email}. Revisa tu bandeja de entrada o carpeta de spam.`);
+            toast.error(`Error al subir el comprobante: ${uploadError.message}`);
           } else {
-            console.error('El servicio de correo reportó un error:', emailResult.error);
-            toast.error(`Error al enviar el correo: ${emailResult.error || 'Error desconocido'}`);
+            const { data: { publicUrl } } = supabase.storage
+              .from('payment-receipts')
+              .getPublicUrl(filePath);
+
+            paymentReceiptUrl = publicUrl;
+            console.log("Archivo subido correctamente, URL:", paymentReceiptUrl);
           }
+        } else {
+          console.log("No hay archivo adjunto para subir");
         }
-      } catch (emailError) {
-        console.error('Error al contactar el servicio de correo:', emailError);
-        // Mostrar toast con error pero continuar con el registro
-        toast.error(`No se pudo contactar al servicio de correo: ${emailError instanceof Error ? emailError.message : 'Error desconocido'}`);
+      } catch (uploadError) {
+        console.error('Error en la subida:', uploadError);
+        toast.error('Error al subir el archivo del comprobante');
       }
 
-      setIsSuccess(true);
-      setQrData(qrValue); // Guardar los datos del QR para mostrarlos
-      
-      // Llamar a onSuccess y pasar directamente el qrValue
-      onSuccess(attendeeData, qrValue);
-      form.reset();
+      // Intentar crear el registro en la base de datos
+      try {
+        console.log("Iniciando inserción en base de datos");
+        const { data: attendeeData, error } = await supabase
+          .from('attendees')
+          .insert([
+            {
+              firstname: data.firstName,
+              lastname: data.lastName,
+              email: data.email,
+              phone: data.phone,
+              church: data.church,
+              sector: data.sector,
+              paymentamount: data.paymentAmount,
+              paymentstatus: data.paymentAmount >= 900 ? 'Completado' : 'Pendiente',
+              registrationdate: new Date().toISOString(),
+              paymentreceipturl: paymentReceiptUrl
+            }
+          ])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error al crear registro:', error);
+          throw new Error(`Error al crear el registro: ${error.message}`);
+        }
+
+        console.log("Registro creado exitosamente:", attendeeData);
+
+        // Generar datos para el QR
+        const qrData = {
+          id: attendeeData.id,
+          nombre: `${data.firstName} ${data.lastName}`,
+          email: data.email,
+          iglesia: data.church,
+          sector: data.sector,
+          monto: data.paymentAmount,
+          estado: data.paymentAmount >= 900 ? 'Completado' : 'Pendiente',
+          fecha: new Date().toISOString()
+        };
+
+        // Convertir a JSON string para el QR
+        const qrValue = JSON.stringify(qrData);
+        console.log('QR Data generado:', qrValue);
+        
+        // Enviar correo (opcional, no bloqueamos si falla)
+        try {
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+          if (supabaseUrl && supabaseAnonKey) {
+            await fetch(`${supabaseUrl}/functions/v1/send-confirmation-email`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseAnonKey}`
+              },
+              body: JSON.stringify({
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                church: data.church,
+                sector: data.sector,
+                paymentAmount: data.paymentAmount,
+                qrData: qrValue
+              })
+            });
+            console.log("Solicitud de correo enviada");
+          }
+        } catch (emailError) {
+          console.error('Error al contactar el servicio de correo:', emailError);
+        }
+
+        // Completar proceso exitosamente
+        setIsSuccess(true);
+        setQrData(qrValue);
+        onSuccess(attendeeData, qrValue);
+        form.reset();
+        toast.success("¡Registro completado con éxito!");
+      } catch (dbError: any) {
+        console.error('Error en la base de datos:', dbError);
+        setError(dbError.message || 'Ha ocurrido un error al procesar tu registro.');
+        toast.error("Error al guardar el registro");
+      }
     } catch (error: any) {
-      console.error('Error al enviar el formulario:', error);
+      console.error('Error general al enviar el formulario:', error);
       setError(error.message || 'Ha ocurrido un error al procesar tu registro.');
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
   
@@ -293,7 +311,14 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
             const link = document.createElement('a');
-            link.download = `qr-${qrData?.split('"nombreCompleto":"')[1].split('"')[0].replace(/\s+/g, '-')}.png`;
+            // Parsear el objeto QR para extraer el nombre del asistente
+            try {
+              const qrDataObj = JSON.parse(qrData || '{}');
+              const fileName = qrDataObj.nombre || 'asistente';
+              link.download = `qr-${fileName.replace(/\s+/g, '-')}.png`;
+            } catch (e) {
+              link.download = `qr-asistente.png`;
+            }
             link.href = canvas.toDataURL('image/png');
             link.click();
           }
@@ -325,6 +350,35 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   includeMargin={true}
                 />
               </div>
+            </div>
+            <div className="mb-4">
+              {(() => {
+                try {
+                  const qrDataObj = JSON.parse(qrData);
+                  return (
+                    <div className="flex flex-col gap-2 items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Estado de pago:</span>
+                        <span className={`px-2 py-0.5 rounded-full text-sm ${
+                          qrDataObj.estado === 'Completado' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {qrDataObj.estado}
+                        </span>
+                      </div>
+                      {qrDataObj.estado === 'Pendiente' && (
+                        <p className="text-sm text-muted-foreground">
+                          El pago total del campamento es de $900. 
+                          {qrDataObj.monto < 900 && ` Has pagado $${qrDataObj.monto}, restan $${900 - qrDataObj.monto}.`}
+                        </p>
+                      )}
+                    </div>
+                  );
+                } catch {
+                  return null;
+                }
+              })()}
             </div>
             <Button
               onClick={handleDownloadQR}
@@ -365,7 +419,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <Input 
                       placeholder="Ingrese su nombre" 
                       {...field} 
-                      disabled={isLoading}
+                      disabled={isLoading || isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -383,7 +437,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <Input 
                       placeholder="Ingrese su apellido" 
                       {...field} 
-                      disabled={isLoading}
+                      disabled={isLoading || isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -399,14 +453,22 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Correo Electrónico</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="correo@ejemplo.com" 
-                      {...field} 
-                      disabled={isLoading}
-                    />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="correo@ejemplo.com" 
+                        {...field} 
+                        disabled={isLoading || isSubmitting}
+                        className={emailExists ? "pr-10 border-red-300" : ""}
+                      />
+                    </FormControl>
+                    {isCheckingEmail && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -427,7 +489,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                         const formatted = formatPhoneNumber(e.target.value);
                         field.onChange(formatted);
                       }}
-                      disabled={isLoading}
+                      disabled={isLoading || isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -450,7 +512,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                       form.setValue("church", ""); // Reset church when sector changes
                     }}
                     value={field.value}
-                    disabled={isLoading}
+                    disabled={isLoading || isSubmitting}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -480,7 +542,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   <Select 
                     onValueChange={field.onChange}
                     value={field.value}
-                    disabled={!sectorValue || isLoading}
+                    disabled={!sectorValue || isLoading || isSubmitting}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -518,12 +580,13 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   <FormControl>
                     <Input 
                       type="number" 
-                      placeholder="0.00" 
+                      placeholder="400.00" 
                       {...field} 
-                      disabled={isLoading}
+                      disabled={isLoading || isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-xs text-muted-foreground mt-1">Mínimo $400 para apartar. Pago completo: $900</p>
                 </FormItem>
               )}
             />
@@ -538,12 +601,16 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <Input 
                       type="file" 
                       accept=".jpg,.jpeg,.png,.pdf"
-                      onChange={(e) => onChange(e.target.files)}
+                      onChange={(e) => {
+                        console.log("Archivo seleccionado:", e.target.files);
+                        onChange(e.target.files);
+                      }}
+                      disabled={isLoading || isSubmitting}
                       {...fieldProps}
-                      disabled={isLoading}
                     />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-xs text-muted-foreground mt-1">Formatos aceptados: JPG, PNG, PDF. Máximo 5MB.</p>
                 </FormItem>
               )}
             />
@@ -552,7 +619,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
           >
             {isLoading ? (
               <>
@@ -563,6 +630,12 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
               "Completar Registro"
             )}
           </Button>
+          
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm mt-4">
+              {error}
+            </div>
+          )}
         </form>
       </Form>
     </div>
