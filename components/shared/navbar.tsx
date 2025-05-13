@@ -56,7 +56,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
               href="/" 
               className="text-2xl font-bold text-primary transition-colors"
             >
-              MDP Noroeste
+              Mensajero de Paz Noroeste
             </Link>
             
             {/* Indicador de modo interno */}

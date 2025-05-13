@@ -77,7 +77,7 @@ export default function RegistroPage() {
                   Registro de Asistentes
                 </h1>
                 <p className="text-lg text-muted-foreground">
-                  Complete el formulario para registrarse al evento MDP Noroeste
+                  Complete el formulario para registrarse "Alfa y Omega" "
                 </p>
               </div>
               

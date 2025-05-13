@@ -9,9 +9,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">MDP Noroeste</h3>
+            <h3 className="text-lg font-semibold mb-4">Mensajero de Paz Noroeste</h3>
             <p className="text-muted-foreground">
-              Fortaleciéndonos en comunidad para servir con propósito y amor.
+             <Heart size={14} className="mx-1 text-destructive" />
             </p>
           </div>
           

@@ -3,18 +3,43 @@ import type { NextRequest } from 'next/server';
 
 // Middleware para proteger rutas
 export function middleware(request: NextRequest) {
-  // Verificar si la ruta es para comité o admin
+  // Verificar la ruta actual
   const path = request.nextUrl.pathname;
+  
+  // Verificar si estamos en producción
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  // En producción, redirigir todo el tráfico público a /registro 
+  // excepto la propia página de registro y recursos estáticos
+  if (isProduction) {
+    // Verificamos si el usuario proviene de origen interno
+    const isInternalUser = isInternalRequest(request);
+    
+    // Si NO es un usuario interno y la ruta NO es /registro (y no son recursos estáticos),
+    // redirigir a /registro
+    if (!isInternalUser && 
+        path !== '/registro' && 
+        !path.startsWith('/_next') && 
+        !path.startsWith('/favicon') && 
+        !path.startsWith('/api')) {
+      
+      // Creamos URL para redirección a registro
+      const redirectUrl = new URL('/registro', request.url);
+      
+      // Devolvemos la redirección
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
   
   // Si la ruta es /comite o /admin, verificamos autenticación
   if (path.startsWith('/comite') || path.startsWith('/admin')) {
     // Verificamos si el usuario proviene de origen interno
     const isInternalUser = isInternalRequest(request);
     
-    // Si no es un usuario interno, redirigir a la página principal
+    // Si no es un usuario interno, redirigir a la página de registro
     if (!isInternalUser) {
-      // Creamos URL para redirección a la página principal
-      const redirectUrl = new URL('/', request.url);
+      // Creamos URL para redirección a registro
+      const redirectUrl = new URL('/registro', request.url);
       
       // Devolvemos la redirección
       return NextResponse.redirect(redirectUrl);
@@ -62,5 +87,5 @@ function isInternalRequest(request: NextRequest): boolean {
 
 // Configuración de rutas para aplicar el middleware
 export const config = {
-  matcher: ['/comite/:path*', '/admin/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }; 

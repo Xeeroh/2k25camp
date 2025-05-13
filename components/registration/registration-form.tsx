@@ -44,12 +44,7 @@ const formSchema = z.object({
     .regex(/^[0-9()-\s]+$/, "El teléfono solo puede contener números, paréntesis, guiones y espacios"),
   sector: z.string({ required_error: "Por favor seleccione un sector" }),
   church: z.string({ required_error: "Por favor seleccione una iglesia" }),
-  paymentAmount: z.coerce.number()
-    .min(400, "El monto mínimo para apartar el campamento es de $400")
-    .max(10000, "El monto no puede ser mayor a $10,000"),
-  paymentFile: z.any(),
   tshirtsize: z.string().optional(),
-  isTest: z.boolean().default(false).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -79,10 +74,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       phone: '',
       sector: '',
       church: '',
-      paymentAmount: 400,
-      paymentFile: undefined,
       tshirtsize: '',
-      isTest: false
     }
   });
 
@@ -101,14 +93,13 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const checkShirtAvailability = async () => {
     try {
       setCheckingShirts(true);
-      // Contar registros que no son de prueba
+      // Contar registros totales
       const { count, error: countError } = await supabase
         .from('attendees')
-        .select('*', { count: 'exact', head: true })
-        .eq('istest', false);
+        .select('*', { count: 'exact', head: true });
       
       if (countError) {
-        console.error('Error al contar registros:', countError);
+        // console.error('Error al contar registros:', countError);
         setShirtAvailable(null);
         return;
       }
@@ -116,9 +107,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       // Determinar si aún hay camisetas disponibles (menos de 100 registros)
       const areTshirtsAvailable = !countError && count !== null && count < 100;
       setShirtAvailable(areTshirtsAvailable);
-      console.log(`Registros no de prueba: ${count}, ¿Camisetas disponibles?: ${areTshirtsAvailable}`);
+      // console.log(`Registros totales: ${count}, ¿Camisetas disponibles?: ${areTshirtsAvailable}`);
     } catch (error) {
-      console.error('Error al verificar disponibilidad de camisetas:', error);
+      // console.error('Error al verificar disponibilidad de camisetas:', error);
       setShirtAvailable(null);
     } finally {
       setCheckingShirts(false);
@@ -145,7 +136,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             .maybeSingle();
           
           if (error) {
-            console.error('Error al verificar email:', error);
+            // console.error('Error al verificar email:', error);
             setEmailExists(false);
           } else {
             setEmailExists(!!data);
@@ -160,7 +151,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             }
           }
         } catch (error) {
-          console.error('Error en la validación del email:', error);
+          // console.error('Error en la validación del email:', error);
         } finally {
           setIsCheckingEmail(false);
         }
@@ -183,13 +174,13 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   };
   
   const onSubmit = async (data: FormValues) => {
-    console.log("Iniciando onSubmit con datos completos:", data);
-    console.log("Talla de camiseta seleccionada:", data.tshirtsize);
+    // console.log("Iniciando onSubmit con datos completos:", data);
+    // console.log("Talla de camiseta seleccionada:", data.tshirtsize);
     
     try {
       // Prevenir envíos duplicados
       if (isSubmitting) {
-        console.log("Formulario ya está siendo enviado, abortando envío duplicado");
+        // console.log("Formulario ya está siendo enviado, abortando envío duplicado");
         return;
       }
       
@@ -199,96 +190,61 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       setIsSuccess(false);
       setError(null);
       
-      console.log("Estado de formulario actualizado, procediendo con el registro");
-
-      // Subir el comprobante de pago si existe
-      let paymentReceiptUrl = '';
-      try {
-        if (data.paymentFile && data.paymentFile instanceof FileList && data.paymentFile.length > 0) {
-          console.log("Iniciando subida de archivo");
-          
-          const file = data.paymentFile[0];
-          const fileExt = file.name.split('.').pop();
-          const fileName = `payment-${Date.now()}.${fileExt}`;
-          const filePath = `payment-receipts/${fileName}`;
-
-          console.log("Subiendo archivo:", fileName);
-          const { error: uploadError } = await supabase.storage
-            .from('payment-receipts')
-            .upload(filePath, file);
-
-          if (uploadError) {
-            console.error('Error al subir archivo:', uploadError);
-            toast.error(`Error al subir el comprobante: ${uploadError.message}`);
-          } else {
-            const { data: { publicUrl } } = supabase.storage
-              .from('payment-receipts')
-              .getPublicUrl(filePath);
-
-            paymentReceiptUrl = publicUrl;
-            console.log("Archivo subido correctamente, URL:", paymentReceiptUrl);
-          }
-        } else {
-          console.log("No hay archivo adjunto para subir");
-        }
-      } catch (uploadError) {
-        console.error('Error en la subida:', uploadError);
-        toast.error('Error al subir el archivo del comprobante');
-      }
+      // console.log("Estado de formulario actualizado, procediendo con el registro");
 
       // Verificar si hay espacio para una camiseta
       const { count, error: countError } = await supabase
         .from('attendees')
-        .select('*', { count: 'exact', head: true })
-        .eq('istest', false);
+        .select('*', { count: 'exact', head: true });
       
       if (countError) {
-        console.error('Error al contar registros:', countError);
+        // console.error('Error al contar registros:', countError);
       }
       
-      // Determinar si este registro recibe camiseta (menos de 100 registros y no es prueba)
-      const canGetTshirt = (!countError && count !== null && count < 100 && !data.isTest);
-      console.log(`Registros actuales: ${count}, ¿Puede recibir camiseta?: ${canGetTshirt}`);
-      console.log(`Valor de talla que se enviará:`, canGetTshirt ? data.tshirtsize : null);
-
-      // Actualizar la disponibilidad de camisetas
+      // Determinar si este registro recibe camiseta (menos de 100 registros)
+      const canReceiveTshirt = (!countError && count !== null && count < 100);
+      // console.log(`Registros actuales: ${count}, ¿Puede recibir camiseta?: ${canReceiveTshirt}`);
+      
+      // Actualizar la disponibilidad de camisetas para la UI
       setShirtAvailable(count !== null && count < 100);
 
       // Crear el objeto de datos a insertar con logs
-      const insertData = {
+      const registrationData = {
         firstname: data.firstName,
         lastname: data.lastName,
         email: data.email,
         phone: data.phone,
         church: data.church,
         sector: data.sector,
-        paymentamount: data.paymentAmount,
-        paymentstatus: data.paymentAmount >= 900 ? 'Completado' : 'Pendiente',
         registrationdate: new Date().toISOString(),
-        paymentreceipturl: paymentReceiptUrl,
-        tshirtsize: canGetTshirt ? data.tshirtsize : null,
-        istest: data.isTest
+        tshirtsize: data.tshirtsize || null, // Guardar la talla seleccionada o null
+        receives_tshirt: canReceiveTshirt, // Indicar si REALMENTE se asigna una del stock
       };
       
-      console.log("Datos a insertar en la BD:", insertData);
+      // console.log("Datos completos a insertar en Supabase:", registrationData);
 
       // Intentar crear el registro en la base de datos
       try {
-        console.log("Iniciando inserción en base de datos");
+        // console.log("Iniciando inserción en base de datos");
         const { data: attendeeData, error } = await supabase
           .from('attendees')
-          .insert([insertData])
+          .insert([registrationData])
           .select()
           .single();
 
         if (error) {
-          console.error('Error al crear registro:', error);
+          // console.error('Error al crear registro:', error);
           throw new Error(`Error al crear el registro: ${error.message}`);
         }
 
-        console.log("Registro creado exitosamente. Datos retornados:", attendeeData);
-        console.log("Talla de camiseta guardada:", attendeeData.tshirtsize);
-
+        // console.log("Registro creado exitosamente. Datos completos retornados:", attendeeData);
+        // console.log("VERIFICACIÓN DE TALLA:");
+        // console.log("- Talla que se intentó guardar:", data.tshirtsize);
+        // console.log("- Talla recibida de la base de datos:", attendeeData.tshirtsize);
+        // console.log("- ¿Son iguales?", data.tshirtsize === attendeeData.tshirtsize);
+        // console.log("- Valor exacto en DB:", JSON.stringify(attendeeData.tshirtsize));
+        // console.log("- Tipo de talla en DB:", typeof attendeeData.tshirtsize);
+        
         // Generar datos para el QR
         const qrData = {
           id: attendeeData.id,
@@ -296,15 +252,13 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           email: data.email,
           iglesia: data.church,
           sector: data.sector,
-          monto: data.paymentAmount,
-          estado: data.paymentAmount >= 900 ? 'Completado' : 'Pendiente',
-          fecha: new Date().toISOString(),
+          fecha: registrationData.registrationdate,
           tshirtsize: attendeeData.tshirtsize
         };
 
         // Convertir a JSON string para el QR
         const qrValue = JSON.stringify(qrData);
-        console.log('QR Data generado:', qrValue);
+        // console.log('QR Data generado:', qrValue);
         
         // Enviar correo (opcional, no bloqueamos si falla)
         try {
@@ -324,14 +278,18 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 email: data.email,
                 church: data.church,
                 sector: data.sector,
-                paymentAmount: data.paymentAmount,
-                qrData: qrValue
+                qrData: qrValue,
+                receivesTshirt: attendeeData.receives_tshirt,
+                tshirtSize: attendeeData.tshirtsize
               })
             });
-            console.log("Solicitud de correo enviada");
+            // console.log("Solicitud de correo enviada con datos de camiseta:", {
+            //   receivesTshirt: attendeeData.receives_tshirt,
+            //   tshirtSize: attendeeData.tshirtsize
+            // });
           }
         } catch (emailError) {
-          console.error('Error al contactar el servicio de correo:', emailError);
+          // console.error('Error al contactar el servicio de correo:', emailError);
         }
 
         // Completar proceso exitosamente
@@ -340,13 +298,27 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         onSuccess(attendeeData, qrValue);
         form.reset();
         toast.success("¡Registro completado con éxito!");
+
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'sign_up', {
+            method: 'form',
+            event_category: 'engagement',
+            event_label: 'Registration Success',
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            church: data.church,
+            sector: data.sector,
+            qrData: qrValue
+          });
+        }
       } catch (dbError: any) {
-        console.error('Error en la base de datos:', dbError);
+        // console.error('Error en la base de datos:', dbError);
         setError(dbError.message || 'Ha ocurrido un error al procesar tu registro.');
         toast.error("Error al guardar el registro");
       }
     } catch (error: any) {
-      console.error('Error general al enviar el formulario:', error);
+      // console.error('Error general al enviar el formulario:', error);
       setError(error.message || 'Ha ocurrido un error al procesar tu registro.');
     } finally {
       setIsLoading(false);
@@ -416,35 +388,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   includeMargin={true}
                 />
               </div>
-            </div>
-            <div className="mb-4">
-              {(() => {
-                try {
-                  const qrDataObj = JSON.parse(qrData);
-                  return (
-                    <div className="flex flex-col gap-2 items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Estado de pago:</span>
-                        <span className={`px-2 py-0.5 rounded-full text-sm ${
-                          qrDataObj.estado === 'Completado' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {qrDataObj.estado}
-                        </span>
-                      </div>
-                      {qrDataObj.estado === 'Pendiente' && (
-                        <p className="text-sm text-muted-foreground">
-                          El pago total del campamento es de $900. 
-                          {qrDataObj.monto < 900 && ` Has pagado $${qrDataObj.monto}, restan $${900 - qrDataObj.monto}.`}
-                        </p>
-                      )}
-                    </div>
-                  );
-                } catch {
-                  return null;
-                }
-              })()}
             </div>
             <Button
               onClick={handleDownloadQR}
@@ -637,52 +580,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="paymentAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monto Pagado</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="400.00" 
-                      {...field} 
-                      disabled={isLoading || isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  <p className="text-xs text-muted-foreground mt-1">Mínimo $400 para apartar. Pago completo: $900</p>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="paymentFile"
-              render={({ field: { value, onChange, ...fieldProps } }) => (
-                <FormItem>
-                  <FormLabel>Comprobante de Pago</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="file" 
-                      accept=".jpg,.jpeg,.png,.pdf"
-                      onChange={(e) => {
-                        console.log("Archivo seleccionado:", e.target.files);
-                        onChange(e.target.files);
-                      }}
-                      disabled={isLoading || isSubmitting}
-                      {...fieldProps}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  <p className="text-xs text-muted-foreground mt-1">Formatos aceptados: JPG, PNG, PDF. Máximo 5MB.</p>
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Mostrar campo de talla solo si aún hay disponibilidad */}
             {(shirtAvailable === null || shirtAvailable) && (
               <FormField
@@ -691,15 +588,27 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Talla de Camiseta
+                      Talla de Camiseta*
                       {checkingShirts && (
                         <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin text-muted-foreground" />
                       )}
                     </FormLabel>
                     <Select 
                       onValueChange={(value) => {
-                        console.log('Talla seleccionada:', value);
+                        // console.log('SELECCIÓN DE TALLA - valor seleccionado:', value);
+                        // console.log('SELECCIÓN DE TALLA - tipo del valor:', typeof value);
+                        // console.log('SELECCIÓN DE TALLA - ¿valor vacío?', value === "");
+                        
+                        // Guardar en el state del formulario
                         field.onChange(value);
+                        
+                        // Log después de cambiar
+                        // console.log('SELECCIÓN DE TALLA - Después de onChange, field.value:', field.value);
+                        
+                        // Ver valor actual en todo el form
+                        const formValues = form.getValues();
+                        // console.log('SELECCIÓN DE TALLA - Valores actuales del formulario:', formValues);
+                        // console.log('SELECCIÓN DE TALLA - tshirtsize en formulario:', formValues.tshirtsize);
                       }}
                       value={field.value}
                       disabled={isLoading || isSubmitting}
@@ -722,8 +631,11 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <p className="text-xs text-muted-foreground mt-1">
                       {shirtAvailable === null
                         ? "Cargando disponibilidad..."
-                        : "Disponible para los primeros 100 asistentes"
+                        : "Disponible para los primeros 100 asistentes*"
                       }
+                    </p>
+                    <p className="text-xs text-blue-500 mt-1">
+                      Talla actual: {field.value || "No seleccionada"}
                     </p>
                   </FormItem>
                 )}
@@ -740,29 +652,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 </p>
               </div>
             )}
-            
-            <FormField
-              control={form.control}
-              name="isTest"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Registro de prueba
-                    </FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                      Marcar solo para pruebas - No contará para camisetas
-                    </p>
-                  </div>
-                </FormItem>
-              )}
-            />
           </div>
           
           <Button 

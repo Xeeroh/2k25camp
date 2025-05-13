@@ -9,9 +9,9 @@ import { cn } from '@/lib/utils';
 const slides = [
   {
     id: 1,
-    image: "https://images.pexels.com/photos/268941/pexels-photo-268941.jpeg",
-    title: "Unidos en fe",
-    description: "Celebrando nuestra comunidad de fe en el noroeste"
+    image: "https://images.pexels.com/photos/32069316/pexels-photo-32069316.png",
+    title: "Alfa y Omega",
+    description: "Campamento 2025"
   },
   {
     id: 2,
