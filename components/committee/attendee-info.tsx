@@ -2,8 +2,8 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { CheckCircle, XCircle, User, Calendar, Building, Mail, CreditCard } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
+import { CheckCircle, XCircle, User, Calendar, Building, Mail, CreditCard, QrCode, ShieldCheck, Shirt } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 
@@ -18,6 +18,7 @@ interface AttendeeData {
   paymentamount?: number;
   paymentstatus?: string;
   created_at?: string;
+  tshirtsize?: string;
 }
 
 interface AttendeeInfoProps {
@@ -100,35 +101,30 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
   });
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5" />
-          Información del Asistente
+    <Card className="max-w-lg mx-auto">
+      <CardHeader>
+        <CardTitle className="font-bold text-center text-xl">
+          {fullName}
         </CardTitle>
+        <CardDescription className="text-center">
+          {attendee.id}
+        </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Estado de pago */}
-        <div className={`rounded-lg p-4 flex items-center gap-3 ${isPaid ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'}`}>
-          {isPaid ? (
-            <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 flex-shrink-0" />
-          ) : (
-            <XCircle className="h-8 w-8 text-red-600 dark:text-red-400 flex-shrink-0" />
-          )}
-          <div>
-            <p className={`font-semibold ${isPaid ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
-              {isPaid ? 'Pago Confirmado' : 'Pago Pendiente'}
-            </p>
-            <p className="text-sm">
-              {isPaid 
-                ? `Pago de $${attendee.paymentamount || 0} recibido` 
-                : 'El asistente debe completar su pago'}
-            </p>
+        <div className="flex justify-center mb-4">
+          <div className="p-3 bg-primary/10 rounded-full">
+            <QrCode className="h-12 w-12 text-primary" />
           </div>
         </div>
         
-        {/* Información personal */}
+        <div className="flex items-center justify-center border-2 border-dashed border-primary/20 p-2 rounded-lg mb-2">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-green-500" />
+            <span className="font-medium text-sm">Asistencia Confirmada</span>
+          </div>
+        </div>
+        
         <div className="space-y-4">
           <div className="flex items-center gap-2 border-b pb-2">
             <User className="h-4 w-4 text-muted-foreground" />
@@ -161,6 +157,15 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
               </p>
               <p className="font-medium">{attendee.sector || 'No especificado'}</p>
             </div>
+            
+            {attendee.tshirtsize && (
+              <div>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Shirt className="h-3 w-3" /> Talla de Camiseta
+                </p>
+                <p className="font-medium">{attendee.tshirtsize}</p>
+              </div>
+            )}
           </div>
           
           <div>

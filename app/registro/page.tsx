@@ -57,8 +57,8 @@ export default function RegistroPage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="min-h-screen flex flex-col">
+      <Navbar showInternalLinks={false} />
       
       <div className="flex-1 py-12 bg-muted/30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -88,6 +88,6 @@ export default function RegistroPage() {
       </div>
       
       <Footer />
-    </main>
+    </div>
   );
 }

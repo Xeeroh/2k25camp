@@ -26,6 +26,7 @@ import { Loader2, CheckCircle2, Download } from 'lucide-react';
 import { CHURCHES_DATA } from '@/lib/churches-data';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Form schema with validation
 const formSchema = z.object({
@@ -47,6 +48,8 @@ const formSchema = z.object({
     .min(400, "El monto mínimo para apartar el campamento es de $400")
     .max(10000, "El monto no puede ser mayor a $10,000"),
   paymentFile: z.any(),
+  tshirtsize: z.string().optional(),
+  isTest: z.boolean().default(false).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,6 +66,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const qrRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [shirtAvailable, setShirtAvailable] = useState<boolean | null>(null);
+  const [checkingShirts, setCheckingShirts] = useState(false);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -75,7 +80,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       sector: '',
       church: '',
       paymentAmount: 400,
-      paymentFile: undefined
+      paymentFile: undefined,
+      tshirtsize: '',
+      isTest: false
     }
   });
 
@@ -84,6 +91,39 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const [emailExists, setEmailExists] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Verificar disponibilidad de camisetas al cargar el componente
+  useEffect(() => {
+    checkShirtAvailability();
+  }, []);
+
+  // Función para verificar si aún hay camisetas disponibles
+  const checkShirtAvailability = async () => {
+    try {
+      setCheckingShirts(true);
+      // Contar registros que no son de prueba
+      const { count, error: countError } = await supabase
+        .from('attendees')
+        .select('*', { count: 'exact', head: true })
+        .eq('istest', false);
+      
+      if (countError) {
+        console.error('Error al contar registros:', countError);
+        setShirtAvailable(null);
+        return;
+      }
+      
+      // Determinar si aún hay camisetas disponibles (menos de 100 registros)
+      const areTshirtsAvailable = !countError && count !== null && count < 100;
+      setShirtAvailable(areTshirtsAvailable);
+      console.log(`Registros no de prueba: ${count}, ¿Camisetas disponibles?: ${areTshirtsAvailable}`);
+    } catch (error) {
+      console.error('Error al verificar disponibilidad de camisetas:', error);
+      setShirtAvailable(null);
+    } finally {
+      setCheckingShirts(false);
+    }
+  };
 
   useEffect(() => {
     // Solo verificar si el email tiene un formato válido
@@ -143,7 +183,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   };
   
   const onSubmit = async (data: FormValues) => {
-    console.log("Iniciando onSubmit con datos:", data);
+    console.log("Iniciando onSubmit con datos completos:", data);
+    console.log("Talla de camiseta seleccionada:", data.tshirtsize);
     
     try {
       // Prevenir envíos duplicados
@@ -195,25 +236,48 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         toast.error('Error al subir el archivo del comprobante');
       }
 
+      // Verificar si hay espacio para una camiseta
+      const { count, error: countError } = await supabase
+        .from('attendees')
+        .select('*', { count: 'exact', head: true })
+        .eq('istest', false);
+      
+      if (countError) {
+        console.error('Error al contar registros:', countError);
+      }
+      
+      // Determinar si este registro recibe camiseta (menos de 100 registros y no es prueba)
+      const canGetTshirt = (!countError && count !== null && count < 100 && !data.isTest);
+      console.log(`Registros actuales: ${count}, ¿Puede recibir camiseta?: ${canGetTshirt}`);
+      console.log(`Valor de talla que se enviará:`, canGetTshirt ? data.tshirtsize : null);
+
+      // Actualizar la disponibilidad de camisetas
+      setShirtAvailable(count !== null && count < 100);
+
+      // Crear el objeto de datos a insertar con logs
+      const insertData = {
+        firstname: data.firstName,
+        lastname: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        church: data.church,
+        sector: data.sector,
+        paymentamount: data.paymentAmount,
+        paymentstatus: data.paymentAmount >= 900 ? 'Completado' : 'Pendiente',
+        registrationdate: new Date().toISOString(),
+        paymentreceipturl: paymentReceiptUrl,
+        tshirtsize: canGetTshirt ? data.tshirtsize : null,
+        istest: data.isTest
+      };
+      
+      console.log("Datos a insertar en la BD:", insertData);
+
       // Intentar crear el registro en la base de datos
       try {
         console.log("Iniciando inserción en base de datos");
         const { data: attendeeData, error } = await supabase
           .from('attendees')
-          .insert([
-            {
-              firstname: data.firstName,
-              lastname: data.lastName,
-              email: data.email,
-              phone: data.phone,
-              church: data.church,
-              sector: data.sector,
-              paymentamount: data.paymentAmount,
-              paymentstatus: data.paymentAmount >= 900 ? 'Completado' : 'Pendiente',
-              registrationdate: new Date().toISOString(),
-              paymentreceipturl: paymentReceiptUrl
-            }
-          ])
+          .insert([insertData])
           .select()
           .single();
 
@@ -222,7 +286,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           throw new Error(`Error al crear el registro: ${error.message}`);
         }
 
-        console.log("Registro creado exitosamente:", attendeeData);
+        console.log("Registro creado exitosamente. Datos retornados:", attendeeData);
+        console.log("Talla de camiseta guardada:", attendeeData.tshirtsize);
 
         // Generar datos para el QR
         const qrData = {
@@ -233,7 +298,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           sector: data.sector,
           monto: data.paymentAmount,
           estado: data.paymentAmount >= 900 ? 'Completado' : 'Pendiente',
-          fecha: new Date().toISOString()
+          fecha: new Date().toISOString(),
+          tshirtsize: attendeeData.tshirtsize
         };
 
         // Convertir a JSON string para el QR
@@ -611,6 +677,89 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   </FormControl>
                   <FormMessage />
                   <p className="text-xs text-muted-foreground mt-1">Formatos aceptados: JPG, PNG, PDF. Máximo 5MB.</p>
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Mostrar campo de talla solo si aún hay disponibilidad */}
+            {(shirtAvailable === null || shirtAvailable) && (
+              <FormField
+                control={form.control}
+                name="tshirtsize"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Talla de Camiseta
+                      {checkingShirts && (
+                        <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin text-muted-foreground" />
+                      )}
+                    </FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        console.log('Talla seleccionada:', value);
+                        field.onChange(value);
+                      }}
+                      value={field.value}
+                      disabled={isLoading || isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione su talla" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="XS">XS</SelectItem>
+                        <SelectItem value="S">S</SelectItem>
+                        <SelectItem value="M">M</SelectItem>
+                        <SelectItem value="L">L</SelectItem>
+                        <SelectItem value="XL">XL</SelectItem>
+                        <SelectItem value="XXL">XXL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {shirtAvailable === null
+                        ? "Cargando disponibilidad..."
+                        : "Disponible para los primeros 100 asistentes"
+                      }
+                    </p>
+                  </FormItem>
+                )}
+              />
+            )}
+            {/* Mensaje cuando ya no hay camisetas disponibles */}
+            {shirtAvailable === false && (
+              <div className="rounded-md border p-4 bg-amber-50">
+                <p className="text-sm font-medium text-amber-800">
+                  Lo sentimos, ya no hay camisetas disponibles
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  Las camisetas eran limitadas para los primeros 100 asistentes y ya se han agotado.
+                </p>
+              </div>
+            )}
+            
+            <FormField
+              control={form.control}
+              name="isTest"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Registro de prueba
+                    </FormLabel>
+                    <p className="text-xs text-muted-foreground">
+                      Marcar solo para pruebas - No contará para camisetas
+                    </p>
+                  </div>
                 </FormItem>
               )}
             />

@@ -32,6 +32,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CHURCHES_DATA } from '@/lib/churches-data';
+import { Badge } from "@/components/ui/badge";
 
 // Form schema for editing attendee
 const formSchema = z.object({
@@ -42,7 +43,10 @@ const formSchema = z.object({
   church: z.string(),
   paymentAmount: z.coerce.number().min(0, "El monto no puede ser negativo"),
   paymentStatus: z.string(),
+  tshirtsize: z.string().optional(),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 type AttendeeModalProps = {
   isOpen: boolean;
@@ -56,7 +60,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
   const [isLoading, setIsLoading] = useState(false);
   const [sectorValue, setSectorValue] = useState("");
   
-  const form = useForm({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: "",
@@ -66,6 +70,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
       church: "",
       paymentAmount: 0,
       paymentStatus: "",
+      tshirtsize: "",
     },
   });
   
@@ -73,21 +78,24 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
   useEffect(() => {
     if (attendee) {
       form.reset({
-        firstName: attendee.firstName,
-        lastName: attendee.lastName,
-        email: attendee.email,
-        sector: attendee.sector.replace('Sector ', ''),
-        church: attendee.church,
-        paymentAmount: attendee.paymentAmount,
-        paymentStatus: attendee.paymentStatus,
+        firstName: attendee.firstName || "",
+        lastName: attendee.lastName || "",
+        email: attendee.email || "",
+        sector: attendee.sector?.replace('Sector ', '') || "",
+        church: attendee.church || "",
+        paymentAmount: attendee.paymentAmount || 0,
+        paymentStatus: attendee.paymentStatus || "Pendiente",
+        tshirtsize: attendee.tshirtsize || "",
       });
       
-      setSectorValue(attendee.sector.replace('Sector ', ''));
+      if (attendee.sector) {
+        setSectorValue(attendee.sector.replace('Sector ', ''));
+      }
     }
   }, [attendee, form]);
   
   // Handle form submission
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     if (mode !== 'edit' || !onUpdate) return;
     
     setIsLoading(true);
@@ -112,6 +120,19 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
               (sectorValue === "Foráneo" && church.sector === "Foráneo")
   );
   
+  // Format date to locale string
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+  
+  // Get modal title based on mode
+  const getModalTitle = () => {
+    if (mode === 'view') return "Detalles del Asistente";
+    if (mode === 'edit') return "Editar Asistente";
+    if (mode === 'receipt') return "Comprobante de Pago";
+    return "Asistente";
+  };
+
   const renderContent = () => {
     switch (mode) {
       case 'view':
@@ -140,12 +161,27 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
               </div>
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground">Estado de Pago</h4>
-                <p>{attendee.paymentStatus}</p>
+                <Badge 
+                  variant={attendee.paymentStatus === 'Completado' ? 'success' : 'warning'}
+                >
+                  {attendee.paymentStatus}
+                </Badge>
               </div>
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground">Fecha de Registro</h4>
-                <p>{new Date(attendee.registrationdate).toLocaleDateString()}</p>
+                <p>{formatDate(attendee.registrationdate)}</p>
               </div>
+              {attendee.tshirtsize && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Talla de Camiseta</h4>
+                  <p>{attendee.tshirtsize}</p>
+                </div>
+              )}
+              {attendee.istest && (
+                <div>
+                  <Badge variant="outline" className="bg-gray-100">Registro de prueba</Badge>
+                </div>
+              )}
             </div>
             {attendee.paymentReceiptUrl && (
               <div>
@@ -228,30 +264,12 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Sector 1">Sector 1</SelectItem>
-                          <SelectItem value="Sector 2">Sector 2</SelectItem>
-                          <SelectItem value="Sector 3">Sector 3</SelectItem>
-                          <SelectItem value="Sector 4">Sector 4</SelectItem>
-                          <SelectItem value="Sector 5">Sector 5</SelectItem>
-                          <SelectItem value="Sector 6">Sector 6</SelectItem>
-                          <SelectItem value="Sector 7">Sector 7</SelectItem>
-                          <SelectItem value="Sector 8">Sector 8</SelectItem>
-                          <SelectItem value="Sector 9">Sector 9</SelectItem>
-                          <SelectItem value="Sector 10">Sector 10</SelectItem>
-                          <SelectItem value="Sector 11">Sector 11</SelectItem>
-                          <SelectItem value="Sector 12">Sector 12</SelectItem>
-                          <SelectItem value="Sector 13">Sector 13</SelectItem>
-                          <SelectItem value="Sector 14">Sector 14</SelectItem>
-                          <SelectItem value="Sector 15">Sector 15</SelectItem>
-                          <SelectItem value="Sector 16">Sector 16</SelectItem>
-                          <SelectItem value="Sector 17">Sector 17</SelectItem>
-                          <SelectItem value="Sector 18">Sector 18</SelectItem>
-                          <SelectItem value="Sector 19">Sector 19</SelectItem>
-                          <SelectItem value="Sector 20">Sector 20</SelectItem>
-                          <SelectItem value="Sector 21">Sector 21</SelectItem>
-                          <SelectItem value="Sector 22">Sector 22</SelectItem>
-                          <SelectItem value="Sector 23">Sector 23</SelectItem>
-                          <SelectItem value="Sector 24">Sector 24</SelectItem>
+                          <SelectItem value="1">Sector 1</SelectItem>
+                          <SelectItem value="2">Sector 2</SelectItem>
+                          <SelectItem value="3">Sector 3</SelectItem>
+                          <SelectItem value="4">Sector 4</SelectItem>
+                          <SelectItem value="5">Sector 5</SelectItem>
+                          <SelectItem value="Foráneo">Foráneo</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -303,8 +321,39 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Pagado">Pagado</SelectItem>
                           <SelectItem value="Pendiente">Pendiente</SelectItem>
+                          <SelectItem value="Completado">Completado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="tshirtsize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Talla de Camiseta</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isLoading}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione talla" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Sin asignar</SelectItem>
+                          <SelectItem value="XS">XS</SelectItem>
+                          <SelectItem value="S">S</SelectItem>
+                          <SelectItem value="M">M</SelectItem>
+                          <SelectItem value="L">L</SelectItem>
+                          <SelectItem value="XL">XL</SelectItem>
+                          <SelectItem value="XXL">XXL</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -361,19 +410,6 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
       
       default:
         return null;
-    }
-  };
-
-  const getModalTitle = () => {
-    switch (mode) {
-      case 'view':
-        return 'Detalles del Asistente';
-      case 'edit':
-        return 'Editar Asistente';
-      case 'receipt':
-        return 'Comprobante de Pago';
-      default:
-        return '';
     }
   };
 

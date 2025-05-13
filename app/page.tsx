@@ -11,7 +11,7 @@ import Navbar from '@/components/shared/navbar';
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
-      <Navbar />
+      <Navbar showInternalLinks={false} />
       
       <HeroSlider />
       

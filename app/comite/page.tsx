@@ -160,7 +160,7 @@ export default function ComitePage() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
+        <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-card shadow-lg border border-border rounded-lg p-6 w-full max-w-md">
             <h1 className="text-2xl font-bold mb-6">Iniciar sesión - Comité</h1>
@@ -176,7 +176,7 @@ export default function ComitePage() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
+        <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-md">
             <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
@@ -198,7 +198,7 @@ export default function ComitePage() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Navbar showInternalLinks={true} />
       
       <div className="flex-1 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

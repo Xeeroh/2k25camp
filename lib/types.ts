@@ -25,4 +25,6 @@ export interface Attendee {
   paymentstatus: 'Pendiente' | 'Pagado';
   registrationdate: string;
   paymentreceipturl: string;
+  tshirtsize?: string;
+  istest?: boolean;
 } 

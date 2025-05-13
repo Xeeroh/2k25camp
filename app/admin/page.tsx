@@ -99,7 +99,7 @@ export default function AdminPage() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Navbar showInternalLinks={true} />
       
       <div className="flex-1 py-8">
         {user ? (
