@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/lib/supabase';
+import imageCompression from 'browser-image-compression';
 import { 
   Form, 
   FormControl, 
@@ -51,9 +52,8 @@ const formSchema = z.object({
           return true; // Permitir el registro si hay error en la verificación
         }
         
-        console.log("Registros encontrados:", count);
-
-        return !data; // Retorna true si el email no existe
+        // Si count es 0, significa que el email no existe en la base de datos
+        return count === 0;
       } catch (error) {
         console.error('Error en la validación del email:', error);
         return true; // Permitir el registro si hay error
@@ -66,6 +66,7 @@ const formSchema = z.object({
   sector: z.string({ required_error: "Por favor seleccione un sector" }),
   church: z.string({ required_error: "Por favor seleccione una iglesia" }),
   tshirtsize: z.string().optional(),
+  paymentReceipt: z.any().optional(), // Campo para el comprobante de pago
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -84,6 +85,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [shirtAvailable, setShirtAvailable] = useState<boolean | null>(null);
   const [checkingShirts, setCheckingShirts] = useState(false);
+  const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
+  const [paymentReceiptUrl, setPaymentReceiptUrl] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -150,19 +154,21 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       // Debounce para no hacer muchas peticiones
       emailCheckTimeoutRef.current = setTimeout(async () => {
         try {
-          const { data, error } = await supabase
+          const { data, error, count } = await supabase
             .from('attendees')
-            .select('id')
+            .select('id', { count: 'exact' })
             .eq('email', watchedEmail)
-            .maybeSingle();
+            .limit(1);
           
           if (error) {
-            // console.error('Error al verificar email:', error);
+            console.error('Error al verificar email:', error);
             setEmailExists(false);
           } else {
-            setEmailExists(!!data);
+            // Verificar si el correo existe basado en el count
+            const exists = count !== null && count > 0;
+            setEmailExists(exists);
             
-            if (data) {
+            if (exists) {
               form.setError("email", { 
                 type: "manual", 
                 message: "Este correo electrónico ya está registrado" 
@@ -172,7 +178,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             }
           }
         } catch (error) {
-          // console.error('Error en la validación del email:', error);
+          console.error('Error en la validación del email:', error);
+          setEmailExists(false);
         } finally {
           setIsCheckingEmail(false);
         }
@@ -192,6 +199,80 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     if (numbers.length <= 3) return numbers;
     if (numbers.length <= 6) return `(${numbers.slice(0, 3)}) ${numbers.slice(3)}`;
     return `(${numbers.slice(0, 3)}) ${numbers.slice(3, 6)}-${numbers.slice(6, 10)}`;
+  };
+  
+  // Función para comprimir imagen
+  const compressImage = async (file: File): Promise<File> => {
+    try {
+      const options = {
+        maxSizeMB: 0.5, // máximo 500KB (más agresivo)
+        maxWidthOrHeight: 1280, // máximo 1280px de ancho o alto (más pequeño)
+        useWebWorker: true,
+        onProgress: (progress: number) => {
+          setUploadProgress(Math.round(progress * 50)); // Primera mitad del progreso (compresión)
+        },
+      };
+      
+      console.log('Iniciando compresión. Tamaño original:', file.size / 1024, 'KB');
+      const compressedFile = await imageCompression(file, options);
+      console.log('Compresión completada. Tamaño final:', compressedFile.size / 1024, 'KB');
+      return compressedFile;
+    } catch (error) {
+      console.error('Error al comprimir la imagen:', error);
+      return file; // devolver archivo original en caso de error
+    }
+  };
+
+  // Función para subir imagen a Supabase Storage
+  const uploadPaymentReceipt = async (file: File): Promise<string | null> => {
+    try {
+      // Primero comprimir la imagen
+      const compressedFile = await compressImage(file);
+      
+      // Generar nombre único para el archivo
+      const fileExt = compressedFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      
+      console.log('Subiendo archivo a payment-receipts bucket...');
+      
+      // Establecer progreso al 50% (después de la compresión)
+      setUploadProgress(50);
+      
+      // Subir a Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('payment-receipts/payment-receipts')
+        .upload(fileName, compressedFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+      
+      if (error) {
+        console.error('Error al subir comprobante:', error);
+        throw error;
+      }
+      
+      // Obtener URL pública del archivo
+      const { data: publicUrlData } = supabase.storage
+        .from('payment-receipts/payment-receipts')
+        .getPublicUrl(fileName);
+      
+      console.log('Comprobante subido correctamente:', publicUrlData.publicUrl);
+      
+      // Establecer progreso al 100% (carga completa)
+      setUploadProgress(100);
+      
+      return publicUrlData.publicUrl;
+    } catch (error) {
+      console.error('Error en uploadPaymentReceipt:', error);
+      return null;
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPaymentReceiptFile(file);
+    }
   };
   
   const onSubmit = async (data: FormValues) => {
@@ -229,6 +310,16 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       // Actualizar la disponibilidad de camisetas para la UI
       setShirtAvailable(count !== null && count < 100);
 
+      // Subir comprobante de pago si existe
+      let receiptUrl = null;
+      if (paymentReceiptFile) {
+        receiptUrl = await uploadPaymentReceipt(paymentReceiptFile);
+        if (!receiptUrl) {
+          throw new Error('Error al subir el comprobante de pago');
+        }
+        setPaymentReceiptUrl(receiptUrl);
+      }
+
       // Crear el objeto de datos a insertar con logs
       const registrationData = {
         firstname: data.firstName,
@@ -240,6 +331,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         registrationdate: new Date().toISOString(),
         tshirtsize: data.tshirtsize || null, // Guardar la talla seleccionada o null
         receives_tshirt: canReceiveTshirt, // Indicar si REALMENTE se asigna una del stock
+        paymentreceipturl: receiptUrl, // URL del comprobante de pago
+        paymentamount: 0, // Monto de pago predeterminado
       };
       
       // console.log("Datos completos a insertar en Supabase:", registrationData);
@@ -273,7 +366,10 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           email: data.email,
           iglesia: data.church,
           sector: data.sector,
+          monto: registrationData.paymentamount,
+          estado: 'Pendiente',
           fecha: registrationData.registrationdate,
+          paymentreceipturl: registrationData.paymentreceipturl, // Incluir URL del comprobante en el QR
           tshirtsize: attendeeData.tshirtsize
         };
 
@@ -444,10 +540,10 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
               name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre</FormLabel>
+                  <FormLabel>Nombre(s)</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Ingrese su nombre" 
+                      placeholder="Ingrese su nombre(s)" 
                       {...field} 
                       disabled={isLoading || isSubmitting}
                     />
@@ -462,10 +558,10 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
               name="lastName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Apellido</FormLabel>
+                  <FormLabel>Apellido(s)</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Ingrese su apellido" 
+                      placeholder="Ingrese su apellido(s)" 
                       {...field} 
                       disabled={isLoading || isSubmitting}
                     />
@@ -609,27 +705,15 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Talla de Camiseta*
+                      Talla de Camiseta *
                       {checkingShirts && (
                         <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin text-muted-foreground" />
                       )}
                     </FormLabel>
                     <Select 
                       onValueChange={(value) => {
-                        // console.log('SELECCIÓN DE TALLA - valor seleccionado:', value);
-                        // console.log('SELECCIÓN DE TALLA - tipo del valor:', typeof value);
-                        // console.log('SELECCIÓN DE TALLA - ¿valor vacío?', value === "");
-                        
-                        // Guardar en el state del formulario
                         field.onChange(value);
-                        
-                        // Log después de cambiar
-                        // console.log('SELECCIÓN DE TALLA - Después de onChange, field.value:', field.value);
-                        
-                        // Ver valor actual en todo el form
                         const formValues = form.getValues();
-                        // console.log('SELECCIÓN DE TALLA - Valores actuales del formulario:', formValues);
-                        // console.log('SELECCIÓN DE TALLA - tshirtsize en formulario:', formValues.tshirtsize);
                       }}
                       value={field.value}
                       disabled={isLoading || isSubmitting}
@@ -652,7 +736,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <p className="text-xs text-muted-foreground mt-1">
                       {shirtAvailable === null
                         ? "Cargando disponibilidad..."
-                        : "Disponible para los primeros 100 asistentes*"
+                        : "* Disponible para los primeros 100 asistentes *"
                       }
                     </p>
                     <p className="text-xs text-blue-500 mt-1">
@@ -662,6 +746,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 )}
               />
             )}
+            
             {/* Mensaje cuando ya no hay camisetas disponibles */}
             {shirtAvailable === false && (
               <div className="rounded-md border p-4 bg-amber-50">
@@ -673,6 +758,42 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 </p>
               </div>
             )}
+            
+            {/* Campo de comprobante de pago */}
+            <FormItem>
+              <FormLabel>Comprobante de Pago</FormLabel>
+              <FormControl>
+                <div className="flex flex-col space-y-2">
+                  <Input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    disabled={isLoading || isSubmitting}
+                  />
+                  {paymentReceiptFile && (
+                    <p className="text-xs text-muted-foreground">
+                      Archivo seleccionado: {paymentReceiptFile.name} ({Math.round(paymentReceiptFile.size / 1024)} KB)
+                    </p>
+                  )}
+                  {uploadProgress > 0 && (
+                    <div className="w-full">
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 transition-all duration-300 ease-in-out" 
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {uploadProgress < 100 ? 'Procesando...' : 'Completado'}
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Sube una imagen de tu comprobante de pago
+                  </p>
+                </div>
+              </FormControl>
+            </FormItem>
           </div>
           
           <Button 

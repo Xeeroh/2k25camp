@@ -16,7 +16,7 @@ export default function Footer() {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Enlaces</h3>
+            {/* <h3 className="text-lg font-semibold mb-4">Enlaces</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
@@ -33,14 +33,13 @@ export default function Footer() {
                   Comité
                 </Link>
               </li>
-            </ul>
+            </ul> */} 
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4">Contacto</h3>
             <address className="not-italic text-muted-foreground">
-              <p>Email: info@mdpnoroeste.org</p>
-              <p>Teléfono: (123) 456-7890</p>
+              <p>Email: soporte@mdpnoroeste.org</p>
             </address>
           </div>
         </div>
