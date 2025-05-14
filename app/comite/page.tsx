@@ -46,10 +46,10 @@ export default function ComitePage() {
   // Verificación de permisos simplificada
   useEffect(() => {
     if (user && !hasRole('editor') && !hasRole('admin')) {
-      toast.error('No tienes permisos para acceder a esta página');
+      toast.error('No tienes permisos para acceder a esta página', {duration: 2000});
       router.push('/');
     } else if (user) {
-      toast.success(`Bienvenido, ${user.email}`);
+      toast.success(`Bienvenido, ${user.email}`, {duration: 2000});
     }
   }, [user, hasRole, router]);
 
@@ -57,14 +57,16 @@ export default function ComitePage() {
   const handleQrScan = async (qrData: string) => {
     setIsLoading(true);
     setLastScannedQR(qrData);
-    toast.loading('Consultando información...');
+
+    //guardamos el id del toast para poder cerrarlo después
+    const toastId = toast.loading('Consultando información...', {duration: 2000});
     
     try {
       // Extraer el ID del QR con mejor rendimiento
       const attendeeId = extractAttendeeId(qrData);
       
       if (!attendeeId) {
-        toast.error('No se pudo extraer un ID válido del QR');
+        toast.error('No se pudo extraer un ID válido del QR', { id: toastId });
         setIsLoading(false);
         setAttendee(null);
         return;
@@ -79,7 +81,7 @@ export default function ComitePage() {
         
       if (error) {
         console.error('Error al consultar la base de datos:', error);
-        toast.error('Error al consultar la base de datos');
+        toast.error('Error al consultar la base de datos', { id: toastId });
         setIsLoading(false);
         setAttendee(null);
         return;
@@ -87,7 +89,7 @@ export default function ComitePage() {
       
       if (!data || data.length === 0) {
         console.log('No se encontró asistente con ID:', attendeeId);
-        toast.error('No se encontró el asistente en la base de datos');
+        toast.error('No se encontró el asistente en la base de datos', { id: toastId });
         setIsLoading(false);
         setAttendee(null);
         return;
@@ -95,8 +97,10 @@ export default function ComitePage() {
       
       // Actualizar estado con los datos obtenidos (primer resultado)
       setAttendee(data[0] as AttendeeData);
-      toast.success('Información cargada correctamente');
-      
+      toast.success('Información cargada correctamente', { id: toastId });
+
+      console.log("toastId", toastId);
+
       // Validar que los datos estén completos
       if (!data[0].firstname || !data[0].lastname || !data[0].email) {
         toast.warning('Algunos datos del asistente están incompletos');
@@ -104,7 +108,7 @@ export default function ComitePage() {
       
     } catch (err) {
       console.error('Error al procesar el QR:', err);
-      toast.error('Error al procesar el código QR');
+      toast.error('Error al procesar el código QR', { id: toastId });
       setAttendee(null);
     } finally {
       setIsLoading(false);
@@ -231,9 +235,9 @@ export default function ComitePage() {
                 </div>
                 
                 <div>
-                  <pre className="text-xs text-muted-foreground mb-2 p-2 bg-muted/30 rounded whitespace-pre-wrap break-all">
+                  {/* <pre className="text-xs text-muted-foreground mb-2 p-2 bg-muted/30 rounded whitespace-pre-wrap break-all">
                     {isLoading ? 'Cargando...' : lastScannedQR ? `Último QR: ${lastScannedQR}` : 'Escáner listo'}
-                  </pre>
+                  </pre> */}
                   <Suspense fallback={<LoadingFallback />}>
                     <AttendeeInfo 
                       attendee={attendee} 
