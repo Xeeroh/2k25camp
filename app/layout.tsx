@@ -6,7 +6,7 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Registro Campamento 2025',
+  title: 'Campamento • Registro',
   description: 'Sistema de registro para campamento MDP 2025',
 };
 
