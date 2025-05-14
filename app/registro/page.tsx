@@ -74,10 +74,10 @@ export default function RegistroPage() {
             <>
               <div className="text-center mb-10">
                 <h1 className="text-3xl md:text-4xl font-bold mb-4">
-                  Registro de Asistentes
+                  Registro Campamento 2025
                 </h1>
                 <p className="text-lg text-muted-foreground">
-                  Complete el formulario para registrarse "Alfa y Omega" "
+                  Complete el formulario para registrarse "Alfa y Omega"
                 </p>
               </div>
               
