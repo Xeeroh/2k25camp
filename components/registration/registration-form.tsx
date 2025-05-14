@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -26,6 +26,7 @@ import { Loader2, CheckCircle2, Download } from 'lucide-react';
 import { CHURCHES_DATA } from '@/lib/churches-data';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Form schema with validation
 const formSchema = z.object({
@@ -64,27 +65,7 @@ const formSchema = z.object({
     .regex(/^[0-9()-\s]+$/, "El teléfono solo puede contener números, paréntesis, guiones y espacios"),
   sector: z.string({ required_error: "Por favor seleccione un sector" }),
   church: z.string({ required_error: "Por favor seleccione una iglesia" }),
-  paymentAmount: z.coerce.number()
-    .min(1, "El monto debe ser mayor a 0")
-    .max(10000, "El monto no puede ser mayor a $10,000"),
-    paymentFile: z.custom((value) => {
-      if (value instanceof FileList && value.length > 0) {
-        const file = value[0];
-        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-        
-        if (!validTypes.includes(file.type)) {
-          throw new Error("El archivo debe ser JPG, PNG o PDF");
-        }
-  
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error("El archivo debe ser menor a 5MB");
-        }
-  
-        return true;
-      }
-  
-      throw new Error("El comprobante de pago es requerido");
-    })
+  tshirtsize: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -100,6 +81,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const [qrData, setQrData] = useState<string | null>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [shirtAvailable, setShirtAvailable] = useState<boolean | null>(null);
+  const [checkingShirts, setCheckingShirts] = useState(false);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -111,10 +95,96 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       phone: '',
       sector: '',
       church: '',
-      paymentAmount: 0,
-      paymentFile: undefined
+      tshirtsize: '',
     }
   });
+
+  // Verificar correo electrónico en tiempo real
+  const watchedEmail = form.watch("email");
+  const [emailExists, setEmailExists] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Verificar disponibilidad de camisetas al cargar el componente
+  useEffect(() => {
+    checkShirtAvailability();
+  }, []);
+
+  // Función para verificar si aún hay camisetas disponibles
+  const checkShirtAvailability = async () => {
+    try {
+      setCheckingShirts(true);
+      // Contar registros totales
+      const { count, error: countError } = await supabase
+        .from('attendees')
+        .select('*', { count: 'exact', head: true });
+      
+      if (countError) {
+        // console.error('Error al contar registros:', countError);
+        setShirtAvailable(null);
+        return;
+      }
+      
+      // Determinar si aún hay camisetas disponibles (menos de 100 registros)
+      const areTshirtsAvailable = !countError && count !== null && count < 100;
+      setShirtAvailable(areTshirtsAvailable);
+      // console.log(`Registros totales: ${count}, ¿Camisetas disponibles?: ${areTshirtsAvailable}`);
+    } catch (error) {
+      // console.error('Error al verificar disponibilidad de camisetas:', error);
+      setShirtAvailable(null);
+    } finally {
+      setCheckingShirts(false);
+    }
+  };
+
+  useEffect(() => {
+    // Solo verificar si el email tiene un formato válido
+    if (watchedEmail && watchedEmail.includes('@') && watchedEmail.includes('.')) {
+      setIsCheckingEmail(true);
+      
+      // Limpiar timeout previo
+      if (emailCheckTimeoutRef.current) {
+        clearTimeout(emailCheckTimeoutRef.current);
+      }
+      
+      // Debounce para no hacer muchas peticiones
+      emailCheckTimeoutRef.current = setTimeout(async () => {
+        try {
+          const { data, error } = await supabase
+            .from('attendees')
+            .select('id')
+            .eq('email', watchedEmail)
+            .maybeSingle();
+          
+          if (error) {
+            // console.error('Error al verificar email:', error);
+            setEmailExists(false);
+          } else {
+            setEmailExists(!!data);
+            
+            if (data) {
+              form.setError("email", { 
+                type: "manual", 
+                message: "Este correo electrónico ya está registrado" 
+              });
+            } else {
+              form.clearErrors("email");
+            }
+          }
+        } catch (error) {
+          // console.error('Error en la validación del email:', error);
+        } finally {
+          setIsCheckingEmail(false);
+        }
+      }, 500);
+    }
+    
+    return () => {
+      if (emailCheckTimeoutRef.current) {
+        clearTimeout(emailCheckTimeoutRef.current);
+      }
+    };
+  }, [watchedEmail, form]);
 
   // Función para formatear el número de teléfono
   const formatPhoneNumber = (value: string) => {
@@ -125,153 +195,155 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   };
   
   const onSubmit = async (data: FormValues) => {
+    // console.log("Iniciando onSubmit con datos completos:", data);
+    // console.log("Talla de camiseta seleccionada:", data.tshirtsize);
+    
     try {
+      // Prevenir envíos duplicados
+      if (isSubmitting) {
+        // console.log("Formulario ya está siendo enviado, abortando envío duplicado");
+        return;
+      }
+      
+      // Activar primero los estados para bloquear interfaz
+      setIsSubmitting(true);
       setIsLoading(true);
       setIsSuccess(false);
       setError(null);
-
-      // Subir el comprobante de pago si existe
-      let paymentReceiptUrl = '';
-      if (data.paymentFile && data.paymentFile[0]) {
-        const file = data.paymentFile[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `payment-receipts/${fileName}`;
-
-        try {
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('payment-receipts')
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (uploadError) {
-            console.error('Error al subir archivo:', uploadError);
-            throw new Error(`Error al subir el archivo: ${uploadError.message}`);
-          }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('payment-receipts')
-            .getPublicUrl(filePath);
-
-          paymentReceiptUrl = publicUrl;
-        } catch (uploadError) {
-          console.error('Error en la subida:', uploadError);
-          throw new Error('Error al subir el archivo');
-        }
-      }
-
-      // Versión simplificada: Usar directamente Supabase para crear el registro
-      const { data: attendeeData, error } = await supabase
-        .from('attendees')
-        .insert([
-          {
-            firstname: data.firstName,
-            lastname: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            church: data.church,
-            sector: data.sector,
-            paymentamount: data.paymentAmount,
-            paymentstatus: 'Pendiente',
-            registrationdate: new Date().toISOString(),
-            paymentreceipturl: paymentReceiptUrl
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error al crear registro:', error);
-        throw new Error(`Error al crear el registro: ${error.message}`);
-      }
-
-      // Generar datos para el QR
-      const qrData = {
-        id: attendeeData.id,
-        nombre: `${data.firstName} ${data.lastName}`,
-        email: data.email,
-        iglesia: data.church,
-        sector: data.sector,
-        monto: data.paymentAmount,
-        estado: 'Pendiente',
-        fecha: new Date().toISOString()
-      };
-
-      // Convertir a JSON string para el QR
-      const qrValue = JSON.stringify(qrData);
-      console.log('QR Data generado:', qrValue);
       
-      // Enviar correo de confirmación usando la Edge Function
-      try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      // console.log("Estado de formulario actualizado, procediendo con el registro");
 
-        if (!supabaseUrl || !supabaseAnonKey) {
-          console.error('Faltan variables de entorno para Supabase');
-          throw new Error('Error en la configuración');
+      // Verificar si hay espacio para una camiseta
+      const { count, error: countError } = await supabase
+        .from('attendees')
+        .select('*', { count: 'exact', head: true });
+      
+      if (countError) {
+        // console.error('Error al contar registros:', countError);
+      }
+      
+      // Determinar si este registro recibe camiseta (menos de 100 registros)
+      const canReceiveTshirt = (!countError && count !== null && count < 100);
+      // console.log(`Registros actuales: ${count}, ¿Puede recibir camiseta?: ${canReceiveTshirt}`);
+      
+      // Actualizar la disponibilidad de camisetas para la UI
+      setShirtAvailable(count !== null && count < 100);
+
+      // Crear el objeto de datos a insertar con logs
+      const registrationData = {
+        firstname: data.firstName,
+        lastname: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        church: data.church,
+        sector: data.sector,
+        registrationdate: new Date().toISOString(),
+        tshirtsize: data.tshirtsize || null, // Guardar la talla seleccionada o null
+        receives_tshirt: canReceiveTshirt, // Indicar si REALMENTE se asigna una del stock
+      };
+      
+      // console.log("Datos completos a insertar en Supabase:", registrationData);
+
+      // Intentar crear el registro en la base de datos
+      try {
+        // console.log("Iniciando inserción en base de datos");
+        const { data: attendeeData, error } = await supabase
+          .from('attendees')
+          .insert([registrationData])
+          .select()
+          .single();
+
+        if (error) {
+          // console.error('Error al crear registro:', error);
+          throw new Error(`Error al crear el registro: ${error.message}`);
         }
 
-        console.log('Enviando correo con los siguientes datos:', {
-          firstName: data.firstName,
-          lastName: data.lastName,
+        // console.log("Registro creado exitosamente. Datos completos retornados:", attendeeData);
+        // console.log("VERIFICACIÓN DE TALLA:");
+        // console.log("- Talla que se intentó guardar:", data.tshirtsize);
+        // console.log("- Talla recibida de la base de datos:", attendeeData.tshirtsize);
+        // console.log("- ¿Son iguales?", data.tshirtsize === attendeeData.tshirtsize);
+        // console.log("- Valor exacto en DB:", JSON.stringify(attendeeData.tshirtsize));
+        // console.log("- Tipo de talla en DB:", typeof attendeeData.tshirtsize);
+        
+        // Generar datos para el QR
+        const qrData = {
+          id: attendeeData.id,
+          nombre: `${data.firstName} ${data.lastName}`,
           email: data.email,
-          church: data.church,
+          iglesia: data.church,
           sector: data.sector,
-          paymentAmount: data.paymentAmount,
-          qrData: qrValue
-        });
+          fecha: registrationData.registrationdate,
+          tshirtsize: attendeeData.tshirtsize
+        };
 
-        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-confirmation-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseAnonKey}`
-          },
-          body: JSON.stringify({
+        // Convertir a JSON string para el QR
+        const qrValue = JSON.stringify(qrData);
+        // console.log('QR Data generado:', qrValue);
+        
+        // Enviar correo (opcional, no bloqueamos si falla)
+        try {
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+          if (supabaseUrl && supabaseAnonKey) {
+            await fetch(`${supabaseUrl}/functions/v1/send-confirmation-email`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseAnonKey}`
+              },
+              body: JSON.stringify({
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                church: data.church,
+                sector: data.sector,
+                qrData: qrValue,
+                receivesTshirt: attendeeData.receives_tshirt,
+                tshirtSize: attendeeData.tshirtsize
+              })
+            });
+            // console.log("Solicitud de correo enviada con datos de camiseta:", {
+            //   receivesTshirt: attendeeData.receives_tshirt,
+            //   tshirtSize: attendeeData.tshirtsize
+            // });
+          }
+        } catch (emailError) {
+          // console.error('Error al contactar el servicio de correo:', emailError);
+        }
+
+        // Completar proceso exitosamente
+        setIsSuccess(true);
+        setQrData(qrValue);
+        onSuccess(attendeeData, qrValue);
+        form.reset();
+        toast.success("¡Registro completado con éxito!");
+
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'sign_up', {
+            method: 'form',
+            event_category: 'engagement',
+            event_label: 'Registration Success',
+            email: data.email,
             firstName: data.firstName,
             lastName: data.lastName,
-            email: data.email,
             church: data.church,
             sector: data.sector,
-            paymentAmount: data.paymentAmount,
             qrData: qrValue
-          })
-        });
-
-        if (!emailResponse.ok) {
-          const errorData = await emailResponse.json();
-          console.error('Error al enviar el correo:', errorData);
-          // Mostrar toast con error pero continuar con el registro
-          toast.error(`No se pudo enviar el correo de confirmación: ${errorData.error || 'Error desconocido'}`);
-        } else {
-          const emailResult = await emailResponse.json();
-          console.log('Respuesta del servicio de correo:', emailResult);
-          if (emailResult.success) {
-            toast.success(`Correo de confirmación enviado a ${data.email}. Revisa tu bandeja de entrada o carpeta de spam.`);
-          } else {
-            console.error('El servicio de correo reportó un error:', emailResult.error);
-            toast.error(`Error al enviar el correo: ${emailResult.error || 'Error desconocido'}`);
-          }
+          });
         }
-      } catch (emailError) {
-        console.error('Error al contactar el servicio de correo:', emailError);
-        // Mostrar toast con error pero continuar con el registro
-        toast.error(`No se pudo contactar al servicio de correo: ${emailError instanceof Error ? emailError.message : 'Error desconocido'}`);
+      } catch (dbError: any) {
+        // console.error('Error en la base de datos:', dbError);
+        setError(dbError.message || 'Ha ocurrido un error al procesar tu registro.');
+        toast.error("Error al guardar el registro");
       }
-
-      setIsSuccess(true);
-      setQrData(qrValue); // Guardar los datos del QR para mostrarlos
-      
-      // Llamar a onSuccess y pasar directamente el qrValue
-      onSuccess(attendeeData, qrValue);
-      form.reset();
     } catch (error: any) {
-      console.error('Error al enviar el formulario:', error);
+      // console.error('Error general al enviar el formulario:', error);
       setError(error.message || 'Ha ocurrido un error al procesar tu registro.');
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
   
@@ -298,7 +370,14 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
             const link = document.createElement('a');
-            link.download = `qr-${qrData?.split('"nombreCompleto":"')[1].split('"')[0].replace(/\s+/g, '-')}.png`;
+            // Parsear el objeto QR para extraer el nombre del asistente
+            try {
+              const qrDataObj = JSON.parse(qrData || '{}');
+              const fileName = qrDataObj.nombre || 'asistente';
+              link.download = `qr-${fileName.replace(/\s+/g, '-')}.png`;
+            } catch (e) {
+              link.download = `qr-asistente.png`;
+            }
             link.href = canvas.toDataURL('image/png');
             link.click();
           }
@@ -370,7 +449,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <Input 
                       placeholder="Ingrese su nombre" 
                       {...field} 
-                      disabled={isLoading}
+                      disabled={isLoading || isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -388,7 +467,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <Input 
                       placeholder="Ingrese su apellido" 
                       {...field} 
-                      disabled={isLoading}
+                      disabled={isLoading || isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -404,14 +483,22 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Correo Electrónico</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="correo@ejemplo.com" 
-                      {...field} 
-                      disabled={isLoading}
-                    />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="correo@ejemplo.com" 
+                        {...field} 
+                        disabled={isLoading || isSubmitting}
+                        className={emailExists ? "pr-10 border-red-300" : ""}
+                      />
+                    </FormControl>
+                    {isCheckingEmail && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -432,7 +519,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                         const formatted = formatPhoneNumber(e.target.value);
                         field.onChange(formatted);
                       }}
-                      disabled={isLoading}
+                      disabled={isLoading || isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -455,7 +542,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                       form.setValue("church", ""); // Reset church when sector changes
                     }}
                     value={field.value}
-                    disabled={isLoading}
+                    disabled={isLoading || isSubmitting}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -485,7 +572,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   <Select 
                     onValueChange={field.onChange}
                     value={field.value}
-                    disabled={!sectorValue || isLoading}
+                    disabled={!sectorValue || isLoading || isSubmitting}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -514,50 +601,84 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="paymentAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monto Pagado</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="0.00" 
-                      {...field} 
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="paymentFile"
-              render={({ field: { value, onChange, ...fieldProps } }) => (
-                <FormItem>
-                  <FormLabel>Comprobante de Pago</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="file" 
-                      accept=".jpg,.jpeg,.png,.pdf"
-                      onChange={(e) => onChange(e.target.files)}
-                      {...fieldProps}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Mostrar campo de talla solo si aún hay disponibilidad */}
+            {(shirtAvailable === null || shirtAvailable) && (
+              <FormField
+                control={form.control}
+                name="tshirtsize"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Talla de Camiseta*
+                      {checkingShirts && (
+                        <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin text-muted-foreground" />
+                      )}
+                    </FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        // console.log('SELECCIÓN DE TALLA - valor seleccionado:', value);
+                        // console.log('SELECCIÓN DE TALLA - tipo del valor:', typeof value);
+                        // console.log('SELECCIÓN DE TALLA - ¿valor vacío?', value === "");
+                        
+                        // Guardar en el state del formulario
+                        field.onChange(value);
+                        
+                        // Log después de cambiar
+                        // console.log('SELECCIÓN DE TALLA - Después de onChange, field.value:', field.value);
+                        
+                        // Ver valor actual en todo el form
+                        const formValues = form.getValues();
+                        // console.log('SELECCIÓN DE TALLA - Valores actuales del formulario:', formValues);
+                        // console.log('SELECCIÓN DE TALLA - tshirtsize en formulario:', formValues.tshirtsize);
+                      }}
+                      value={field.value}
+                      disabled={isLoading || isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione su talla" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="XS">XS</SelectItem>
+                        <SelectItem value="S">S</SelectItem>
+                        <SelectItem value="M">M</SelectItem>
+                        <SelectItem value="L">L</SelectItem>
+                        <SelectItem value="XL">XL</SelectItem>
+                        <SelectItem value="XXL">XXL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {shirtAvailable === null
+                        ? "Cargando disponibilidad..."
+                        : "Disponible para los primeros 100 asistentes*"
+                      }
+                    </p>
+                    <p className="text-xs text-blue-500 mt-1">
+                      Talla actual: {field.value || "No seleccionada"}
+                    </p>
+                  </FormItem>
+                )}
+              />
+            )}
+            {/* Mensaje cuando ya no hay camisetas disponibles */}
+            {shirtAvailable === false && (
+              <div className="rounded-md border p-4 bg-amber-50">
+                <p className="text-sm font-medium text-amber-800">
+                  Lo sentimos, ya no hay camisetas disponibles
+                </p>
+                <p className="text-xs text-amber-700 mt-1">
+                  Las camisetas eran limitadas para los primeros 100 asistentes y ya se han agotado.
+                </p>
+              </div>
+            )}
           </div>
           
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
           >
             {isLoading ? (
               <>
@@ -568,6 +689,12 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
               "Completar Registro"
             )}
           </Button>
+          
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm mt-4">
+              {error}
+            </div>
+          )}
         </form>
       </Form>
     </div>

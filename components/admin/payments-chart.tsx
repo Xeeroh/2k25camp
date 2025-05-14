@@ -4,21 +4,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
 
-// Mock data for charts
+// Datos de prueba simplificados
 const paymentsByDate = [
   { date: '10/05', amount: 5250, count: 15 },
   { date: '11/05', amount: 7000, count: 20 },
@@ -42,11 +29,6 @@ const paymentStatusData = [
   { name: 'Pagado', value: 184 },
   { name: 'Pendiente', value: 32 }
 ];
-
-// Colors for charts
-const SECTOR_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 
-                      'hsl(var(--chart-4))', 'hsl(var(--chart-5))', '#6C3483'];
-const STATUS_COLORS = ['hsl(var(--chart-2))', 'hsl(var(--chart-1))'];
 
 export default function PaymentsChart() {
   const [timeframe, setTimeframe] = useState('week');
@@ -77,26 +59,12 @@ export default function PaymentsChart() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={paymentsByDate}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="amount" name="Monto ($)" fill="hsl(var(--chart-1))" />
-                  <Bar dataKey="count" name="Asistentes" fill="hsl(var(--chart-2))" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-muted-foreground text-center">
+                Gráfico de pagos por fecha deshabilitado temporalmente.
+                <br />
+                Estamos trabajando para resolver un problema con la visualización.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -116,27 +84,12 @@ export default function PaymentsChart() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={paymentsBySector}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={true}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {paymentsBySector.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={SECTOR_COLORS[index % SECTOR_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value, name, props) => [`${value} asistentes`, name]} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                <div className="h-[300px] flex items-center justify-center">
+                  <p className="text-muted-foreground text-center">
+                    Gráfico de distribución por sector deshabilitado temporalmente.
+                    <br />
+                    Estamos trabajando para resolver un problema con la visualización.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -151,33 +104,61 @@ export default function PaymentsChart() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={paymentStatusData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={true}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {paymentStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value, name, props) => [`${value} asistentes`, name]} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                <div className="h-[300px] flex items-center justify-center">
+                  <p className="text-muted-foreground text-center">
+                    Gráfico de estado de pagos deshabilitado temporalmente.
+                    <br />
+                    Estamos trabajando para resolver un problema con la visualización.
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Mostramos los datos en formato tabla como alternativa */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Datos de Pagos</CardTitle>
+          <CardDescription>
+            Información detallada en formato tabular
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Fecha</th>
+                  <th className="text-right p-2">Monto ($)</th>
+                  <th className="text-right p-2">Asistentes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paymentsByDate.map((item, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="p-2">{item.date}</td>
+                    <td className="text-right p-2">${item.amount.toLocaleString()}</td>
+                    <td className="text-right p-2">{item.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="p-2 font-bold">Total</td>
+                  <td className="text-right p-2 font-bold">
+                    ${paymentsByDate.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
+                  </td>
+                  <td className="text-right p-2 font-bold">
+                    {paymentsByDate.reduce((sum, item) => sum + item.count, 0)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

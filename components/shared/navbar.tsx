@@ -3,12 +3,19 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
-export default function Navbar() {
+// Opciones para configurar qué enlaces mostrar
+interface NavbarProps {
+  showInternalLinks?: boolean;
+}
+
+export default function Navbar({ showInternalLinks = false }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isInternal, setIsInternal] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,8 +23,22 @@ export default function Navbar() {
     };
     
     window.addEventListener('scroll', handleScroll);
+
+    // Intentamos detectar si estamos en un entorno interno
+    // Esto es solo para propósitos de visualización, la seguridad real está en el middleware
+    const checkInternalAccess = () => {
+      // En producción, aquí implementarías la misma lógica que en el middleware
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                          window.location.hostname === '127.0.0.1';
+      const hasInternalParam = new URLSearchParams(window.location.search).get('internal_access') === 'true';
+      
+      setIsInternal(showInternalLinks || isLocalhost || hasInternalParam);
+    };
+    
+    checkInternalAccess();
+    
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [showInternalLinks]);
 
   return (
     <nav 
@@ -35,8 +56,15 @@ export default function Navbar() {
               href="/" 
               className="text-2xl font-bold text-primary transition-colors"
             >
-              MDP Noroeste
+              Mensajero de Paz Noroeste
             </Link>
+            
+            {/* Indicador de modo interno */}
+            {isInternal && (
+              <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 border-amber-300">
+                <Shield className="h-3 w-3 mr-1" /> Acceso Interno
+              </Badge>
+            )}
           </div>
           
           {/* Desktop navigation */}
@@ -47,14 +75,20 @@ export default function Navbar() {
             <Link href="/registro" className="text-foreground hover:text-primary transition-colors">
               Registro
             </Link>
-            <Link href="/comite" className="text-foreground hover:text-primary transition-colors">
-              Comité
-            </Link>
-            <Button asChild variant="outline">
-              <Link href="/admin">
-                Administración
-              </Link>
-            </Button>
+            
+            {/* Enlaces para acceso interno */}
+            {isInternal && (
+              <>
+                <Link href="/comite" className="text-foreground hover:text-primary transition-colors">
+                  Comité
+                </Link>
+                <Button asChild variant="outline">
+                  <Link href="/admin">
+                    Administración
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
           
           {/* Mobile menu button */}
@@ -91,20 +125,26 @@ export default function Navbar() {
           >
             Registro
           </Link>
-          <Link 
-            href="/comite" 
-            className="block px-3 py-2 rounded-md text-base font-medium hover:bg-muted transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Comité
-          </Link>
-          <Link 
-            href="/admin" 
-            className="block px-3 py-2 rounded-md text-base font-medium hover:bg-muted transition-colors"
-            onClick={() => setIsOpen(false)}
-          >
-            Administración
-          </Link>
+          
+          {/* Enlaces para acceso interno en menú móvil */}
+          {isInternal && (
+            <>
+              <Link 
+                href="/comite" 
+                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-muted transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Comité
+              </Link>
+              <Link 
+                href="/admin" 
+                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-muted transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Administración
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

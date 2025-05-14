@@ -20,8 +20,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { MoreHorizontal, Search, CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import AttendeeModal from "./attendee-modal";
 import { 
   AlertDialog,
@@ -105,8 +105,7 @@ export default function AttendeesTable() {
       
       if (error) throw error;
       
-      toast({
-        title: "Asistente eliminado",
+      toast.success("Asistente eliminado", {
         description: "El asistente ha sido eliminado con éxito",
       });
       
@@ -114,10 +113,8 @@ export default function AttendeesTable() {
       fetchAttendees();
     } catch (error) {
       console.error('Error al eliminar asistente:', error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo eliminar el asistente",
-        variant: "destructive",
       });
     } finally {
       setIsDeleteDialogOpen(false);
@@ -139,13 +136,13 @@ export default function AttendeesTable() {
           church: updatedAttendee.church,
           paymentamount: updatedAttendee.paymentAmount,
           paymentstatus: updatedAttendee.paymentStatus,
+          tshirtsize: updatedAttendee.tshirtsize,
         })
         .eq('id', updatedAttendee.id);
 
       if (error) throw error;
       
-      toast({
-        title: "Asistente actualizado",
+      toast.success("Asistente actualizado", {
         description: "La información del asistente ha sido actualizada con éxito",
       });
       
@@ -154,10 +151,8 @@ export default function AttendeesTable() {
       closeModal();
     } catch (err) {
       console.error('Error al actualizar asistente:', err);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo actualizar la información del asistente",
-        variant: "destructive",
       });
     }
   };
@@ -207,19 +202,30 @@ export default function AttendeesTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+      <div className="flex justify-between items-center">
+        <div className="relative w-1/3">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar asistentes..."
+            placeholder="Buscar asistente..." 
+            className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
           />
         </div>
+        <Button 
+          onClick={fetchAttendees}
+          variant="outline"
+          disabled={loading}
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            "Actualizar"
+          )}
+        </Button>
       </div>
-
-      <div className="rounded-md border">
+      
+      <div className="border rounded-md">
         <Table>
           <TableHeader>
             <TableRow>
@@ -229,19 +235,27 @@ export default function AttendeesTable() {
               <TableHead>Sector</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead>Fecha de Registro</TableHead>
-              <TableHead>Acciones</TableHead>
+              <TableHead>Talla</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAttendees.map((attendee) => (
-              <TableRow key={attendee.id}>
+              <TableRow key={attendee.id} className={attendee.istest ? "bg-gray-50" : ""}>
                 <TableCell>{attendee.firstname} {attendee.lastname}</TableCell>
                 <TableCell>{attendee.email}</TableCell>
                 <TableCell>{attendee.church}</TableCell>
                 <TableCell>{attendee.sector}</TableCell>
                 <TableCell>${attendee.paymentamount}</TableCell>
                 <TableCell>{getPaymentBadge(attendee.paymentstatus)}</TableCell>
+                <TableCell>
+                  {attendee.tshirtsize ? (
+                    <Badge variant="outline" className="bg-blue-50">{attendee.tshirtsize}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">N/A</span>
+                  )}
+                </TableCell>
                 <TableCell>{new Date(attendee.registrationdate).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <DropdownMenu>

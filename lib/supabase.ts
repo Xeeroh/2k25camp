@@ -26,7 +26,7 @@ export const supabase = createClient(
     },
     global: {
       headers: {
-        'x-application-name': 'mdpnoroeste-admin'
+        'x-application-name': 'Mensajeros De Paz Noroeste'
       }
     },
     // Mejoras para el rendimiento y la confiabilidad
@@ -36,10 +36,6 @@ export const supabase = createClient(
     realtime: {
       timeout: 20000, // Aumentar el timeout para conexiones lentas
     },
-    // Reducir registros innecesarios
-    logger: {
-      level: process.env.NODE_ENV === 'development' ? 'info' : 'error',
-    }
   }
 );
 

@@ -15,6 +15,8 @@ interface EmailData {
   sector: string
   paymentAmount: number
   qrData: string // Datos JSON del QR
+  receivesTshirt?: boolean // Si recibe camiseta (primeros 100)
+  tshirtSize?: string // Talla de camiseta seleccionada
 }
 
 serve(async (req) => {
@@ -46,7 +48,9 @@ serve(async (req) => {
       church: body.church,
       sector: body.sector,
       paymentAmount: body.paymentAmount,
-      qrDataLength: body.qrData ? body.qrData.length : 0
+      qrDataLength: body.qrData ? body.qrData.length : 0,
+      receivesTshirt: body.receivesTshirt,
+      tshirtSize: body.tshirtSize
     }));
 
     // Usar un servicio externo para generar el QR
@@ -57,6 +61,16 @@ serve(async (req) => {
     // Para usar este dominio, debe estar verificado en Resend
     const fromEmail = 'MDP Noroeste <noreply@mdpnoroeste.com>';
     console.log('Enviando correo desde:', fromEmail, 'a:', body.email);
+
+    // Preparar el mensaje de camiseta para los primeros 100 registros
+    const tshirtMessage = body.receivesTshirt 
+      ? `
+        <div style="background-color: #dbeafe; border-radius: 8px; padding: 15px; margin: 20px 0; border-left: 4px solid #2563eb;">
+          <h3 style="color: #1e40af; margin-top: 0;">¡FELICITACIONES! 🎉</h3>
+          <p style="margin-bottom: 0;">Por ser uno de los primeros 100 registrados, <strong>has ganado una camiseta exclusiva talla ${body.tshirtSize || 'seleccionada'}</strong>. ¡No olvides recogerla durante el evento!</p>
+        </div>
+      ` 
+      : '';
 
     // Enviar correo de confirmación con el QR
     try {
@@ -70,15 +84,16 @@ serve(async (req) => {
             
             <p>Hola ${body.firstName},</p>
             
-            <p>Gracias por registrarte al evento MDP Noroeste. Tu registro ha sido procesado exitosamente.</p>
+            <p>Gracias por registrarte al Campamento Alfa y Omega Distrito Noroeste . Tu registro ha sido procesado exitosamente.</p>
             
+            ${tshirtMessage}
+
             <h2 style="color: #2563eb;">Detalles del Registro:</h2>
             <ul style="list-style: none; padding: 0;">
               <li style="margin-bottom: 8px;"><strong>Nombre:</strong> ${body.firstName} ${body.lastName}</li>
               <li style="margin-bottom: 8px;"><strong>Iglesia:</strong> ${body.church}</li>
               <li style="margin-bottom: 8px;"><strong>Sector:</strong> ${body.sector}</li>
-              <li style="margin-bottom: 8px;"><strong>Monto Pagado:</strong> $${body.paymentAmount}</li>
-              <li style="margin-bottom: 8px;"><strong>Estado del Pago:</strong> Pendiente</li>
+              ${body.receivesTshirt && body.tshirtSize ? `<li style="margin-bottom: 8px;"><strong>Talla de Camiseta:</strong> ${body.tshirtSize}</li>` : ''}
             </ul>
 
             <div style="text-align: center; margin: 20px 0;">
