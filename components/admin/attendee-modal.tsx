@@ -347,7 +347,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sin asignar</SelectItem>
+                          <SelectItem value="NA">Sin asignar</SelectItem>
                           <SelectItem value="XS">XS</SelectItem>
                           <SelectItem value="S">S</SelectItem>
                           <SelectItem value="M">M</SelectItem>
