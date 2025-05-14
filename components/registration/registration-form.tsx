@@ -66,7 +66,9 @@ const formSchema = z.object({
   sector: z.string({ required_error: "Por favor seleccione un sector" }),
   church: z.string({ required_error: "Por favor seleccione una iglesia" }),
   tshirtsize: z.string().optional(),
-  paymentReceipt: z.any().optional(), // Campo para el comprobante de pago
+  paymentReceipt: z.custom<File>((val) => val instanceof File || val === null, {
+    message: "El comprobante de pago es obligatorio"
+  })
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -268,31 +270,55 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     }
   };
 
+  // Manejar cambio de archivo
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setPaymentReceiptFile(file);
+      
+      // Actualizar el valor en el formulario
+      form.setValue('paymentReceipt', file, { 
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true 
+      });
     }
   };
   
   const onSubmit = async (data: FormValues) => {
-    // console.log("Iniciando onSubmit con datos completos:", data);
-    // console.log("Talla de camiseta seleccionada:", data.tshirtsize);
+    // Capturar evento de Google Analytics
+    // @ts-ignore
+    if (window.gtag) {
+      // @ts-ignore
+      window.gtag('event', 'start_registration', {
+        event_category: 'registration',
+        event_label: 'Intento de registro'
+      });
+    }
+
+    setIsSubmitting(true);
+    setIsLoading(true);
+    setIsSuccess(false);
+    setError(null);
     
     try {
-      // Prevenir envíos duplicados
-      if (isSubmitting) {
-        // console.log("Formulario ya está siendo enviado, abortando envío duplicado");
+      // Verificar si hay comprobante de pago
+      if (!paymentReceiptFile) {
+        setError("El comprobante de pago es obligatorio");
+        setIsSubmitting(false);
+        setIsLoading(false);
         return;
       }
       
-      // Activar primero los estados para bloquear interfaz
-      setIsSubmitting(true);
-      setIsLoading(true);
-      setIsSuccess(false);
-      setError(null);
+      // Subir comprobante de pago a Storage y obtener la URL
+      const receiptUrl = await uploadPaymentReceipt(paymentReceiptFile);
       
-      // console.log("Estado de formulario actualizado, procediendo con el registro");
+      if (!receiptUrl) {
+        setError("Error al subir el comprobante de pago. Por favor intenta de nuevo.");
+        setIsSubmitting(false);
+        setIsLoading(false);
+        return;
+      }
 
       // Verificar si hay espacio para una camiseta
       const { count, error: countError } = await supabase
@@ -310,16 +336,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       // Actualizar la disponibilidad de camisetas para la UI
       setShirtAvailable(count !== null && count < 100);
 
-      // Subir comprobante de pago si existe
-      let receiptUrl = null;
-      if (paymentReceiptFile) {
-        receiptUrl = await uploadPaymentReceipt(paymentReceiptFile);
-        if (!receiptUrl) {
-          throw new Error('Error al subir el comprobante de pago');
-        }
-        setPaymentReceiptUrl(receiptUrl);
-      }
-
       // Crear el objeto de datos a insertar con logs
       const registrationData = {
         firstname: data.firstName,
@@ -335,8 +351,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         paymentamount: 0, // Monto de pago predeterminado
       };
       
-      // console.log("Datos completos a insertar en Supabase:", registrationData);
-
       // Intentar crear el registro en la base de datos
       try {
         // console.log("Iniciando inserción en base de datos");
@@ -761,7 +775,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             
             {/* Campo de comprobante de pago */}
             <FormItem>
-              <FormLabel>Comprobante de Pago</FormLabel>
+              <FormLabel>Comprobante de Pago *</FormLabel>
               <FormControl>
                 <div className="flex flex-col space-y-2">
                   <Input 
@@ -769,6 +783,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     accept="image/*"
                     onChange={handleFileChange}
                     disabled={isLoading || isSubmitting}
+                    required
                   />
                   {paymentReceiptFile && (
                     <p className="text-xs text-muted-foreground">
@@ -777,22 +792,23 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   )}
                   {uploadProgress > 0 && (
                     <div className="w-full">
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
                         <div 
-                          className="h-full bg-blue-500 transition-all duration-300 ease-in-out" 
+                          className="bg-primary h-2.5 rounded-full" 
                           style={{ width: `${uploadProgress}%` }}
                         ></div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {uploadProgress < 100 ? 'Procesando...' : 'Completado'}
+                        {uploadProgress < 100 ? `Procesando: ${uploadProgress}%` : 'Carga completa'}
                       </p>
                     </div>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    Sube una imagen de tu comprobante de pago
-                  </p>
                 </div>
               </FormControl>
+              <FormMessage />
+              <p className="text-xs text-muted-foreground mt-1">
+                Sube una imagen de tu comprobante de pago
+              </p>
             </FormItem>
           </div>
           
