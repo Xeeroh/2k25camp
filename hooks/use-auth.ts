@@ -4,17 +4,25 @@ import { AuthUser, UserRole } from '@/lib/types';
 
 // Cache para perfiles de usuario
 const profileCache = new Map<string, {role: string, timestamp: number}>();
-const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos
+const CACHE_EXPIRY = 2 * 60 * 1000; // Reducido a 2 minutos
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(false); // Iniciar como false
+  const [loading, setLoading] = useState(true); // Cambiado a true por defecto
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Función simplificada para obtener perfil
     const fetchUserProfile = async (userId: string, userEmail: string) => {
       try {
+        // Limpiar caché expirado
+        const now = Date.now();
+        for (const [key, value] of profileCache.entries()) {
+          if (now - value.timestamp > CACHE_EXPIRY) {
+            profileCache.delete(key);
+          }
+        }
+
         // Verificar caché primero
         const cachedProfile = profileCache.get(userId);
         if (cachedProfile && (Date.now() - cachedProfile.timestamp < CACHE_EXPIRY)) {

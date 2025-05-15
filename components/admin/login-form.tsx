@@ -44,6 +44,13 @@ export default function LoginForm() {
     try {
       setIsLoading(true);
       setError("");
+      
+      // Limpiar caché antes de iniciar sesión
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('mdpnoroeste.auth.token');
+        sessionStorage.clear();
+      }
+      
       console.log('Intentando iniciar sesión con:', data.email);
       await signIn(data.email, data.password);
     } catch (err) {

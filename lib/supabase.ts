@@ -23,10 +23,15 @@ export const supabase = createClient(
       detectSessionInUrl: true,
       storageKey: 'mdpnoroeste.auth.token',
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      flowType: 'pkce',
+      debug: process.env.NODE_ENV === 'development',
     },
     global: {
       headers: {
-        'x-application-name': 'Mensajeros De Paz Noroeste'
+        'x-application-name': 'Mensajeros De Paz Noroeste',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       }
     },
     // Mejoras para el rendimiento y la confiabilidad
