@@ -17,11 +17,12 @@ export function useAuth() {
       try {
         // Limpiar caché expirado
         const now = Date.now();
-        for (const [key, value] of profileCache.entries()) {
-          if (now - value.timestamp > CACHE_EXPIRY) {
+        Array.from(profileCache.keys()).forEach(key => {
+          const value = profileCache.get(key);
+          if (value && now - value.timestamp > CACHE_EXPIRY) {
             profileCache.delete(key);
           }
-        }
+        });
 
         // Verificar caché primero
         const cachedProfile = profileCache.get(userId);
