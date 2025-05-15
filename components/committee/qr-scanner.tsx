@@ -20,29 +20,19 @@ const SCANNER_CONFIG = {
   formatsToSupport: [0],
   disableFlip: true,
   aspectRatio: 1.0,
-  showTorchButtonIfSupported: true,
-  showZoomSliderIfSupported: true,
-  // Nuevas configuraciones para mejor rendimiento
-  rememberLastUsedCamera: true,
-  supportedScanTypes: [0], // Solo QR
-  videoConstraints: {
-    width: { min: 360, ideal: 640, max: 1280 },
-    height: { min: 240, ideal: 480, max: 720 },
-    facingMode: "environment"
-  }
+  showZoomSliderIfSupported: true
 };
 
 function QrScanner({ onScan }: QrScannerProps) {
   const [scanning, setScanning] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [hasTorch, setHasTorch] = useState(false);
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const qrScannerId = "qr-reader-id";
   
-  // Detectar capacidades del dispositivo
+  // Detectar si es dispositivo móvil
   useEffect(() => {
-    const checkDeviceCapabilities = async () => {
+    const checkIfMobile = () => {
       const userAgent = navigator.userAgent;
       const mobile = Boolean(
         userAgent.match(
@@ -50,22 +40,9 @@ function QrScanner({ onScan }: QrScannerProps) {
         )
       );
       setIsMobile(mobile);
-
-      // Verificar si el dispositivo tiene linterna
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        const hasTorchSupport = videoDevices.some(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('posterior')
-        );
-        setHasTorch(hasTorchSupport);
-      } catch (error) {
-        console.log('No se pudo verificar el soporte de linterna');
-      }
     };
     
-    checkDeviceCapabilities();
+    checkIfMobile();
   }, []);
   
   useEffect(() => {
@@ -168,7 +145,7 @@ function QrScanner({ onScan }: QrScannerProps) {
     }
     setScanning(false);
   };
-  
+
   return (
     <div className="space-y-4">
       <div className={`relative ${isMobile ? 'aspect-square' : 'aspect-video'} w-full max-w-md mx-auto bg-black/5 rounded-lg overflow-hidden`}>
@@ -180,40 +157,6 @@ function QrScanner({ onScan }: QrScannerProps) {
               <Camera className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
               <p className="text-muted-foreground text-sm">Presione el botón para iniciar el escáner</p>
             </div>
-          </div>
-        )}
-
-        {scanning && hasTorch && (
-          <div className="absolute bottom-4 right-4">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="rounded-full bg-black/50 hover:bg-black/70"
-              onClick={() => {
-                if (qrScannerRef.current) {
-                  qrScannerRef.current.toggleTorch();
-                }
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5"
-              >
-                <path d="M9 2v6" />
-                <path d="M15 2v6" />
-                <path d="M12 17v5" />
-                <path d="M5 14h14" />
-                <path d="M4 14h16" />
-              </svg>
-            </Button>
           </div>
         )}
       </div>
@@ -242,9 +185,6 @@ function QrScanner({ onScan }: QrScannerProps) {
         <div className="text-center text-sm text-muted-foreground mt-2">
           <p>Apunte la cámara al código QR</p>
           <p className="text-xs mt-1">Mantenga el código QR dentro del marco para una mejor lectura</p>
-          {hasTorch && (
-            <p className="text-xs mt-1 text-primary">Use el botón de linterna en condiciones de poca luz</p>
-          )}
         </div>
       )}
     </div>
