@@ -12,37 +12,49 @@ interface QrScannerProps {
 
 // Configuración fija para el escáner
 const SCANNER_CONFIG = {
-  fps: 5,
-  qrbox: { width: 200, height: 200 },
+  fps: 10,
+  qrbox: { width: 300, height: 300 },
   experimentalFeatures: {
     useBarCodeDetectorIfSupported: true
   },
   formatsToSupport: [0],
-  disableFlip: true,
+  disableFlip: false,
   aspectRatio: 1.0,
-  showZoomSliderIfSupported: true
+  showZoomSliderIfSupported: true,
+  videoConstraints: {
+    width: { min: 640, ideal: 1280, max: 1920 },
+    height: { min: 480, ideal: 720, max: 1080 },
+    facingMode: "environment",
+    focusMode: "continuous",
+    exposureMode: "continuous"
+  }
 };
 
 function QrScanner({ onScan }: QrScannerProps) {
   const [scanning, setScanning] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [scanAttempts, setScanAttempts] = useState(0);
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const qrScannerId = "qr-reader-id";
   
-  // Detectar si es dispositivo móvil
+  // Mejorar la detección de dispositivos móviles
   useEffect(() => {
     const checkIfMobile = () => {
       const userAgent = navigator.userAgent;
-      const mobile = Boolean(
-        userAgent.match(
-          /Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i
-        )
-      );
-      setIsMobile(mobile);
+      const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+      const isMobileDevice = mobileRegex.test(userAgent);
+      const isSmallScreen = window.innerWidth <= 768;
+      const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      
+      const isMobile = (isMobileDevice && isSmallScreen) || (isMobileDevice && hasTouchScreen) || (isSmallScreen && hasTouchScreen);
+      
+      setIsMobile(isMobile);
     };
     
     checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
   
   useEffect(() => {
@@ -79,31 +91,31 @@ function QrScanner({ onScan }: QrScannerProps) {
   
   const startScanner = async () => {
     try {
-      // Verificar si ya hay un escáner en ejecución y detenerlo
       if (qrScannerRef.current) {
         await stopScanner();
       }
       
-      // Crear una nueva instancia del escáner
       const html5QrCode = new Html5Qrcode(qrScannerId);
       qrScannerRef.current = html5QrCode;
       
+      // Configuración específica para escanear pantallas de otros dispositivos
+      const config = {
+        ...SCANNER_CONFIG,
+        qrbox: isMobile ? { width: 350, height: 350 } : SCANNER_CONFIG.qrbox,
+        fps: 10
+      };
+      
       await html5QrCode.start(
         { facingMode: "environment" },
-        SCANNER_CONFIG,
+        config,
         async (decodedText) => {
-          // Success callback - QR code detected
           playSuccessSound();
-          toast.success('Código QR detectado');
+          setScanAttempts(prev => prev + 1);
           
           try {
-            // Detener el escáner primero para evitar múltiples escaneos
             await stopScanner();
-            
-            // Limpiar los datos antes de pasarlos al componente padre
             let cleanedQrData = decodedText.trim();
             
-            // Caso especial: JSON malformado
             if (cleanedQrData.startsWith('{') && !cleanedQrData.endsWith('}')) {
               const lastBraceIndex = cleanedQrData.lastIndexOf('}');
               if (lastBraceIndex > 0) {
@@ -111,7 +123,6 @@ function QrScanner({ onScan }: QrScannerProps) {
               }
             }
             
-            // Pasar datos al componente padre
             onScan(cleanedQrData);
           } catch {
             toast.error('Error al procesar el código QR');
@@ -185,6 +196,8 @@ function QrScanner({ onScan }: QrScannerProps) {
         <div className="text-center text-sm text-muted-foreground mt-2">
           <p>Apunte la cámara al código QR</p>
           <p className="text-xs mt-1">Mantenga el código QR dentro del marco para una mejor lectura</p>
+          <p className="text-xs mt-1">Asegúrese de que el código QR esté bien iluminado y en foco</p>
+          <p className="text-xs mt-1">Mantenga una distancia de aproximadamente 15-20 cm</p>
         </div>
       )}
     </div>
