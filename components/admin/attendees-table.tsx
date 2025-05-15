@@ -213,13 +213,19 @@ export default function AttendeesTable() {
   };
 
   const filteredAttendees = attendees.filter(attendee => {
-    const fullName = `${attendee.firstname} ${attendee.lastname}`.toLowerCase();
     const searchLower = searchTerm.toLowerCase();
+    const fullName = `${attendee.firstname} ${attendee.lastname}`.toLowerCase();
+    const email = attendee.email.toLowerCase();
+    const church = attendee.church.toLowerCase();
+    const sector = attendee.sector.toLowerCase();
+    const attendanceNumber = attendee.attendance_number?.toString() || '';
+
     return (
       fullName.includes(searchLower) ||
-      attendee.email.toLowerCase().includes(searchLower) ||
-      attendee.church.toLowerCase().includes(searchLower) ||
-      attendee.sector.toLowerCase().includes(searchLower)
+      email.includes(searchLower) ||
+      church.includes(searchLower) ||
+      sector.includes(searchLower) ||
+      attendanceNumber.includes(searchLower)
     );
   });
 
@@ -284,6 +290,7 @@ export default function AttendeesTable() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Número</TableHead>
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Iglesia</TableHead>
@@ -298,6 +305,15 @@ export default function AttendeesTable() {
           <TableBody>
             {filteredAttendees.map((attendee) => (
               <TableRow key={attendee.id} className={attendee.istest ? "bg-gray-50" : ""}>
+                <TableCell>
+                  {attendee.attendance_number ? (
+                    <Badge variant="outline" className="bg-green-50">
+                      #{attendee.attendance_number}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">N/A</span>
+                  )}
+                </TableCell>
                 <TableCell>{attendee.firstname} {attendee.lastname}</TableCell>
                 <TableCell>{attendee.email}</TableCell>
                 <TableCell>{attendee.church}</TableCell>

@@ -27,4 +27,7 @@ export interface Attendee {
   paymentreceipturl: string;
   tshirtsize?: string;
   istest?: boolean;
+  attendance_number?: number;
+  attendance_confirmed?: boolean;
+  attendance_confirmed_at?: string;
 } 

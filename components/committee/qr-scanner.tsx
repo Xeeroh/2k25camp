@@ -12,7 +12,7 @@ interface QrScannerProps {
 
 // Configuración fija para el escáner
 const SCANNER_CONFIG = {
-  fps: 8, // Reducido de 10 a 8 para menos consumo de recursos
+  fps: 10, // Reducido de 10 a 8 para menos consumo de recursos
   qrbox: { width: 250, height: 250 },
   experimentalFeatures: {
     useBarCodeDetectorIfSupported: true // Usar la API nativa si está disponible

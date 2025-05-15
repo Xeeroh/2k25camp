@@ -34,6 +34,9 @@ interface AttendeeData {
   paymentamount: number;
   paymentstatus: string;
   created_at: string;
+  attendance_number: number;
+  attendance_confirmed: boolean;
+  attendance_confirmed_at: string;
 }
 
 export default function ComitePage() {
@@ -76,7 +79,7 @@ export default function ComitePage() {
       console.log('Consultando base de datos con ID:', attendeeId);
       const { data, error } = await supabase
         .from('attendees')
-        .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at')
+        .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at')
         .eq('id', attendeeId);
         
       if (error) {
@@ -156,8 +159,49 @@ export default function ComitePage() {
   
   // Función para confirmar asistencia
   const confirmAttendance = async (id: string) => {
-    toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''}`);
-    // Aquí iría la lógica para guardar la confirmación en la base de datos
+    try {
+      // Obtener el último número de asistencia
+      const { data: lastAttendee, error: lastError } = await supabase
+        .from('attendees')
+        .select('attendance_number')
+        .order('attendance_number', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (lastError && lastError.code !== 'PGRST116') {
+        throw lastError;
+      }
+
+      // Calcular el nuevo número de asistencia
+      const nextAttendanceNumber = (lastAttendee?.attendance_number || 0) + 1;
+
+      // Actualizar el asistente con el número y la confirmación
+      const { error: updateError } = await supabase
+        .from('attendees')
+        .update({
+          attendance_number: nextAttendanceNumber,
+          attendance_confirmed: true,
+          attendance_confirmed_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''} - Número: ${nextAttendanceNumber}`);
+      
+      // Actualizar el estado local
+      if (attendee) {
+        setAttendee({
+          ...attendee,
+          attendance_number: nextAttendanceNumber,
+          attendance_confirmed: true,
+          attendance_confirmed_at: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('Error al confirmar asistencia:', error);
+      toast.error('Error al confirmar la asistencia');
+    }
   };
 
   // Si el usuario no está autenticado, mostrar formulario de inicio de sesión

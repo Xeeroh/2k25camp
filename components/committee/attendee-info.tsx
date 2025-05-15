@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
-import { CheckCircle, XCircle, User, Calendar, Building, Mail, CreditCard, QrCode, ShieldCheck, Shirt } from 'lucide-react';
+import { CheckCircle, XCircle, User, Calendar, Building, Mail, CreditCard, QrCode, ShieldCheck, Shirt, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 
@@ -19,6 +19,9 @@ interface AttendeeData {
   paymentstatus?: string;
   created_at?: string;
   tshirtsize?: string;
+  attendance_number?: number;
+  attendance_confirmed?: boolean;
+  attendance_confirmed_at?: string;
 }
 
 interface AttendeeInfoProps {
@@ -120,8 +123,19 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
         
         <div className="flex items-center justify-center border-2 border-dashed border-primary/20 p-2 rounded-lg mb-2">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-green-500" />
-            <span className="font-medium text-sm">Asistencia Confirmada</span>
+            {attendee.attendance_confirmed ? (
+              <>
+                <ShieldCheck className="h-5 w-5 text-green-500" />
+                <span className="font-medium text-sm">
+                  Asistencia Confirmada - Número: {attendee.attendance_number}
+                </span>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                <span className="font-medium text-sm">Pendiente de Confirmar</span>
+              </>
+            )}
           </div>
         </div>
         
