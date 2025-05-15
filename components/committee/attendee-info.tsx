@@ -104,20 +104,20 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
   });
 
   return (
-    <Card className="max-w-lg mx-auto">
-      <CardHeader>
-        <CardTitle className="font-bold text-center text-xl">
+    <Card className="w-full">
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="font-bold text-center text-lg sm:text-xl">
           {fullName}
         </CardTitle>
-        <CardDescription className="text-center">
+        <CardDescription className="text-center text-xs sm:text-sm">
           {attendee.id}
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-6">
-        <div className="flex justify-center mb-4">
-          <div className="p-3 bg-primary/10 rounded-full">
-            <QrCode className="h-12 w-12 text-primary" />
+      <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+        <div className="flex justify-center mb-2 sm:mb-4">
+          <div className="p-2 sm:p-3 bg-primary/10 rounded-full">
+            <QrCode className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
           </div>
         </div>
         
@@ -125,80 +125,54 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           <div className="flex items-center gap-2">
             {attendee.attendance_confirmed ? (
               <>
-                <ShieldCheck className="h-5 w-5 text-green-500" />
-                <span className="font-medium text-sm">
+                <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+                <span className="font-medium text-xs sm:text-sm">
                   Asistencia Confirmada - Número: {attendee.attendance_number}
                 </span>
               </>
             ) : (
               <>
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                <span className="font-medium text-sm">Pendiente de Confirmar</span>
+                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
+                <span className="font-medium text-xs sm:text-sm">Pendiente de Confirmar</span>
               </>
             )}
           </div>
         </div>
-        
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 border-b pb-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm font-medium">Datos Personales</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Email</p>
+            <p className="text-sm sm:text-base font-medium break-all">{attendee.email || 'No disponible'}</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Nombre Completo</p>
-              <p className="font-medium text-lg">{fullName}</p>
-            </div>
-            
-            <div>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Mail className="h-3 w-3" /> Correo
-              </p>
-              <p className="font-medium">{attendee.email || 'No disponible'}</p>
-            </div>
-            
-            <div>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Building className="h-3 w-3" /> Iglesia
-              </p>
-              <p className="font-medium">{attendee.church || 'No especificada'}</p>
-            </div>
-            
-            <div>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <CreditCard className="h-3 w-3" /> Sector
-              </p>
-              <p className="font-medium">{attendee.sector || 'No especificado'}</p>
-            </div>
-            
-            {attendee.tshirtsize && (
-              <div>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Shirt className="h-3 w-3" /> Talla de Camiseta
-                </p>
-                <p className="font-medium">{attendee.tshirtsize}</p>
-              </div>
-            )}
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Iglesia</p>
+            <p className="text-sm sm:text-base font-medium">{attendee.church || 'No disponible'}</p>
           </div>
           
-          <div>
-            <p className="text-sm text-muted-foreground flex items-center gap-1">
-              <Calendar className="h-3 w-3" /> Fecha de Registro
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Sector</p>
+            <p className="text-sm sm:text-base font-medium">{attendee.sector || 'No disponible'}</p>
+          </div>
+          
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Monto</p>
+            <p className="text-sm sm:text-base font-medium">
+              {attendee.paymentamount ? `$${attendee.paymentamount}` : 'No disponible'}
             </p>
-            <p className="font-medium">{formatDate(attendee.created_at)}</p>
           </div>
         </div>
+
+        {!attendee.attendance_confirmed && (
+          <Button 
+            onClick={handleConfirm}
+            className="w-full mt-4"
+            size="sm"
+          >
+            Confirmar Asistencia
+          </Button>
+        )}
       </CardContent>
-      
-      <CardFooter>
-        <Button 
-          className="w-full"
-          onClick={handleConfirm}
-        >
-          Confirmar Asistencia
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

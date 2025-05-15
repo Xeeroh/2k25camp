@@ -45,6 +45,8 @@ export default function ComitePage() {
   const [attendee, setAttendee] = useState<AttendeeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastScannedQR, setLastScannedQR] = useState<string | null>(null);
+  const [scanCount, setScanCount] = useState(0);
+  const [lastScanTime, setLastScanTime] = useState<number>(0);
   
   // Verificación de permisos simplificada
   useEffect(() => {
@@ -58,14 +60,21 @@ export default function ComitePage() {
 
   // Función para manejar el escaneo del QR
   const handleQrScan = async (qrData: string) => {
+    // Prevenir escaneos múltiples rápidos
+    const now = Date.now();
+    if (now - lastScanTime < 2000) {
+      toast.warning('Por favor espere antes de escanear otro código');
+      return;
+    }
+    setLastScanTime(now);
+
     setIsLoading(true);
     setLastScannedQR(qrData);
+    setScanCount(prev => prev + 1);
 
-    //guardamos el id del toast para poder cerrarlo después
     const toastId = toast.loading('Consultando información...', {duration: 2000});
     
     try {
-      // Extraer el ID del QR con mejor rendimiento
       const attendeeId = extractAttendeeId(qrData);
       
       if (!attendeeId) {
@@ -76,11 +85,11 @@ export default function ComitePage() {
       }
       
       // Consultar la base de datos con el ID extraído
-      console.log('Consultando base de datos con ID:', attendeeId);
       const { data, error } = await supabase
         .from('attendees')
         .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at')
-        .eq('id', attendeeId);
+        .eq('id', attendeeId)
+        .single(); // Usar single() para obtener un solo resultado
         
       if (error) {
         console.error('Error al consultar la base de datos:', error);
@@ -90,7 +99,7 @@ export default function ComitePage() {
         return;
       }
       
-      if (!data || data.length === 0) {
+      if (!data) {
         console.log('No se encontró asistente con ID:', attendeeId);
         toast.error('No se encontró el asistente en la base de datos', { id: toastId });
         setIsLoading(false);
@@ -98,14 +107,12 @@ export default function ComitePage() {
         return;
       }
       
-      // Actualizar estado con los datos obtenidos (primer resultado)
-      setAttendee(data[0] as AttendeeData);
+      // Actualizar estado con los datos obtenidos
+      setAttendee(data as AttendeeData);
       toast.success('Información cargada correctamente', { id: toastId });
 
-      console.log("toastId", toastId);
-
       // Validar que los datos estén completos
-      if (!data[0].firstname || !data[0].lastname || !data[0].email) {
+      if (!data.firstname || !data.lastname || !data.email) {
         toast.warning('Algunos datos del asistente están incompletos');
       }
       
@@ -248,40 +255,43 @@ export default function ComitePage() {
     <div className="min-h-screen flex flex-col">
       <Navbar showInternalLinks={true} />
       
-      <div className="flex-1 py-8">
+      <div className="flex-1 py-4 sm:py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Panel del Comité</h1>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{user.email}</span>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Panel del Comité</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Códigos escaneados: {scanCount}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm text-muted-foreground truncate">{user.email}</span>
               <Button 
                 variant="outline"
                 onClick={signOut}
+                className="whitespace-nowrap"
               >
                 Cerrar sesión
               </Button>
             </div>
           </div>
           
-          <Tabs defaultValue="scanner" className="mt-8">
-            <TabsList className="grid grid-cols-2 md:w-[400px] mb-8">
+          <Tabs defaultValue="scanner" className="mt-4 sm:mt-8">
+            <TabsList className="grid grid-cols-2 w-full sm:w-[400px] mb-6 sm:mb-8">
               <TabsTrigger value="scanner">Escáner QR</TabsTrigger>
               <TabsTrigger value="info">Información</TabsTrigger>
             </TabsList>
             
             <TabsContent value="scanner">
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-                  <h2 className="text-xl font-semibold mb-4">Escáner de Código QR</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+                <div className="bg-card p-4 sm:p-6 rounded-lg shadow-sm border border-border">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-4">Escáner de Código QR</h2>
                   <Suspense fallback={<LoadingFallback />}>
                     <QrScanner onScan={handleQrScan} />
                   </Suspense>
                 </div>
                 
-                <div>
-                  {/* <pre className="text-xs text-muted-foreground mb-2 p-2 bg-muted/30 rounded whitespace-pre-wrap break-all">
-                    {isLoading ? 'Cargando...' : lastScannedQR ? `Último QR: ${lastScannedQR}` : 'Escáner listo'}
-                  </pre> */}
+                <div className="mt-4 md:mt-0">
                   <Suspense fallback={<LoadingFallback />}>
                     <AttendeeInfo 
                       attendee={attendee} 
@@ -293,15 +303,15 @@ export default function ComitePage() {
             </TabsContent>
             
             <TabsContent value="info">
-              <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-                <h2 className="text-xl font-semibold mb-4">Información</h2>
+              <div className="bg-card p-4 sm:p-6 rounded-lg shadow-sm border border-border">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4">Información</h2>
                 <div className="space-y-4">
-                  <p>
+                  <p className="text-sm sm:text-base">
                     Use esta herramienta para verificar la asistencia al evento escaneando los códigos QR de los asistentes.
                   </p>
-                  <div className="bg-primary/10 p-4 rounded-lg">
-                    <h3 className="font-medium mb-2">Instrucciones:</h3>
-                    <ol className="list-decimal list-inside space-y-2">
+                  <div className="bg-primary/10 p-3 sm:p-4 rounded-lg">
+                    <h3 className="font-medium mb-2 text-sm sm:text-base">Instrucciones:</h3>
+                    <ol className="list-decimal list-inside space-y-2 text-sm sm:text-base">
                       <li>Seleccione la pestaña "Escáner QR"</li>
                       <li>Haga clic en "Iniciar Escáner" y permita el acceso a la cámara</li>
                       <li>Apunte la cámara al código QR del asistente</li>
