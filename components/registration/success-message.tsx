@@ -144,12 +144,15 @@ export default function SuccessMessage({ qrData, onReset }: SuccessMessageProps)
       <h2 className="text-2xl font-bold mb-4">¡Registro Completado!</h2>
       
       <p className="text-muted-foreground mb-6">
-        Gracias por registrarse al evento MDP Noroeste. Su registro ha sido procesado exitosamente.
+        Gracias por registrarse al Campamento Alfa y Omega . Su registro ha sido procesado exitosamente.
         <br /><br />
         {attendeeEmail ? (
           <strong>Hemos enviado un correo a: {attendeeEmail}</strong>
         ) : (
-          <strong>Hemos enviado un correo de confirmación a su dirección de correo registrada.</strong>
+          <strong>
+            Hemos enviado un correo de confirmación a su dirección de correo registrada.
+             Si no lo encuentra en su bandeja de entrada, por favor revise su carpeta de spam o correo no deseado.
+          </strong>
         )}
       </p>
       

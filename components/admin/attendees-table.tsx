@@ -72,11 +72,17 @@ export default function AttendeesTable() {
   };
 
   const openModal = (attendee: Attendee, mode: 'view' | 'edit' | 'receipt') => {
+    // Extraer el número del sector sin el prefijo
+    let sectorValue = attendee.sector;
+    if (attendee.sector.startsWith('Sector ')) {
+      sectorValue = attendee.sector.replace('Sector ', '');
+    }
+    
     const formattedAttendee = {
       ...attendee,
       firstName: attendee.firstname,
       lastName: attendee.lastname,
-      sector: attendee.sector,
+      sector: sectorValue,
       church: attendee.church,
       paymentAmount: attendee.paymentamount,
       paymentStatus: attendee.paymentstatus,
@@ -124,19 +130,64 @@ export default function AttendeesTable() {
 
   const handleUpdateAttendee = async (updatedAttendee: any) => {
     try {
+      if (!updatedAttendee.id) {
+        throw new Error('ID del asistente es requerido');
+      }
+      
+      // Validar campos requeridos
+      const requiredFields = [
+        { key: 'firstName', label: 'nombre' },
+        { key: 'lastName', label: 'apellido' },
+        { key: 'email', label: 'correo electrónico' },
+        { key: 'sector', label: 'sector' },
+        { key: 'church', label: 'iglesia' },
+        { key: 'paymentAmount', label: 'monto de pago' },
+        { key: 'paymentStatus', label: 'estado de pago' }
+      ];
+      
+      for (const field of requiredFields) {
+        if (updatedAttendee[field.key] === undefined || updatedAttendee[field.key] === '') {
+          throw new Error(`El campo ${field.label} es requerido`);
+        }
+      }
+      
+      // Validar que el monto sea un número
+      const paymentAmount = Number(updatedAttendee.paymentAmount);
+      if (isNaN(paymentAmount)) {
+        throw new Error(`El monto de pago debe ser un número válido`);
+      }
+      
+      // Validar que el estado de pago sea válido
+      if (!['Pendiente', 'Pagado', 'Completado'].includes(updatedAttendee.paymentStatus)) {
+        throw new Error('El estado de pago debe ser "Pendiente", "Pagado" o "Completado"');
+      }
+      
+      // Normalizar paymentStatus (Completado -> Pagado)
+      const paymentStatus = updatedAttendee.paymentStatus === 'Completado' ? 'Pagado' : updatedAttendee.paymentStatus;
+      
+      console.log('Datos a actualizar:', {
+        id: updatedAttendee.id,
+        firstname: updatedAttendee.firstName,
+        lastname: updatedAttendee.lastName,
+        email: updatedAttendee.email,
+        sector: updatedAttendee.sector === 'Foráneo' ? 'Foráneo' : updatedAttendee.sector,
+        church: updatedAttendee.church,
+        paymentamount: paymentAmount,
+        paymentstatus: paymentStatus,
+        tshirtsize: updatedAttendee.tshirtsize || null,
+      });
+      
       const { error } = await supabase
         .from('attendees')
         .update({
           firstname: updatedAttendee.firstName,
           lastname: updatedAttendee.lastName,
           email: updatedAttendee.email,
-          sector: updatedAttendee.sector.startsWith('Sector') 
-            ? updatedAttendee.sector 
-            : `Sector ${updatedAttendee.sector}`,
+          sector: updatedAttendee.sector === 'Foráneo' ? 'Foráneo' : updatedAttendee.sector,
           church: updatedAttendee.church,
-          paymentamount: updatedAttendee.paymentAmount,
-          paymentstatus: updatedAttendee.paymentStatus,
-          tshirtsize: updatedAttendee.tshirtsize,
+          paymentamount: paymentAmount,
+          paymentstatus: paymentStatus,
+          tshirtsize: updatedAttendee.tshirtsize || null,
         })
         .eq('id', updatedAttendee.id);
 
@@ -151,8 +202,12 @@ export default function AttendeesTable() {
       closeModal();
     } catch (err) {
       console.error('Error al actualizar asistente:', err);
+      let errorMessage = "No se pudo actualizar la información del asistente";
+      if (err instanceof Error) {
+        errorMessage += `: ${err.message}`;
+      }
       toast.error("Error", {
-        description: "No se pudo actualizar la información del asistente",
+        description: errorMessage,
       });
     }
   };

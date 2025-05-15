@@ -77,20 +77,19 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
   // Reset form with attendee data when attendee changes
   useEffect(() => {
     if (attendee) {
+      console.log('Resetting form with attendee data:', attendee);
       form.reset({
         firstName: attendee.firstName || "",
         lastName: attendee.lastName || "",
         email: attendee.email || "",
-        sector: attendee.sector?.replace('Sector ', '') || "",
+        sector: attendee.sector || "",
         church: attendee.church || "",
         paymentAmount: attendee.paymentAmount || 0,
         paymentStatus: attendee.paymentStatus || "Pendiente",
         tshirtsize: attendee.tshirtsize || "",
       });
       
-      if (attendee.sector) {
-        setSectorValue(attendee.sector.replace('Sector ', ''));
-      }
+      setSectorValue(attendee.sector || "");
     }
   }, [attendee, form]);
   
@@ -104,8 +103,10 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
       const updatedAttendee = {
         ...attendee,
         ...data,
+        id: attendee.id // Aseguramos que el ID esté presente
       };
       
+      console.log('Enviando datos para actualizar:', updatedAttendee);
       await onUpdate(updatedAttendee);
     } catch (error) {
       console.error("Error al actualizar:", error);
@@ -283,9 +284,31 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Iglesia</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
+                      <Select 
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={!sectorValue || isLoading}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              sectorValue 
+                                ? "Seleccione una iglesia" 
+                                : "Primero seleccione un sector"
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {filteredChurches.map((church) => (
+                            <SelectItem 
+                              key={`${church.sector}-${church.name}`} 
+                              value={church.name}
+                            >
+                              {church.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
