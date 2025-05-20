@@ -18,8 +18,7 @@ export function middleware(request: NextRequest) {
     // Si NO es un usuario interno y la ruta NO es /registro (y no son recursos estáticos),
     // redirigir a /registro
     if (!isInternalUser && 
-        //path !== '/registro' && 
-        !path.startsWith('/registro') && 
+        path !== '/registro' && 
         !path.startsWith('/_next') && 
         !path.startsWith('/favicon') && 
         !path.startsWith('/api')) {
