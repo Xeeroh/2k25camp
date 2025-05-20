@@ -125,6 +125,7 @@ function QrScanner({ onScan }: QrScannerProps) {
           setSelectedCamera(videoDevices[0].deviceId);
         }
       } else if (videoDevices.length > 0) {
+        // En PC, seleccionar la primera cámara por defecto
         setSelectedCamera(videoDevices[0].deviceId);
       }
     } catch (error) {
@@ -246,7 +247,7 @@ function QrScanner({ onScan }: QrScannerProps) {
         <Button
           onClick={startScanner}
           className="flex items-center gap-2 w-full sm:w-auto"
-          disabled={scanning || !selectedCamera}
+          disabled={scanning}
         >
           <Camera className="h-4 w-4" />
           {scanning ? 'Escaneando...' : 'Iniciar Escáner'}
