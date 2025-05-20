@@ -8,10 +8,12 @@ const CACHE_EXPIRY = 2 * 60 * 1000; // Reducido a 2 minutos
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true); // Cambiado a true por defecto
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     // Función simplificada para obtener perfil
     const fetchUserProfile = async (userId: string, userEmail: string) => {
       try {
@@ -37,6 +39,8 @@ export function useAuth() {
           .eq('id', userId)
           .single();
 
+        if (!mounted) return 'viewer';
+
         // Si existe, usarlo
         if (profile) {
           const role = profile.role || 'viewer';
@@ -50,11 +54,12 @@ export function useAuth() {
             .from('profiles')
             .insert([{ id: userId, email: userEmail, role: 'viewer' }]);
           
+          if (!mounted) return 'viewer';
+          
           profileCache.set(userId, { role: 'viewer', timestamp: Date.now() });
           return 'viewer' as UserRole;
         }
 
-        // Perfil por defecto
         return 'viewer' as UserRole;
       } catch (err) {
         console.error('Error al obtener perfil:', err);
@@ -65,7 +70,17 @@ export function useAuth() {
     // Comprobar sesión actual de forma simplificada
     const checkCurrentSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (sessionError) {
+          console.error('Error al obtener sesión:', sessionError);
+          setUser(null);
+          setError('Error al verificar autenticación');
+          setLoading(false);
+          return;
+        }
         
         if (session?.user) {
           const userId = session.user.id;
@@ -73,6 +88,8 @@ export function useAuth() {
           
           // Obtener rol
           const role = await fetchUserProfile(userId, userEmail);
+          
+          if (!mounted) return;
           
           // Establecer usuario
           setUser({
@@ -85,10 +102,14 @@ export function useAuth() {
         }
       } catch (err) {
         console.error('Error al verificar sesión:', err);
-        setUser(null);
-        setError('Error al verificar autenticación');
+        if (mounted) {
+          setUser(null);
+          setError('Error al verificar autenticación');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -97,12 +118,16 @@ export function useAuth() {
 
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       if (event === 'SIGNED_IN' && session?.user) {
         const userId = session.user.id;
         const userEmail = session.user.email || '';
         
         // Obtener rol
         const role = await fetchUserProfile(userId, userEmail);
+        
+        if (!mounted) return;
         
         // Establecer usuario
         setUser({
@@ -111,12 +136,15 @@ export function useAuth() {
           role
         });
       } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        profileCache.clear();
+        if (mounted) {
+          setUser(null);
+          profileCache.clear();
+        }
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);

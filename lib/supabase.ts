@@ -25,6 +25,15 @@ export const supabase = createClient(
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       flowType: 'pkce',
       debug: process.env.NODE_ENV === 'development',
+      onAuthStateChange: (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          // Limpiar caché al cerrar sesión
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('mdpnoroeste.auth.token');
+            sessionStorage.clear();
+          }
+        }
+      }
     },
     global: {
       headers: {

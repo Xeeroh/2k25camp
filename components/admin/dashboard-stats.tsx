@@ -89,12 +89,12 @@ export default function DashboardStats() {
       const confirmedAttendees = attendees.filter(a => a.paymentstatus === 'Pagado');
       
       // Total recaudado
-      const totalAmount = confirmedAttendees.reduce((sum, attendee) => {
+      const totalAmount = attendees.reduce((sum, attendee) => {
         return sum + safeParseNumber(attendee.paymentamount);
       }, 0);
       
       // Total recaudado el mes pasado
-      const lastMonthAmount = confirmedAttendees
+      const lastMonthAmount = attendees
         .filter(a => new Date(a.registrationdate) < lastMonthDate)
         .reduce((sum, attendee) => sum + safeParseNumber(attendee.paymentamount), 0);
       
