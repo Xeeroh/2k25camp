@@ -159,8 +159,9 @@ function QrScanner({ onScan }: QrScannerProps) {
 
   return (
     <div className="space-y-4">
-      <div className={`relative ${isMobile ? 'aspect-square' : 'aspect-video'} w-full max-w-md mx-auto bg-black/5 rounded-lg overflow-hidden`}>
-        <div id={qrScannerId} className="w-full h-full"></div>
+      <div className={`relative ${scanning ? 'w-full h-[70vh]' : 'aspect-video'} max-w-4xl mx-auto bg-black/5 rounded-lg overflow-hidden`}>
+        <div id={qrScannerId} className="absolute inset-0 w-full h-full"></div>
+
         
         {!scanning && (
           <div className="absolute inset-0 flex items-center justify-center">
