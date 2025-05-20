@@ -210,7 +210,7 @@ function QrScanner({ onScan }: QrScannerProps) {
 
   return (
     <div className="space-y-4">
-      <div className={`relative ${scanning ? 'w-full h-[70vh]' : 'aspect-video'} max-w-4xl mx-auto bg-black/5 rounded-lg overflow-hidden`}>
+      <div className={`relative ${scanning ? 'w-full h-[70vh] md:h-[60vh]' : 'aspect-video'} max-w-4xl mx-auto bg-black/5 rounded-lg overflow-hidden`}>
         <div id={qrScannerId} className="absolute inset-0 w-full h-full"></div>
 
         {!scanning && (
