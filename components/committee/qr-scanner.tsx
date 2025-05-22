@@ -159,7 +159,7 @@ function QrScanner({ onScan }: QrScannerProps) {
         await stopScanner();
       }
 
-      if (!selectedCamera) {
+      if (!selectedCamera && !isMobile) {
         toast.error('No hay cámara seleccionada');
         return;
       }
@@ -173,10 +173,14 @@ function QrScanner({ onScan }: QrScannerProps) {
         fps: 10
       };
 
+      const cameraConfig = isMobile
+      ? (selectedCamera
+          ? { deviceId: selectedCamera } // si el usuario ya eligió
+          : { facingMode: { exact: "environment" } }) // si no, intenta trasera
+      : { deviceId: selectedCamera };
+
       await html5QrCode.start(
-        isMobile
-          ? { facingMode: { exact: "environment" } }
-          : { deviceId: selectedCamera },
+        cameraConfig,
         config,
         async (decodedText) => {
           playSuccessSound();
