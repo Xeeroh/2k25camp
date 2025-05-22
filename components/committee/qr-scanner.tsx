@@ -10,7 +10,7 @@ import { isMobile } from 'react-device-detect';
 
 const SCANNER_CONFIG = {
   fps: 10,
-  qrbox: { width: 300, height: 300 }
+  qrbox: { width: 250, height: 250 }
 };
 
  interface QrScannerProps {
