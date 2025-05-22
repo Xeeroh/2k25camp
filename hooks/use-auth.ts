@@ -4,54 +4,6 @@ import { AuthUser, UserRole } from '@/lib/types';
 import { authService } from '@/services/auth.service';
 import { ERROR_MESSAGES, ROLE_HIERARCHY } from '@/constants/auth.constants';
 
-// Constantes
-const ROLE_HIERARCHY: Record<UserRole, number> = {
-  'admin': 3,
-  'editor': 2,
-  'viewer': 1
-};
-
-const ERROR_MESSAGES = {
-  SESSION_ERROR: 'Error al verificar autenticación',
-  SIGN_IN_ERROR: 'Error al iniciar sesión',
-  SIGN_OUT_ERROR: 'Error al cerrar sesión',
-  PROFILE_ERROR: 'Error al obtener perfil de usuario'
-} as const;
-
-// Servicios
-const authService = {
-  async getSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    return session;
-  },
-
-  async getUserProfile(userId: string) {
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .single();
-      
-    if (error) throw error;
-    return profile;
-  },
-
-  async signInWithPassword(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    if (error) throw error;
-    return data;
-  },
-
-  async signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  }
-};
-
 // Hook principal
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
