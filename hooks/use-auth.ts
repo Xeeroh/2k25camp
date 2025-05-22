@@ -10,6 +10,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
+  const isUpdating = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -18,54 +19,82 @@ export function useAuth() {
   }, []);
 
   const updateUserState = async (session: any) => {
-    if (!session?.user) {
-      setUser(null);
-      return;
-    }
+    if (isUpdating.current) return;
+    isUpdating.current = true;
 
     try {
+      if (!session?.user) {
+        if (mounted.current) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
+
       const profile = await authService.getUserProfile(session.user.id);
-      setUser({
-        id: session.user.id,
-        email: session.user.email || '',
-        role: profile?.role || 'viewer'
-      });
+      
+      if (mounted.current) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          role: profile?.role || 'viewer'
+        });
+        setLoading(false);
+      }
     } catch (err) {
       console.error('Error al obtener perfil:', err);
-      setError(ERROR_MESSAGES.PROFILE_ERROR);
-      setUser(null);
+      if (mounted.current) {
+        setError(ERROR_MESSAGES.PROFILE_ERROR);
+        setUser(null);
+        setLoading(false);
+      }
+    } finally {
+      isUpdating.current = false;
     }
   };
 
   useEffect(() => {
+    let subscription: { unsubscribe: () => void } | null = null;
+
     const initializeAuth = async () => {
       try {
+        if (!mounted.current) return;
+        
         setLoading(true);
         const session = await authService.getSession();
         await updateUserState(session);
+
+        // Configurar suscripción a cambios de autenticación
+        const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log('Auth state changed:', event);
+          
+          if (!mounted.current) return;
+
+          if (event === 'SIGNED_IN') {
+            await updateUserState(session);
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setLoading(false);
+          }
+        });
+
+        subscription = authSubscription;
       } catch (err) {
         console.error('Error al verificar sesión:', err);
-        setError(ERROR_MESSAGES.SESSION_ERROR);
-        setUser(null);
-      } finally {
-        setLoading(false);
+        if (mounted.current) {
+          setError(ERROR_MESSAGES.SESSION_ERROR);
+          setUser(null);
+          setLoading(false);
+        }
       }
     };
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
-      
-      if (event === 'SIGNED_IN') {
-        await updateUserState(session);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-    });
-
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -83,14 +112,19 @@ export function useAuth() {
       setError(err.message || ERROR_MESSAGES.SIGN_IN_ERROR);
       throw err;
     } finally {
-      setLoading(false);
+      if (mounted.current) {
+        setLoading(false);
+      }
     }
   };
 
   const signOut = async () => {
     try {
       await authService.signOut();
-      setUser(null);
+      if (mounted.current) {
+        setUser(null);
+        setLoading(false);
+      }
     } catch (err) {
       console.error('Error al cerrar sesión:', err);
       setError(ERROR_MESSAGES.SIGN_OUT_ERROR);
