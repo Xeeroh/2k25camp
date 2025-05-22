@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   email: z.string().email("Correo electrónico no válido"),
@@ -28,7 +29,27 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0);
   
+  // Efecto para manejar el contador de tiempo de espera
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldownTime > 0) {
+      timer = setInterval(() => {
+        setCooldownTime((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [cooldownTime]);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -37,6 +58,8 @@ export default function ResetPasswordPage() {
   });
   
   const onSubmit = async (data: FormValues) => {
+    if (cooldownTime > 0) return;
+    
     setIsLoading(true);
     setError("");
     setSuccess(false);
@@ -49,9 +72,23 @@ export default function ResetPasswordPage() {
       if (error) throw error;
       
       setSuccess(true);
-    } catch (error) {
+      toast.success('Se ha enviado un correo con las instrucciones para restablecer tu contraseña');
+    } catch (error: any) {
       console.error("Error al enviar el correo de restablecimiento:", error);
-      setError("Hubo un error al enviar el correo de restablecimiento. Por favor intente de nuevo.");
+      let errorMessage = "Hubo un error al enviar el correo de restablecimiento. Por favor intente de nuevo.";
+      
+      if (error.message?.includes('security purposes')) {
+        // Extraer el tiempo de espera del mensaje de error
+        const waitTime = parseInt(error.message.match(/\d+/)?.[0] || '30');
+        setCooldownTime(waitTime);
+        errorMessage = `Por razones de seguridad, debes esperar ${waitTime} segundos antes de solicitar otro enlace.`;
+      } else if (error.message?.includes('rate limit')) {
+        setCooldownTime(30);
+        errorMessage = "Demasiados intentos. Por favor, espere 30 segundos antes de intentar de nuevo.";
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -118,13 +155,15 @@ export default function ResetPasswordPage() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading}
+                disabled={isLoading || cooldownTime > 0}
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enviando...
                   </>
+                ) : cooldownTime > 0 ? (
+                  `Esperar ${cooldownTime} segundos`
                 ) : (
                   "Enviar enlace de restablecimiento"
                 )}
