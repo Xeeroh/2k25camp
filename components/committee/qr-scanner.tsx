@@ -139,7 +139,10 @@ function QrScanner({ onScan }: QrScannerProps) {
   
   const startScanner = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } }
+      });
+
       stream.getTracks().forEach(track => track.stop());
 
       const devices = await navigator.mediaDevices.enumerateDevices();
