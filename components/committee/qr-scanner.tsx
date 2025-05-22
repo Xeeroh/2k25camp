@@ -1,203 +1,451 @@
 "use client";
 
+// import { useEffect, useRef, useState, memo } from 'react';
+// import { Button } from '@/components/ui/button';
+// import { Camera, CameraOff } from 'lucide-react';
+// import { Html5Qrcode } from 'html5-qrcode';
+// import { toast } from 'sonner';
+// import { isMobile } from 'react-device-detect';
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+
+// interface QrScannerProps {
+//   onScan: (data: string) => void;
+// }
+
+// interface CameraDevice {
+//   deviceId: string;
+//   label: string;
+// }
+
+// // Configuración mejorada para el escáner
+// const SCANNER_CONFIG = {
+//   fps: 10,
+//   qrbox: { width: 300, height: 300 },
+//   experimentalFeatures: {
+//     useBarCodeDetectorIfSupported: true,
+//   },
+//   formatsToSupport: [0],
+//   disableFlip: false,
+//   aspectRatio: 1.0,
+//   showZoomSliderIfSupported: true,
+//   videoConstraints: {
+//     width: { min: 640, ideal: 1280, max: 1920 },
+//     height: { min: 480, ideal: 720, max: 1080 },
+//     focusMode: "continuous",
+//     exposureMode: "continuous"
+//   }
+// };
+
+// function QrScanner({ onScan }: QrScannerProps) {
+//   const [scanning, setScanning] = useState(false);
+//   const [isMobile, setIsMobile] = useState(false);
+//   const [scanAttempts, setScanAttempts] = useState(0);
+//   const [availableCameras, setAvailableCameras] = useState<CameraDevice[]>([]);
+//   const [selectedCamera, setSelectedCamera] = useState<string>('');
+//   const qrScannerRef = useRef<Html5Qrcode | null>(null);
+//   const audioRef = useRef<HTMLAudioElement | null>(null);
+//   const qrScannerId = "qr-reader-id";
+//   const isIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+//   const [cameraMap, setCameraMap] = useState<{ front?: string; back?: string }>({});
+
+//   useEffect(() => {
+//     const checkIfMobile = () => {
+//       const userAgent = navigator.userAgent;
+//       const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+//       const isMobileDevice = mobileRegex.test(userAgent);
+//       const isSmallScreen = window.innerWidth <= 768;
+//       const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+//       const isMobile = (isMobileDevice && isSmallScreen) || (isMobileDevice && hasTouchScreen);
+//       setIsMobile(isMobile);
+//     };
+
+//     checkIfMobile();
+//     window.addEventListener('resize', checkIfMobile);
+//     return () => window.removeEventListener('resize', checkIfMobile);
+//   }, []);
+
+//   useEffect(() => {
+//     if (!audioRef.current) {
+//       audioRef.current = new Audio('/sounds/beep.mp3');
+//       audioRef.current.preload = 'auto';
+//     }
+//     return () => {
+//       stopScanner();
+//       if (audioRef.current) {
+//         audioRef.current.src = '';
+//         audioRef.current = null;
+//       }
+//     };
+//   }, []);
+
+//   const playSuccessSound = () => {
+//     if (audioRef.current) {
+//       try {
+//         audioRef.current.currentTime = 0;
+//         audioRef.current.play().catch(() => {});
+//       } catch {}
+//     }
+//   };
+
+//   const getBackCameraId = async (): Promise<string | null> => {
+//     try {
+//       const devices = await navigator.mediaDevices.enumerateDevices();
+//       const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+//       // Busca una cámara que contenga "back", "rear" o "wide" (Samsung usa "wide" para la principal)
+//       const backCamera = videoDevices.find(device =>
+//         /back|rear|wide/i.test(device.label)
+//       );
+
+//       return backCamera?.deviceId || null;
+//     } catch {
+//       return null;
+//     }
+//   };
+  
+//   const getAvailableCameras = async () => {
+//     try {
+
+//       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+//       stream.getTracks().forEach(track => track.stop());
+
+//       const devices = await navigator.mediaDevices.enumerateDevices();
+//       console.log(devices)
+      
+//       const videoDevices = devices
+//         .filter(device => device.kind === 'videoinput')
+//         .map(device => ({
+//           deviceId: device.deviceId,
+//           label: device.label || `Cámara ${device.deviceId.slice(0, 5)}`
+//         }));
+
+//       setAvailableCameras(videoDevices);
+
+//       if(isIPhone) {
+//         const backCamera = videoDevices.find(c => /back|environment/i.test(c.label));
+//         const frontCamera = videoDevices.find(c => /front|user/i.test(c.label));
+
+//         setCameraMap({
+//           front: frontCamera?.deviceId,
+//           back: backCamera?.deviceId
+//         });
+
+//         if (!selectedCamera) {
+//           setSelectedCamera("back"); // Esto se va a mapear luego al deviceId real
+//         }
+//       } else {
+//         if (videoDevices.length > 0 && !selectedCamera) {
+//           setSelectedCamera(videoDevices[0].deviceId);
+//         }
+//       }
+      
+//       // Seleccionar la cámara trasera por defecto en dispositivos móviles
+//       /*if (isMobile && videoDevices.length > 1) {
+//         const backCamera = videoDevices.find(device => 
+//           device.label.toLowerCase().includes('back') || 
+//           device.label.toLowerCase().includes('rear') ||
+//           device.label.toLowerCase().includes('environment')
+//         );
+//         if (backCamera) {
+//           setSelectedCamera(backCamera.deviceId);
+//         } else {
+//           setSelectedCamera(videoDevices[0].deviceId);
+//         }
+//       } else if (videoDevices.length > 0) {
+//         // En PC, seleccionar la primera cámara por defecto
+//         setSelectedCamera(videoDevices[0].deviceId);
+//       }*/
+//     } catch (error) {
+//       toast.error('Error al obtener la lista de cámaras');
+//     }
+//   };
+
+//   useEffect(() => {
+//     getAvailableCameras();
+//   }, [isMobile]);
+  
+//   const startScanner = async () => {
+
+//     if (!selectedCamera) return;
+
+//     const deviceIdToUse = isIPhone
+//           ? cameraMap[selectedCamera as 'front' | 'back'] 
+//           : selectedCamera;
+
+//     const cameraConfig = { deviceId: { exact: deviceIdToUse } };
+
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+//       stream.getTracks().forEach(track => track.stop());
+
+//       const devices = await navigator.mediaDevices.enumerateDevices();
+//       const cameras = devices.filter(device => device.kind === "videoinput");
+
+//       if (cameras.length === 0) {
+//         toast.error("No se encontró ninguna cámara.");
+//         return;
+//       }
+
+//       if (qrScannerRef.current) {
+//         await stopScanner();
+//       }
+
+//       if (!selectedCamera && !isMobile) {
+//         toast.error('No hay cámara seleccionada');
+//         return;
+//       }
+
+//       const html5QrCode = new Html5Qrcode(qrScannerId);
+//       qrScannerRef.current = html5QrCode;
+
+//       const config = {
+//         ...SCANNER_CONFIG,
+//         qrbox: isMobile ? { width: 250, height: 250 } : SCANNER_CONFIG.qrbox,
+//         fps: 10
+//       };
+
+//       await html5QrCode.start(
+//         cameraConfig,
+//         config,
+//         async (decodedText) => {
+//           playSuccessSound();
+//           setScanAttempts(prev => prev + 1);
+
+//           try {
+//             await stopScanner();
+//             let cleanedQrData = decodedText.trim();
+
+//             if (cleanedQrData.startsWith('{') && !cleanedQrData.endsWith('}')) {
+//               const lastBraceIndex = cleanedQrData.lastIndexOf('}');
+//               if (lastBraceIndex > 0) {
+//                 cleanedQrData = cleanedQrData.substring(0, lastBraceIndex + 1);
+//               }
+//             }
+
+//             onScan(cleanedQrData);
+//           } catch {
+//             toast.error('Error al procesar el código QR');
+//           }
+//         },
+//         () => {}
+//       );
+
+//       setScanning(true);
+//       toast.info('Escáner activado. Apunte a un código QR.');
+//     } catch (err) {
+//       toast.error('No se pudo acceder a la cámara. Verifique los permisos.');
+//       setScanning(false);
+//     }
+//   };
+
+//   const stopScanner = async () => {
+//     if (qrScannerRef.current) {
+//       try {
+//         if (qrScannerRef.current.isScanning) {
+//           await qrScannerRef.current.stop();
+//         }
+//       } catch {}
+//       finally {
+//         qrScannerRef.current = null;
+//         setScanning(false);
+//       }
+//     }
+//   };
+
+//   return (
+//     <div className="space-y-4">
+//       <div className={`relative ${scanning ? 'w-full h-[70vh] md:h-[60vh]' : 'aspect-video'} max-w-4xl mx-auto bg-black/5 rounded-lg overflow-hidden`}>
+//         <div id={qrScannerId} className="absolute inset-0 w-full h-full"></div>
+
+//         {!scanning && (
+//           <div className="absolute inset-0 flex items-center justify-center">
+//             <div className="text-center p-4">
+//               <Camera className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+//               <p className="text-muted-foreground text-sm">Presione el botón para iniciar el escáner</p>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+
+//       {/* <div className="flex flex-col sm:flex-row justify-center gap-4">
+//         {isIPhone ? (
+//           <Select
+//             value={selectedCamera}
+//             onValueChange={setSelectedCamera}
+//             disabled={scanning}
+//           >
+//             <SelectTrigger className="w-full sm:w-[200px]">
+//               <SelectValue placeholder="Seleccionar cámara" />
+//             </SelectTrigger>
+//             <SelectContent>
+//               <SelectItem value="front">Cámara frontal</SelectItem>
+//               <SelectItem value="back">Cámara trasera</SelectItem>
+//             </SelectContent>
+//           </Select>
+//         ) : (availableCameras.length > 1 && (
+//           <Select
+//             value={selectedCamera}
+//             onValueChange={setSelectedCamera}
+//             disabled={scanning}
+//           >
+//             <SelectTrigger className="w-full sm:w-[200px]">
+//               <SelectValue placeholder="Seleccionar cámara" />
+//             </SelectTrigger>
+//             <SelectContent>
+//               {availableCameras.map((camera) => (
+//                 <SelectItem key={camera.deviceId} value={camera.deviceId}>
+//                   {camera.label}
+//                 </SelectItem>
+//               ))}
+//             </SelectContent>
+//           </Select>
+//         ))}
+        
+//         <Button
+//           onClick={startScanner}
+//           className="flex items-center gap-2 w-full sm:w-auto"
+//           disabled={scanning}
+//         >
+//           <Camera className="h-4 w-4" />
+//           {scanning ? 'Escaneando...' : 'Iniciar Escáner'}
+//         </Button>
+
+//         <Button
+//           variant="outline"
+//           onClick={stopScanner}
+//           disabled={!scanning}
+//           className="w-full sm:w-auto"
+//         >
+//           Detener
+//         </Button>
+//       </div> */}
+
+//       <div className="flex flex-col sm:flex-row justify-center gap-4">
+//   <Select
+//     value={selectedCamera}
+//     onValueChange={setSelectedCamera}
+//     disabled={scanning}
+//   >
+//     <SelectTrigger className="w-full sm:w-[200px]">
+//       <SelectValue placeholder="Seleccionar cámara" />
+//     </SelectTrigger>
+//     <SelectContent>
+//       {isIPhone ? (
+//         <>
+//           <SelectItem value="front">Cámara frontal</SelectItem>
+//           <SelectItem value="back">Cámara trasera</SelectItem>
+//         </>
+//       ) : (
+//         availableCameras.map((camera) => (
+//           <SelectItem key={camera.deviceId} value={camera.deviceId}>
+//             {camera.label || `Cámara ${camera.deviceId.slice(0, 5)}`}
+//           </SelectItem>
+//         ))
+//       )}
+//     </SelectContent>
+//   </Select>
+
+//   <Button
+//     onClick={startScanner}
+//     className="flex items-center gap-2 w-full sm:w-auto"
+//     disabled={scanning}
+//   >
+//     <Camera className="h-4 w-4" />
+//     {scanning ? 'Escaneando...' : 'Iniciar Escáner'}
+//   </Button>
+
+//   <Button
+//     variant="outline"
+//     onClick={stopScanner}
+//     disabled={!scanning}
+//     className="w-full sm:w-auto"
+//   >
+//     Detener
+//   </Button>
+// </div>
+
+
+//       {isMobile && scanning && (
+//         <div className="text-center text-sm text-muted-foreground mt-2">
+//           <p>Apunte la cámara al código QR</p>
+//           <p className="text-xs mt-1">Mantenga el código QR dentro del marco para una mejor lectura</p>
+//           <p className="text-xs mt-1">Asegúrese de que el código esté bien iluminado y en foco</p>
+//           <p className="text-xs mt-1">Mantenga una distancia de 15-20 cm</p>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
 import { useEffect, useRef, useState, memo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Camera, CameraOff } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { Select, SelectItem, SelectTrigger, SelectValue, SelectContent } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Camera } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { isMobile } from 'react-device-detect';
 
-interface QrScannerProps {
-  onScan: (data: string) => void;
-}
-
-interface CameraDevice {
-  deviceId: string;
-  label: string;
-}
-
-// Configuración mejorada para el escáner
 const SCANNER_CONFIG = {
   fps: 10,
-  qrbox: { width: 300, height: 300 },
-  experimentalFeatures: {
-    useBarCodeDetectorIfSupported: true,
-  },
-  formatsToSupport: [0],
-  disableFlip: false,
-  aspectRatio: 1.0,
-  showZoomSliderIfSupported: true,
-  videoConstraints: {
-    width: { min: 640, ideal: 1280, max: 1920 },
-    height: { min: 480, ideal: 720, max: 1080 },
-    focusMode: "continuous",
-    exposureMode: "continuous"
-  }
+  qrbox: { width: 250, height: 250 }
 };
 
+ interface QrScannerProps {
+   onScan: (data: string) => void;
+}
+
+ type CameraDevice = {
+   id: string;
+   label: string;
+ }
+
+const qrScannerId = 'reader';
+
+const isIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 function QrScanner({ onScan }: QrScannerProps) {
-  const [scanning, setScanning] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [scanAttempts, setScanAttempts] = useState(0);
   const [availableCameras, setAvailableCameras] = useState<CameraDevice[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>('');
+  const [scanning, setScanning] = useState(false);
+  const [scanAttempts, setScanAttempts] = useState(0);
+
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const qrScannerId = "qr-reader-id";
-  const isIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const [cameraMap, setCameraMap] = useState<{ front?: string; back?: string }>({});
 
   useEffect(() => {
-    const checkIfMobile = () => {
-      const userAgent = navigator.userAgent;
-      const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-      const isMobileDevice = mobileRegex.test(userAgent);
-      const isSmallScreen = window.innerWidth <= 768;
-      const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      const isMobile = (isMobileDevice && isSmallScreen) || (isMobileDevice && hasTouchScreen);
-      setIsMobile(isMobile);
-    };
-
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
-
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio('/sounds/beep.mp3');
-      audioRef.current.preload = 'auto';
-    }
-    return () => {
-      stopScanner();
-      if (audioRef.current) {
-        audioRef.current.src = '';
-        audioRef.current = null;
+    Html5Qrcode.getCameras().then(devices => {
+      setAvailableCameras(devices);
+      if (!isIPhone && devices.length > 0) {
+        setSelectedCamera(devices[0].id);
+      } else {
+        setSelectedCamera('back'); // default en iPhone
       }
-    };
+    });
   }, []);
 
   const playSuccessSound = () => {
-    if (audioRef.current) {
-      try {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {});
-      } catch {}
-    }
+    const audio = new Audio('/success.mp3');
+    audio.play();
   };
 
-  const getBackCameraId = async (): Promise<string | null> => {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-      // Busca una cámara que contenga "back", "rear" o "wide" (Samsung usa "wide" para la principal)
-      const backCamera = videoDevices.find(device =>
-        /back|rear|wide/i.test(device.label)
-      );
-
-      return backCamera?.deviceId || null;
-    } catch {
-      return null;
+  const stopScanner = async () => {
+    if (qrScannerRef.current) {
+      await qrScannerRef.current.stop();
+      await qrScannerRef.current.clear();
+      qrScannerRef.current = null;
     }
-  };
-  
-  const getAvailableCameras = async () => {
-    try {
-
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      stream.getTracks().forEach(track => track.stop());
-
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      console.log(devices)
-      
-      const videoDevices = devices
-        .filter(device => device.kind === 'videoinput')
-        .map(device => ({
-          deviceId: device.deviceId,
-          label: device.label || `Cámara ${device.deviceId.slice(0, 5)}`
-        }));
-
-      setAvailableCameras(videoDevices);
-
-      if(isIPhone) {
-        const backCamera = videoDevices.find(c => /back|environment/i.test(c.label));
-        const frontCamera = videoDevices.find(c => /front|user/i.test(c.label));
-
-        setCameraMap({
-          front: frontCamera?.deviceId,
-          back: backCamera?.deviceId
-        });
-
-        if (!selectedCamera) {
-          setSelectedCamera("back"); // Esto se va a mapear luego al deviceId real
-        }
-      } else {
-        if (videoDevices.length > 0 && !selectedCamera) {
-          setSelectedCamera(videoDevices[0].deviceId);
-        }
-      }
-      
-      // Seleccionar la cámara trasera por defecto en dispositivos móviles
-      /*if (isMobile && videoDevices.length > 1) {
-        const backCamera = videoDevices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('rear') ||
-          device.label.toLowerCase().includes('environment')
-        );
-        if (backCamera) {
-          setSelectedCamera(backCamera.deviceId);
-        } else {
-          setSelectedCamera(videoDevices[0].deviceId);
-        }
-      } else if (videoDevices.length > 0) {
-        // En PC, seleccionar la primera cámara por defecto
-        setSelectedCamera(videoDevices[0].deviceId);
-      }*/
-    } catch (error) {
-      toast.error('Error al obtener la lista de cámaras');
-    }
+    setScanning(false);
   };
 
-  useEffect(() => {
-    getAvailableCameras();
-  }, [isMobile]);
-  
   const startScanner = async () => {
-
-    if (!selectedCamera) return;
-
-    const deviceIdToUse = isIPhone
-          ? cameraMap[selectedCamera as 'front' | 'back'] 
-          : selectedCamera;
-
-    const cameraConfig = { deviceId: { exact: deviceIdToUse } };
-
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      stream.getTracks().forEach(track => track.stop());
-
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(device => device.kind === "videoinput");
-
-      if (cameras.length === 0) {
-        toast.error("No se encontró ninguna cámara.");
-        return;
-      }
-
       if (qrScannerRef.current) {
         await stopScanner();
-      }
-
-      if (!selectedCamera && !isMobile) {
-        toast.error('No hay cámara seleccionada');
-        return;
       }
 
       const html5QrCode = new Html5Qrcode(qrScannerId);
@@ -208,6 +456,10 @@ function QrScanner({ onScan }: QrScannerProps) {
         qrbox: isMobile ? { width: 250, height: 250 } : SCANNER_CONFIG.qrbox,
         fps: 10
       };
+
+      const cameraConfig = isIPhone
+        ? { facingMode: selectedCamera === 'front' ? 'user' : 'environment' }
+        : { deviceId: { exact: selectedCamera } };
 
       await html5QrCode.start(
         cameraConfig,
@@ -232,7 +484,7 @@ function QrScanner({ onScan }: QrScannerProps) {
             toast.error('Error al procesar el código QR');
           }
         },
-        () => {}
+        () => { }
       );
 
       setScanning(true);
@@ -243,36 +495,9 @@ function QrScanner({ onScan }: QrScannerProps) {
     }
   };
 
-  const stopScanner = async () => {
-    if (qrScannerRef.current) {
-      try {
-        if (qrScannerRef.current.isScanning) {
-          await qrScannerRef.current.stop();
-        }
-      } catch {}
-      finally {
-        qrScannerRef.current = null;
-        setScanning(false);
-      }
-    }
-  };
-
   return (
-    <div className="space-y-4">
-      <div className={`relative ${scanning ? 'w-full h-[70vh] md:h-[60vh]' : 'aspect-video'} max-w-4xl mx-auto bg-black/5 rounded-lg overflow-hidden`}>
-        <div id={qrScannerId} className="absolute inset-0 w-full h-full"></div>
-
-        {!scanning && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center p-4">
-              <Camera className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-muted-foreground text-sm">Presione el botón para iniciar el escáner</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* <div className="flex flex-col sm:flex-row justify-center gap-4">
+    <>
+      <div className="flex flex-col sm:flex-row justify-center gap-4">
         {isIPhone ? (
           <Select
             value={selectedCamera}
@@ -287,25 +512,27 @@ function QrScanner({ onScan }: QrScannerProps) {
               <SelectItem value="back">Cámara trasera</SelectItem>
             </SelectContent>
           </Select>
-        ) : (availableCameras.length > 1 && (
-          <Select
-            value={selectedCamera}
-            onValueChange={setSelectedCamera}
-            disabled={scanning}
-          >
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Seleccionar cámara" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableCameras.map((camera) => (
-                <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                  {camera.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ))}
-        
+        ) : (
+          availableCameras.length > 0 && (
+            <Select
+              value={selectedCamera}
+              onValueChange={setSelectedCamera}
+              disabled={scanning}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Seleccionar cámara" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCameras.map(camera => (
+                  <SelectItem key={camera.id} value={camera.id}>
+                    {camera.label || `Cámara ${camera.id.slice(0, 5)}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )
+        )}
+
         <Button
           onClick={startScanner}
           className="flex items-center gap-2 w-full sm:w-auto"
@@ -323,63 +550,12 @@ function QrScanner({ onScan }: QrScannerProps) {
         >
           Detener
         </Button>
-      </div> */}
+      </div>
 
-      <div className="flex flex-col sm:flex-row justify-center gap-4">
-  <Select
-    value={selectedCamera}
-    onValueChange={setSelectedCamera}
-    disabled={scanning}
-  >
-    <SelectTrigger className="w-full sm:w-[200px]">
-      <SelectValue placeholder="Seleccionar cámara" />
-    </SelectTrigger>
-    <SelectContent>
-      {isIPhone ? (
-        <>
-          <SelectItem value="front">Cámara frontal</SelectItem>
-          <SelectItem value="back">Cámara trasera</SelectItem>
-        </>
-      ) : (
-        availableCameras.map((camera) => (
-          <SelectItem key={camera.deviceId} value={camera.deviceId}>
-            {camera.label || `Cámara ${camera.deviceId.slice(0, 5)}`}
-          </SelectItem>
-        ))
-      )}
-    </SelectContent>
-  </Select>
-
-  <Button
-    onClick={startScanner}
-    className="flex items-center gap-2 w-full sm:w-auto"
-    disabled={scanning}
-  >
-    <Camera className="h-4 w-4" />
-    {scanning ? 'Escaneando...' : 'Iniciar Escáner'}
-  </Button>
-
-  <Button
-    variant="outline"
-    onClick={stopScanner}
-    disabled={!scanning}
-    className="w-full sm:w-auto"
-  >
-    Detener
-  </Button>
-</div>
-
-
-      {isMobile && scanning && (
-        <div className="text-center text-sm text-muted-foreground mt-2">
-          <p>Apunte la cámara al código QR</p>
-          <p className="text-xs mt-1">Mantenga el código QR dentro del marco para una mejor lectura</p>
-          <p className="text-xs mt-1">Asegúrese de que el código esté bien iluminado y en foco</p>
-          <p className="text-xs mt-1">Mantenga una distancia de 15-20 cm</p>
-        </div>
-      )}
-    </div>
+      <div id={qrScannerId} className="mt-4 rounded-md overflow-hidden border border-gray-300" />
+    </>
   );
 }
+
 
 export default memo(QrScanner);
