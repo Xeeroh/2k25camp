@@ -33,7 +33,9 @@ export async function middleware(request: NextRequest) {
 
   // Si estamos en la ruta raíz y no hay sesión, redirigir a registro
   if (path === '/' && !session) {
-    return NextResponse.redirect(new URL('/registro', request.url));
+    const redirectUrl = new URL('/registro', request.url);
+    redirectUrl.searchParams.set('from', '/');
+    return NextResponse.redirect(redirectUrl);
   }
 
   // Si no hay sesión y la ruta requiere autenticación
@@ -57,24 +59,31 @@ export async function middleware(request: NextRequest) {
         .eq('id', session.user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error al obtener perfil:', error);
+        return res;
+      }
 
       // Verificar acceso a /comite
       if (path.startsWith('/comite')) {
         if (!profile || (profile.role !== 'editor' && profile.role !== 'admin')) {
-          return NextResponse.redirect(new URL('/registro', request.url));
+          const redirectUrl = new URL('/registro', request.url);
+          redirectUrl.searchParams.set('error', 'unauthorized');
+          return NextResponse.redirect(redirectUrl);
         }
       }
 
       // Verificar acceso a rutas de admin (excepto la página principal de admin)
       if (path.startsWith('/admin') && path !== '/admin') {
         if (!profile || profile.role !== 'admin') {
-          return NextResponse.redirect(new URL('/registro', request.url));
+          const redirectUrl = new URL('/registro', request.url);
+          redirectUrl.searchParams.set('error', 'unauthorized');
+          return NextResponse.redirect(redirectUrl);
         }
       }
     } catch (error) {
       console.error('Error al verificar rol:', error);
-      return NextResponse.redirect(new URL('/registro', request.url));
+      return res; // En caso de error, permitir el acceso en lugar de redirigir
     }
   }
   
