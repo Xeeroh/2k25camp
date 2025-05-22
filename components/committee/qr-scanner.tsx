@@ -117,7 +117,7 @@ function QrScanner({ onScan }: QrScannerProps) {
       if (isMobile && videoDevices.length > 1) {
         const backCamera = videoDevices.find(device => 
           device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('trasera')
+          device.label.toLowerCase().includes('rear')
         );
         if (backCamera) {
           setSelectedCamera(backCamera.deviceId);
