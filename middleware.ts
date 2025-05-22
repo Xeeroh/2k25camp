@@ -41,9 +41,7 @@ export async function middleware(request: NextRequest) {
   // Si estamos en la ruta raíz y no hay sesión, redirigir a registro
   if (path === '/' && !session) {
     console.log('🔄 Redirigiendo a registro desde raíz');
-    const redirectUrl = new URL('/registro', request.url);
-    redirectUrl.searchParams.set('from', '/');
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(new URL('/registro', request.url));
   }
 
   // Si no hay sesión y la ruta requiere autenticación
@@ -56,7 +54,10 @@ export async function middleware(request: NextRequest) {
     }
     // Para otras rutas protegidas, redirigir a registro
     const redirectUrl = new URL('/registro', request.url);
-    redirectUrl.searchParams.set('redirect', path);
+    // Solo agregar el parámetro redirect si no estamos ya en la página de registro
+    if (path !== '/registro') {
+      redirectUrl.searchParams.set('redirect', path);
+    }
     console.log('🔄 Redirigiendo a registro desde ruta protegida:', path);
     return NextResponse.redirect(redirectUrl);
   }
