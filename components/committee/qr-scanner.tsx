@@ -393,20 +393,7 @@ import { isMobile } from 'react-device-detect';
 
 const SCANNER_CONFIG = {
   fps: 10,
-  qrbox: { width: 300, height: 300 },
-  experimentalFeatures: {
-    useBarCodeDetectorIfSupported: true,
-  },
-  formatsToSupport: [0],
-  disableFlip: false,
-  aspectRatio: 1.0,
-  showZoomSliderIfSupported: true,
-  videoConstraints: {
-    width: { min: 640, ideal: 1280, max: 1920 },
-    height: { min: 480, ideal: 720, max: 1080 },
-    focusMode: "continuous",
-    exposureMode: "continuous"
-  }
+  qrbox: { width: 250, height: 250 }
 };
 
  interface QrScannerProps {
@@ -442,7 +429,7 @@ function QrScanner({ onScan }: QrScannerProps) {
   }, []);
 
   const playSuccessSound = () => {
-    const audio = new Audio('/sounds/beep.mp3');
+    const audio = new Audio('/success.mp3');
     audio.play();
   };
 
