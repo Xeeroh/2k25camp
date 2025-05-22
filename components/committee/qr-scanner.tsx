@@ -108,7 +108,12 @@ function QrScanner({ onScan }: QrScannerProps) {
   
   const getAvailableCameras = async () => {
     try {
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+
       const devices = await navigator.mediaDevices.enumerateDevices();
+      console.log(devices)
       const videoDevices = devices
         .filter(device => device.kind === 'videoinput')
         .map(device => ({
@@ -148,6 +153,7 @@ function QrScanner({ onScan }: QrScannerProps) {
       stream.getTracks().forEach(track => track.stop());
 
       const devices = await navigator.mediaDevices.enumerateDevices();
+      console.log(devices);
       const cameras = devices.filter(device => device.kind === "videoinput");
 
       if (cameras.length === 0) {
