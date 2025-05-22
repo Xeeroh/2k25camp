@@ -463,6 +463,15 @@ function QrScanner({ onScan }: QrScannerProps) {
     }
   };
 
+  const stopScanner = async () => {
+    if (qrScannerRef.current) {
+      await qrScannerRef.current.stop();
+      await qrScannerRef.current.clear();
+      qrScannerRef.current = null;
+    }
+    setScanning(false);
+  };
+
   const startScanner = async () => {
     try {
       if (qrScannerRef.current) {
@@ -516,44 +525,10 @@ function QrScanner({ onScan }: QrScannerProps) {
     }
   };
 
-  // const stopScanner = async () => {
-  //   if (qrScannerRef.current) {
-  //     try {
-  //       if (qrScannerRef.current.isScanning) {
-  //         await qrScannerRef.current.stop();
-  //       }
-  //     } catch {}
-  //     finally {
-  //       qrScannerRef.current = null;
-  //       setScanning(false);
-  //     }
-  //   }
-  // };
-
-  const stopScanner = async () => {
-    if (qrScannerRef.current) {
-      await qrScannerRef.current.stop();
-      await qrScannerRef.current.clear();
-      qrScannerRef.current = null;
-    }
-    setScanning(false);
-  };
-
   return (
-    <div className="space-y-4">
-      <div className={`relative ${scanning ? 'w-full h-[70vh] md:h-[60vh]' : 'aspect-video'} max-w-4xl mx-auto bg-black/5 rounded-lg overflow-hidden`}>
-        <div id={qrScannerId} className="absolute inset-0 w-full h-full"></div>
-
-        {!scanning && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center p-4">
-              <Camera className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-muted-foreground text-sm">Presione el botón para iniciar el escáner</p>
-            </div>
-          </div>
-        )}
-      </div>
-
+    <>
+      <div id={qrScannerId} className="mt-4 rounded-md overflow-hidden border border-gray-300" />
+      <br />
       <div className="flex flex-col sm:flex-row justify-center gap-4">
         {isIPhone ? (
           <Select
@@ -608,9 +583,7 @@ function QrScanner({ onScan }: QrScannerProps) {
           Detener
         </Button>
       </div>
-
-      <div id={qrScannerId} className="mt-4 rounded-md overflow-hidden border border-gray-300" />
-    </div>
+    </>
   );
 }
 
