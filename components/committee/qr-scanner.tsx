@@ -139,11 +139,25 @@ function QrScanner({ onScan }: QrScannerProps) {
   
   const startScanner = async () => {
     try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(device => device.kind === "videoinput");
+
+      if (cameras.length === 0) {
+        toast.error("No se encontró ninguna cámara.");
+        return;
+      }
+
+      const defaultCameraId = cameras[0].deviceId;
+      const cameraToUse = selectedCamera || defaultCameraId;
+
       if (qrScannerRef.current) {
         await stopScanner();
       }
 
-      if (!selectedCamera) {
+      if (!cameraToUse) {
         toast.error('No hay cámara seleccionada');
         return;
       }
@@ -158,7 +172,7 @@ function QrScanner({ onScan }: QrScannerProps) {
       };
 
       await html5QrCode.start(
-        { deviceId: selectedCamera },
+        { deviceId: cameraToUse },
         config,
         async (decodedText) => {
           playSuccessSound();
