@@ -117,7 +117,8 @@ function QrScanner({ onScan }: QrScannerProps) {
       if (isMobile && videoDevices.length > 1) {
         const backCamera = videoDevices.find(device => 
           device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('rear')
+          device.label.toLowerCase().includes('rear') ||
+          device.label.toLowerCase().includes('environment')
         );
         if (backCamera) {
           setSelectedCamera(backCamera.deviceId);
@@ -147,28 +148,11 @@ function QrScanner({ onScan }: QrScannerProps) {
         return;
       }
 
-      let cameraToUse = selectedCamera;
-
-      if (!selectedCamera) {
-        // Try to find the 'environment' (rear) camera
-        const rearCamera = cameras.find(camera =>
-          camera.label.toLowerCase().includes('back') ||
-          camera.label.toLowerCase().includes('rear') ||
-          camera.label.toLowerCase().includes('environment')
-        );
-
-        if (rearCamera) {
-          cameraToUse = rearCamera.deviceId;
-        } else {
-          cameraToUse = cameras[0].deviceId;
-        }
-      }
-
       if (qrScannerRef.current) {
         await stopScanner();
       }
 
-      if (!cameraToUse) {
+      if (!selectedCamera) {
         toast.error('No hay cámara seleccionada');
         return;
       }
@@ -183,7 +167,9 @@ function QrScanner({ onScan }: QrScannerProps) {
       };
 
       await html5QrCode.start(
-        { facingMode: { exact: "environment" } },
+        isMobile
+          ? { facingMode: { exact: "environment" } }
+          : { deviceId: selectedCamera },
         config,
         async (decodedText) => {
           playSuccessSound();
