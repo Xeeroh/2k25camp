@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AuthUser, UserRole } from '@/lib/types';
 
@@ -18,8 +18,14 @@ const clearCache = () => {
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   // Función para reconectar
   const reconnect = async () => {
@@ -27,12 +33,16 @@ export function useAuth() {
       clearCache();
       const { data: { session } } = await supabase.auth.getSession();
       
+      if (!mounted.current) return;
+      
       if (session?.user) {
         const userId = session.user.id;
         const userEmail = session.user.email || '';
         
         // Obtener rol
         const role = await fetchUserProfile(userId, userEmail);
+        
+        if (!mounted.current) return;
         
         // Establecer usuario
         setUser({
@@ -45,10 +55,14 @@ export function useAuth() {
       }
     } catch (err) {
       console.error('Error al reconectar:', err);
-      setUser(null);
-      setError('Error al reconectar');
+      if (mounted.current) {
+        setUser(null);
+        setError('Error al reconectar');
+      }
     } finally {
-      setLoading(false);
+      if (mounted.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -108,7 +122,7 @@ export function useAuth() {
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (!mounted) return;
+        if (!mounted.current) return;
         
         if (sessionError) {
           console.error('Error al obtener sesión:', sessionError);
@@ -125,7 +139,7 @@ export function useAuth() {
           // Obtener rol
           const role = await fetchUserProfile(userId, userEmail);
           
-          if (!mounted) return;
+          if (!mounted.current) return;
           
           // Establecer usuario
           setUser({
@@ -138,12 +152,12 @@ export function useAuth() {
         }
       } catch (err) {
         console.error('Error al verificar sesión:', err);
-        if (mounted) {
+        if (mounted.current) {
           setUser(null);
           setError('Error al verificar autenticación');
         }
       } finally {
-        if (mounted) {
+        if (mounted.current) {
           setLoading(false);
         }
       }
@@ -154,7 +168,7 @@ export function useAuth() {
 
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
+      if (!mounted.current) return;
       
       if (event === 'SIGNED_IN' && session?.user) {
         const userId = session.user.id;
@@ -163,7 +177,7 @@ export function useAuth() {
         // Obtener rol
         const role = await fetchUserProfile(userId, userEmail);
         
-        if (!mounted) return;
+        if (!mounted.current) return;
         
         // Establecer usuario
         setUser({
@@ -181,7 +195,6 @@ export function useAuth() {
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
