@@ -25,20 +25,33 @@ export default function DebugPanel({ qrData, attendeeData }: DebugPanelProps) {
   // Añadir un log cuando cambia qrData o attendeeData
   useEffect(() => {
     if (qrData) {
-      addLog('Código QR escaneado: ' + (qrData.length > 30 ? qrData.substring(0, 30) + '...' : qrData), 'info');
+      const logMessage = 'Código QR escaneado: ' + (qrData.length > 30 ? qrData.substring(0, 30) + '...' : qrData);
+      setLogs(prev => [...prev, { timestamp: new Date(), message: logMessage, type: 'info' }]);
       
       // Intentar analizar si es un JSON
       try {
         const parsed = JSON.parse(qrData);
-        addLog('QR contiene un objeto JSON válido con ID: ' + (parsed.id || 'No encontrado'), 'success');
+        setLogs(prev => [...prev, { 
+          timestamp: new Date(), 
+          message: 'QR contiene un objeto JSON válido con ID: ' + (parsed.id || 'No encontrado'), 
+          type: 'success' 
+        }]);
       } catch (e) {
         // Buscar un UUID en el texto
         const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
         const matches = qrData.match(uuidRegex);
         if (matches && matches[0]) {
-          addLog('Se encontró un UUID en el QR: ' + matches[0], 'success');
+          setLogs(prev => [...prev, { 
+            timestamp: new Date(), 
+            message: 'Se encontró un UUID en el QR: ' + matches[0], 
+            type: 'success' 
+          }]);
         } else {
-          addLog('QR no es un JSON válido y no contiene un UUID reconocible', 'warning');
+          setLogs(prev => [...prev, { 
+            timestamp: new Date(), 
+            message: 'QR no es un JSON válido y no contiene un UUID reconocible', 
+            type: 'warning' 
+          }]);
         }
       }
     }
@@ -46,26 +59,43 @@ export default function DebugPanel({ qrData, attendeeData }: DebugPanelProps) {
 
   useEffect(() => {
     if (attendeeData) {
-      addLog('Datos de asistente recibidos', 'success');
+      setLogs(prev => [...prev, { timestamp: new Date(), message: 'Datos de asistente recibidos', type: 'success' }]);
+      
       if (attendeeData.firstname && attendeeData.lastname) {
-        addLog(`Nombre: ${attendeeData.firstname} ${attendeeData.lastname}`, 'info');
+        setLogs(prev => [...prev, { 
+          timestamp: new Date(), 
+          message: `Nombre: ${attendeeData.firstname} ${attendeeData.lastname}`, 
+          type: 'info' 
+        }]);
       } else {
-        addLog('Advertencia: Datos de nombre incompletos', 'warning');
+        setLogs(prev => [...prev, { 
+          timestamp: new Date(), 
+          message: 'Advertencia: Datos de nombre incompletos', 
+          type: 'warning' 
+        }]);
       }
+      
       if (attendeeData.email) {
-        addLog(`Email: ${attendeeData.email}`, 'info');
+        setLogs(prev => [...prev, { 
+          timestamp: new Date(), 
+          message: `Email: ${attendeeData.email}`, 
+          type: 'info' 
+        }]);
       } else {
-        addLog('Advertencia: Email no disponible', 'warning');
+        setLogs(prev => [...prev, { 
+          timestamp: new Date(), 
+          message: 'Advertencia: Email no disponible', 
+          type: 'warning' 
+        }]);
       }
     } else if (qrData) {
-      addLog('No se encontraron datos de asistente para el QR escaneado', 'error');
+      setLogs(prev => [...prev, { 
+        timestamp: new Date(), 
+        message: 'No se encontraron datos de asistente para el QR escaneado', 
+        type: 'error' 
+      }]);
     }
-  }, [attendeeData]);
-
-  // Función para añadir un nuevo log
-  const addLog = (message: string, type: 'info' | 'error' | 'success' | 'warning') => {
-    setLogs(prev => [...prev, { timestamp: new Date(), message, type }]);
-  };
+  }, [attendeeData, qrData]);
 
   // Función para limpiar logs
   const clearLogs = () => {

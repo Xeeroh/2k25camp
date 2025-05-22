@@ -112,6 +112,7 @@ export default function AttendeesTable() {
     if (!attendeeToDelete) return;
     
     try {
+      // Eliminar el registro del asistente
       const { error } = await supabase
         .from('attendees')
         .delete()
@@ -126,9 +127,8 @@ export default function AttendeesTable() {
       // Refetch attendees to update the list
       fetchAttendees();
     } catch (error) {
-      console.error('Error al eliminar asistente:', error);
       toast.error("Error", {
-        description: "No se pudo eliminar el asistente",
+        description: error instanceof Error ? error.message : "No se pudo eliminar el asistente",
       });
     } finally {
       setIsDeleteDialogOpen(false);

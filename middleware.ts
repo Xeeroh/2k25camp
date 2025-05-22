@@ -1,91 +1,87 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+
+// Función para verificar si es una solicitud interna
+const isInternalRequest = (request: NextRequest) => {
+  const internalAccess = request.nextUrl.searchParams.get('internal_access');
+  const internalHeader = request.headers.get('x-internal-access');
+  return internalAccess === 'true' || internalHeader === 'true';
+};
 
 // Middleware para proteger rutas
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req: request, res });
+  
   // Verificar la ruta actual
   const path = request.nextUrl.pathname;
   
-  // Verificar si estamos en producción
-  const isProduction = process.env.NODE_ENV === 'production';
-  
-  // En producción, redirigir todo el tráfico público a /registro 
-  // excepto la propia página de registro y recursos estáticos
-  if (isProduction) {
-    // Verificamos si el usuario proviene de origen interno
-    const isInternalUser = isInternalRequest(request);
-    
-    // Si NO es un usuario interno y la ruta NO es /registro (y no son recursos estáticos),
-    // redirigir a /registro
-    if (!isInternalUser && 
-        path !== '/registro' && 
-        !path.startsWith('/_next') && 
-        !path.startsWith('/favicon') && 
-        !path.startsWith('/api')) {
-      
-      // Creamos URL para redirección a registro
-      const redirectUrl = new URL('/registro', request.url);
-      
-      // Devolvemos la redirección
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
-  
-  // Si la ruta es /comite o /admin, verificamos autenticación
-  if (path.startsWith('/comite') || path.startsWith('/admin')) {
-    // Verificamos si el usuario proviene de origen interno
-    const isInternalUser = isInternalRequest(request);
-    
-    // Si no es un usuario interno, redirigir a la página de registro
-    if (!isInternalUser) {
-      // Creamos URL para redirección a registro
-      const redirectUrl = new URL('/registro', request.url);
-      
-      // Devolvemos la redirección
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
-  
-  // Para todas las demás rutas, permitir acceso
-  return NextResponse.next();
-}
+  // Rutas públicas que no requieren autenticación
+  const publicPaths = ['/registro', '/_next', '/favicon', '/api', '/'];
+  const isPublicPath = publicPaths.some(publicPath => path.startsWith(publicPath));
 
-// Función para verificar si la solicitud proviene de un origen interno
-function isInternalRequest(request: NextRequest): boolean {
-  // En producción, aquí puedes implementar la lógica para verificar direcciones IP internas,
-  // encabezados de acceso, o tokens específicos
-  
-  // Verificamos el encabezado X-Internal-Access si existe
-  const internalAccessHeader = request.headers.get('x-internal-access');
-  if (internalAccessHeader === 'true') {
-    return true;
+  // Si es una solicitud interna, permitir el acceso
+  if (isInternalRequest(request)) {
+    return res;
+  }
+
+  // Verificar la sesión
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // Si estamos en la ruta raíz y no hay sesión, redirigir a registro
+  if (path === '/' && !session) {
+    return NextResponse.redirect(new URL('/registro', request.url));
+  }
+
+  // Si no hay sesión y la ruta requiere autenticación
+  if (!session && !isPublicPath) {
+    // Si estamos en la página de admin, permitir el acceso para mostrar el formulario de login
+    if (path === '/admin') {
+      return res;
+    }
+    // Para otras rutas protegidas, redirigir a registro
+    const redirectUrl = new URL('/registro', request.url);
+    redirectUrl.searchParams.set('redirect', path);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Si hay sesión, verificar roles
+  if (session) {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) throw error;
+
+      // Verificar acceso a /comite
+      if (path.startsWith('/comite')) {
+        if (!profile || (profile.role !== 'editor' && profile.role !== 'admin')) {
+          return NextResponse.redirect(new URL('/registro', request.url));
+        }
+      }
+
+      // Verificar acceso a rutas de admin (excepto la página principal de admin)
+      if (path.startsWith('/admin') && path !== '/admin') {
+        if (!profile || profile.role !== 'admin') {
+          return NextResponse.redirect(new URL('/registro', request.url));
+        }
+      }
+    } catch (error) {
+      console.error('Error al verificar rol:', error);
+      return NextResponse.redirect(new URL('/registro', request.url));
+    }
   }
   
-  // Verificamos si la solicitud proviene del mismo origen (desarrollo local)
-  const referer = request.headers.get('referer');
-  if (referer && (referer.includes('localhost') || referer.includes('127.0.0.1'))) {
-    return true;
-  }
-  
-  // Por defecto, en desarrollo permitiremos el acceso a estas rutas si se incluye un parámetro especial
-  // Esto es útil para pruebas
-  const url = new URL(request.url);
-  const internalAccess = url.searchParams.get('internal_access');
-  if (internalAccess === 'true') {
-    return true;
-  }
-  
-  // En un entorno de producción, podrías verificar rangos de IP específicos
-  // const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
-  // if (isInternalIpAddress(clientIp)) {
-  //   return true;
-  // }
-  
-  // Por defecto, consideramos que no es una solicitud interna
-  return false;
+  return res;
 }
 
 // Configuración de rutas para aplicar el middleware
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
 }; 

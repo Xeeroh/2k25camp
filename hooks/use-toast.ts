@@ -5,14 +5,17 @@ import * as React from 'react';
 
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
 
-const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+// Configuración de toasts
+const TOAST_LIMIT = 3; // Permitir hasta 3 toasts simultáneos
+const TOAST_REMOVE_DELAY = 500; // 1 segundo para remover después de cerrar
+const DEFAULT_DURATION = 2000; // 5 segundos por defecto
 
 type ToasterToast = ToastProps & {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: ToastActionElement;
+  duration?: number;
 };
 
 const actionTypes = {
@@ -20,6 +23,7 @@ const actionTypes = {
   UPDATE_TOAST: 'UPDATE_TOAST',
   DISMISS_TOAST: 'DISMISS_TOAST',
   REMOVE_TOAST: 'REMOVE_TOAST',
+  CLEAR_ALL: 'CLEAR_ALL',
 } as const;
 
 let count = 0;
@@ -47,6 +51,9 @@ type Action =
   | {
       type: ActionType['REMOVE_TOAST'];
       toastId?: ToasterToast['id'];
+    }
+  | {
+      type: ActionType['CLEAR_ALL'];
     };
 
 interface State {
@@ -123,6 +130,12 @@ export const reducer = (state: State, action: Action): State => {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
       };
+
+    case 'CLEAR_ALL':
+      return {
+        ...state,
+        toasts: [],
+      };
   }
 };
 
@@ -139,7 +152,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, 'id'>;
 
-function toast({ ...props }: Toast) {
+function toast({ duration = DEFAULT_DURATION, ...props }: Toast) {
   const id = genId();
 
   const update = (props: ToasterToast) =>
@@ -149,11 +162,19 @@ function toast({ ...props }: Toast) {
     });
   const dismiss = () => dispatch({ type: 'DISMISS_TOAST', toastId: id });
 
+  // Auto-dismiss after duration
+  if (duration !== Infinity) {
+    setTimeout(() => {
+      dismiss();
+    }, duration);
+  }
+
   dispatch({
     type: 'ADD_TOAST',
     toast: {
       ...props,
       id,
+      duration,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss();
@@ -185,6 +206,7 @@ function useToast() {
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: 'DISMISS_TOAST', toastId }),
+    clearAll: () => dispatch({ type: 'CLEAR_ALL' }),
   };
 }
 

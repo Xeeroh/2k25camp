@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Shield, Lock, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 // Form schema with validation
 const formSchema = z.object({
@@ -28,9 +30,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
+  const router = useRouter();
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -44,25 +46,28 @@ export default function LoginForm() {
   const onSubmit = async (data: FormValues) => {
     try {
       setIsLoading(true);
-      setError("");
       
-      // Limpiar caché antes de iniciar sesión
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('mdpnoroeste.auth.token');
-        sessionStorage.clear();
+      const result = await signIn(data.email, data.password);
+      
+      if (result?.user) {
+        toast.success('Inicio de sesión exitoso');
+        // Esperar un momento antes de redirigir para asegurar que el estado se actualice
+        setTimeout(() => {
+          router.replace('/admin');
+        }, 100);
+      }
+    } catch (err: any) {
+      console.error('Error al iniciar sesión:', err);
+      
+      let errorMessage = 'Error al iniciar sesión';
+      
+      if (err.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Credenciales inválidas';
+      } else if (err.message?.includes('Email not confirmed')) {
+        errorMessage = 'Email no confirmado';
       }
       
-      console.log('Intentando iniciar sesión con:', data.email);
-      await signIn(data.email, data.password);
-    } catch (err) {
-      console.error('Error detallado al iniciar sesión:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else if (typeof err === 'string') {
-        setError(err);
-      } else {
-        setError('Error desconocido al iniciar sesión');
-      }
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -73,12 +78,6 @@ export default function LoginForm() {
       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
         <Shield className="h-6 w-6 text-primary" />
       </div>
-      
-      {error && (
-        <div className="bg-destructive/10 text-destructive p-3 rounded-md mb-6 text-sm">
-          {error}
-        </div>
-      )}
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -93,6 +92,7 @@ export default function LoginForm() {
                     type="email" 
                     placeholder="ejemplo@correo.com" 
                     {...field} 
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <FormMessage />
@@ -112,6 +112,7 @@ export default function LoginForm() {
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••" 
                       {...field} 
+                      disabled={isLoading}
                     />
                     <Button
                       type="button"
@@ -119,6 +120,7 @@ export default function LoginForm() {
                       size="sm"
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
+                      disabled={isLoading}
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4 text-muted-foreground" />

@@ -8,6 +8,7 @@ import LoginForm from '@/components/admin/login-form';
 import Dashboard from '@/components/admin/dashboard';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function AdminPage() {
   const { user, loading, error, signOut, hasRole } = useAuth();
@@ -18,11 +19,13 @@ export default function AdminPage() {
     
     if (!loading && user) {
       console.log('Usuario autenticado, verificando rol...');
-      if (!hasRole('viewer')) {
+      if (!hasRole('admin')) {
         console.log('Usuario no autorizado, redirigiendo...');
+        toast.error('No tienes permisos de administrador');
         router.push('/');
       } else {
         console.log('Usuario autorizado, mostrando dashboard...');
+        toast.success('Bienvenido al panel de administración');
       }
     }
   }, [user, loading, hasRole, router]);
@@ -32,17 +35,17 @@ export default function AdminPage() {
       console.log('Forzando cierre de sesión...');
       await signOut();
       console.log('Sesión cerrada correctamente');
-      window.location.reload(); // Recargar después de cerrar sesión
+      window.location.reload();
     } catch (err) {
       console.error('Error al forzar cierre de sesión:', err);
+      toast.error('Error al cerrar sesión');
     }
   };
   
   if (loading) {
-    console.log('Mostrando estado de carga...');
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
+        <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
@@ -64,10 +67,9 @@ export default function AdminPage() {
   }
   
   if (error) {
-    console.log('Mostrando error:', error);
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
+        <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="bg-destructive/10 text-destructive p-4 rounded-lg max-w-md">
@@ -94,8 +96,6 @@ export default function AdminPage() {
       </div>
     );
   }
-  
-  console.log('Renderizando contenido principal:', { user });
   
   return (
     <div className="min-h-screen flex flex-col">

@@ -24,7 +24,7 @@ export const supabase = createClient(
       storageKey: 'mdpnoroeste.auth.token',
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       flowType: 'pkce',
-      debug: process.env.NODE_ENV === 'development'
+      debug: false
     },
     global: {
       headers: {
@@ -46,11 +46,21 @@ export const supabase = createClient(
 
 // Configurar el listener de cambios de autenticación
 if (typeof window !== 'undefined') {
+  let isHandlingAuth = false;
+
   supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_OUT') {
-      // Limpiar caché al cerrar sesión
-      localStorage.removeItem('mdpnoroeste.auth.token');
-      sessionStorage.clear();
+    if (isHandlingAuth) return;
+    
+    try {
+      isHandlingAuth = true;
+      console.log('Evento de autenticación:', event);
+      
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('mdpnoroeste.auth.token');
+        sessionStorage.clear();
+      }
+    } finally {
+      isHandlingAuth = false;
     }
   });
 }
