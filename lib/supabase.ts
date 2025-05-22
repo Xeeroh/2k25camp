@@ -24,7 +24,7 @@ export const supabase = createClient(
       storageKey: 'mdpnoroeste.auth.token',
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       flowType: 'pkce',
-      debug: process.env.NODE_ENV === 'development',
+      debug: process.env.NODE_ENV === 'development'
     },
     global: {
       headers: {
@@ -43,6 +43,17 @@ export const supabase = createClient(
     },
   }
 );
+
+// Configurar el listener de cambios de autenticación
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      // Limpiar caché al cerrar sesión
+      localStorage.removeItem('mdpnoroeste.auth.token');
+      sessionStorage.clear();
+    }
+  });
+}
 
 // Esta función nos permite usar la misma instancia en toda la aplicación
 export const getSupabase = () => supabase;

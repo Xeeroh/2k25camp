@@ -2,14 +2,27 @@
 
 import { useEffect, useRef, useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera } from 'lucide-react';
+import { Camera, CameraOff } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface QrScannerProps {
   onScan: (data: string) => void;
 }
 
+interface CameraDevice {
+  deviceId: string;
+  label: string;
+}
+
+// Configuración mejorada para el escáner
 const SCANNER_CONFIG = {
   fps: 10,
   qrbox: { width: 300, height: 300 },
@@ -23,15 +36,17 @@ const SCANNER_CONFIG = {
   videoConstraints: {
     width: { min: 640, ideal: 1280, max: 1920 },
     height: { min: 480, ideal: 720, max: 1080 },
-    facingMode: { ideal: "environment" },
-    focusMode: 'continuous',
-    advanced: [{ focusMode: 'continuous' }],
-  },
+    focusMode: "continuous",
+    exposureMode: "continuous"
+  }
 };
 
 function QrScanner({ onScan }: QrScannerProps) {
   const [scanning, setScanning] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [scanAttempts, setScanAttempts] = useState(0);
+  const [availableCameras, setAvailableCameras] = useState<CameraDevice[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState<string>('');
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const qrScannerId = "qr-reader-id";
@@ -90,11 +105,60 @@ function QrScanner({ onScan }: QrScannerProps) {
       return null;
     }
   };
+  
+  const getAvailableCameras = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices
+        .filter(device => device.kind === 'videoinput')
+        .map(device => ({
+          deviceId: device.deviceId,
+          label: device.label || `Cámara ${device.deviceId.slice(0, 5)}`
+        }));
+      setAvailableCameras(videoDevices);
+      
+      // Seleccionar la cámara trasera por defecto en dispositivos móviles
+      if (isMobile && videoDevices.length > 1) {
+        const backCamera = videoDevices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('rear') ||
+          device.label.toLowerCase().includes('environment')
+        );
+        if (backCamera) {
+          setSelectedCamera(backCamera.deviceId);
+        } else {
+          setSelectedCamera(videoDevices[0].deviceId);
+        }
+      } else if (videoDevices.length > 0) {
+        // En PC, seleccionar la primera cámara por defecto
+        setSelectedCamera(videoDevices[0].deviceId);
+      }
+    } catch (error) {
+      toast.error('Error al obtener la lista de cámaras');
+    }
+  };
 
+  useEffect(() => {
+    getAvailableCameras();
+  }, [isMobile]);
+  
   const startScanner = async () => {
     try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(device => device.kind === "videoinput");
+
+      if (cameras.length === 0) {
+        toast.error("No se encontró ninguna cámara.");
+        return;
+      }
+
       if (qrScannerRef.current) {
         await stopScanner();
+      }
+
+      if (!selectedCamera) {
+        toast.error('No hay cámara seleccionada');
+        return;
       }
 
       const html5QrCode = new Html5Qrcode(qrScannerId);
@@ -102,28 +166,18 @@ function QrScanner({ onScan }: QrScannerProps) {
 
       const config = {
         ...SCANNER_CONFIG,
-        qrbox: isMobile ? { width: 350, height: 350 } : SCANNER_CONFIG.qrbox,
-        fps: 10,
+        qrbox: isMobile ? { width: 250, height: 250 } : SCANNER_CONFIG.qrbox,
+        fps: 10
       };
 
-      let cameraConfig;
-
-      if (isMobile) {
-        const deviceId = await getBackCameraId();
-        if (!deviceId) {
-          toast.error("No se encontró la cámara trasera.");
-          return;
-        }
-        cameraConfig = { deviceId: { exact: deviceId } };
-      } else {
-        cameraConfig = { facingMode: "environment" }; // PC/laptop
-      }
-
       await html5QrCode.start(
-        cameraConfig,
+        isMobile
+          ? { facingMode: { exact: "environment" } }
+          : { deviceId: selectedCamera },
         config,
         async (decodedText) => {
           playSuccessSound();
+          setScanAttempts(prev => prev + 1);
 
           try {
             await stopScanner();
@@ -182,6 +236,25 @@ function QrScanner({ onScan }: QrScannerProps) {
       </div>
 
       <div className="flex flex-col sm:flex-row justify-center gap-4">
+        {availableCameras.length > 1 && (
+          <Select
+            value={selectedCamera}
+            onValueChange={setSelectedCamera}
+            disabled={scanning}
+          >
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Seleccionar cámara" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableCameras.map((camera) => (
+                <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                  {camera.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        
         <Button
           onClick={startScanner}
           className="flex items-center gap-2 w-full sm:w-auto"

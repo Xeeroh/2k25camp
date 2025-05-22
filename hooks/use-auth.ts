@@ -18,6 +18,7 @@ const clearCache = () => {
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Función para reconectar
@@ -105,7 +106,17 @@ export function useAuth() {
     // Comprobar sesión actual
     const checkCurrentSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (sessionError) {
+          console.error('Error al obtener sesión:', sessionError);
+          setUser(null);
+          setError('Error al verificar autenticación');
+          setLoading(false);
+          return;
+        }
         
         if (session?.user) {
           const userId = session.user.id;
@@ -113,6 +124,8 @@ export function useAuth() {
           
           // Obtener rol
           const role = await fetchUserProfile(userId, userEmail);
+          
+          if (!mounted) return;
           
           // Establecer usuario
           setUser({
@@ -125,10 +138,14 @@ export function useAuth() {
         }
       } catch (err) {
         console.error('Error al verificar sesión:', err);
-        setUser(null);
-        setError('Error al verificar autenticación');
+        if (mounted) {
+          setUser(null);
+          setError('Error al verificar autenticación');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -137,12 +154,16 @@ export function useAuth() {
 
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       if (event === 'SIGNED_IN' && session?.user) {
         const userId = session.user.id;
         const userEmail = session.user.email || '';
         
         // Obtener rol
         const role = await fetchUserProfile(userId, userEmail);
+        
+        if (!mounted) return;
         
         // Establecer usuario
         setUser({
@@ -160,6 +181,7 @@ export function useAuth() {
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
