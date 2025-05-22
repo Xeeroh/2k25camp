@@ -1,3 +1,5 @@
+"use client";
+
 // import { useEffect, useRef, useState, memo } from 'react';
 // import { Button } from '@/components/ui/button';
 // import { Camera, CameraOff } from 'lucide-react';
@@ -381,8 +383,6 @@
 //   );
 // }
 
-"use client";
-
 import { useEffect, useRef, useState, memo } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Select, SelectItem, SelectTrigger, SelectValue, SelectContent } from '@/components/ui/select';
@@ -419,6 +419,7 @@ const SCANNER_CONFIG = {
  }
 
 const qrScannerId = 'reader';
+
 const isIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 function QrScanner({ onScan }: QrScannerProps) {
@@ -426,8 +427,8 @@ function QrScanner({ onScan }: QrScannerProps) {
   const [selectedCamera, setSelectedCamera] = useState<string>('');
   const [scanning, setScanning] = useState(false);
   const [scanAttempts, setScanAttempts] = useState(0);
+
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     Html5Qrcode.getCameras().then(devices => {
@@ -440,27 +441,9 @@ function QrScanner({ onScan }: QrScannerProps) {
     });
   }, []);
 
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio('/sounds/beep.mp3');
-      audioRef.current.preload = 'auto';
-    }
-    return () => {
-      stopScanner();
-      if (audioRef.current) {
-        audioRef.current.src = '';
-        audioRef.current = null;
-      }
-    };
-  }, []);
-
   const playSuccessSound = () => {
-    if (audioRef.current) {
-      try {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {});
-      } catch {}
-    }
+    const audio = new Audio('/sounds/beep.mp3');
+    audio.play();
   };
 
   const stopScanner = async () => {
@@ -527,8 +510,6 @@ function QrScanner({ onScan }: QrScannerProps) {
 
   return (
     <>
-      <div id={qrScannerId} className="mt-4 rounded-md overflow-hidden border border-gray-300" />
-      <br />
       <div className="flex flex-col sm:flex-row justify-center gap-4">
         {isIPhone ? (
           <Select
@@ -583,6 +564,8 @@ function QrScanner({ onScan }: QrScannerProps) {
           Detener
         </Button>
       </div>
+
+      <div id={qrScannerId} className="mt-4 rounded-md overflow-hidden border border-gray-300" />
     </>
   );
 }
