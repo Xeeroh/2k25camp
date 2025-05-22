@@ -50,6 +50,7 @@ function QrScanner({ onScan }: QrScannerProps) {
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const qrScannerId = "qr-reader-id";
+  const isIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -114,16 +115,25 @@ function QrScanner({ onScan }: QrScannerProps) {
 
       const devices = await navigator.mediaDevices.enumerateDevices();
       console.log(devices)
+      
       const videoDevices = devices
         .filter(device => device.kind === 'videoinput')
         .map(device => ({
           deviceId: device.deviceId,
           label: device.label || `Cámara ${device.deviceId.slice(0, 5)}`
         }));
+
       setAvailableCameras(videoDevices);
+
+      if(isIPhone) {
+        setSelectedCamera("back");
+      } else if(videoDevices.length > 0) {
+        // Seleccionar la primera cámara por defecto
+        setSelectedCamera(videoDevices[0].deviceId);
+      }
       
       // Seleccionar la cámara trasera por defecto en dispositivos móviles
-      if (isMobile && videoDevices.length > 1) {
+      /*if (isMobile && videoDevices.length > 1) {
         const backCamera = videoDevices.find(device => 
           device.label.toLowerCase().includes('back') || 
           device.label.toLowerCase().includes('rear') ||
@@ -137,7 +147,7 @@ function QrScanner({ onScan }: QrScannerProps) {
       } else if (videoDevices.length > 0) {
         // En PC, seleccionar la primera cámara por defecto
         setSelectedCamera(videoDevices[0].deviceId);
-      }
+      }*/
     } catch (error) {
       toast.error('Error al obtener la lista de cámaras');
     }
@@ -178,11 +188,12 @@ function QrScanner({ onScan }: QrScannerProps) {
         fps: 10
       };
 
-      const cameraConfig = isMobile
-      ? (selectedCamera
-          ? { deviceId: selectedCamera } // si el usuario ya eligió
-          : { facingMode: { exact: "environment" } }) // si no, intenta trasera
-      : { deviceId: selectedCamera };
+      const cameraConfig = isIPhone
+          ? (selectedCamera === "front"
+              ? { facingMode: "user" }
+              : { facingMode: { exact: "environment" } })
+          : { deviceId: { exact: selectedCamera } };
+
 
       await html5QrCode.start(
         cameraConfig,
@@ -248,7 +259,21 @@ function QrScanner({ onScan }: QrScannerProps) {
       </div>
 
       <div className="flex flex-col sm:flex-row justify-center gap-4">
-        {availableCameras.length > 1 && (
+        {isIPhone ? (
+          <Select
+            value={selectedCamera}
+            onValueChange={setSelectedCamera}
+            disabled={scanning}
+          >
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Seleccionar cámara" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="front">Cámara frontal</SelectItem>
+              <SelectItem value="back">Cámara trasera</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (availableCameras.length > 1 && (
           <Select
             value={selectedCamera}
             onValueChange={setSelectedCamera}
@@ -265,7 +290,7 @@ function QrScanner({ onScan }: QrScannerProps) {
               ))}
             </SelectContent>
           </Select>
-        )}
+        ))}
         
         <Button
           onClick={startScanner}
