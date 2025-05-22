@@ -139,12 +139,6 @@ function QrScanner({ onScan }: QrScannerProps) {
   
   const startScanner = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: selectedCamera }
-      });
-
-      stream.getTracks().forEach(track => track.stop());
-
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameras = devices.filter(device => device.kind === "videoinput");
 
@@ -153,8 +147,22 @@ function QrScanner({ onScan }: QrScannerProps) {
         return;
       }
 
-      const defaultCameraId = cameras[0].deviceId;
-      const cameraToUse = selectedCamera || defaultCameraId;
+      let cameraToUse = selectedCamera;
+
+      if (!selectedCamera) {
+        // Try to find the 'environment' (rear) camera
+        const rearCamera = cameras.find(camera =>
+          camera.label.toLowerCase().includes('back') ||
+          camera.label.toLowerCase().includes('rear') ||
+          camera.label.toLowerCase().includes('environment')
+        );
+
+        if (rearCamera) {
+          cameraToUse = rearCamera.deviceId;
+        } else {
+          cameraToUse = cameras[0].deviceId;
+        }
+      }
 
       if (qrScannerRef.current) {
         await stopScanner();
@@ -175,7 +183,7 @@ function QrScanner({ onScan }: QrScannerProps) {
       };
 
       await html5QrCode.start(
-        { deviceId: cameraToUse },
+        { facingMode: { exact: "environment" } },
         config,
         async (decodedText) => {
           playSuccessSound();
