@@ -51,6 +51,7 @@ function QrScanner({ onScan }: QrScannerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const qrScannerId = "qr-reader-id";
   const isIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const [cameraMap, setCameraMap] = useState<{ front?: string; back?: string }>({});
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -126,10 +127,21 @@ function QrScanner({ onScan }: QrScannerProps) {
       setAvailableCameras(videoDevices);
 
       if(isIPhone) {
-        setSelectedCamera("back");
-      } else if(videoDevices.length > 0) {
-        // Seleccionar la primera cámara por defecto
-        setSelectedCamera(videoDevices[0].deviceId);
+        const backCamera = videoDevices.find(c => /back|environment/i.test(c.label));
+        const frontCamera = videoDevices.find(c => /front|user/i.test(c.label));
+
+        setCameraMap({
+          front: frontCamera?.deviceId,
+          back: backCamera?.deviceId
+        });
+
+        if (!selectedCamera) {
+          setSelectedCamera("back"); // Esto se va a mapear luego al deviceId real
+        }
+      } else {
+        if (videoDevices.length > 0 && !selectedCamera) {
+          setSelectedCamera(videoDevices[0].deviceId);
+        }
       }
       
       // Seleccionar la cámara trasera por defecto en dispositivos móviles
@@ -158,6 +170,15 @@ function QrScanner({ onScan }: QrScannerProps) {
   }, [isMobile]);
   
   const startScanner = async () => {
+
+    if (!selectedCamera) return;
+
+    const deviceIdToUse = isIPhone
+          ? cameraMap[selectedCamera as 'front' | 'back'] 
+          : selectedCamera;
+
+    const cameraConfig = { deviceId: { exact: deviceIdToUse } };
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       stream.getTracks().forEach(track => track.stop());
@@ -187,14 +208,6 @@ function QrScanner({ onScan }: QrScannerProps) {
         qrbox: isMobile ? { width: 250, height: 250 } : SCANNER_CONFIG.qrbox,
         fps: 10
       };
-
-      const cameraConfig =
-        selectedCamera === 'front'
-          ? { facingMode: 'user' } // Solo cuando es explícitamente "front"
-          : selectedCamera === 'back'
-            ? { facingMode: { exact: 'environment' } }
-            : { deviceId: { exact: selectedCamera } }; 
-
 
       await html5QrCode.start(
         cameraConfig,
