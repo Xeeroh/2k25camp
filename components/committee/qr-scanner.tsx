@@ -108,6 +108,10 @@ function QrScanner({ onScan }: QrScannerProps) {
   
   const getAvailableCameras = async () => {
     try {
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+
       const devices = await navigator.mediaDevices.enumerateDevices();
       console.log(devices)
       const videoDevices = devices
@@ -145,18 +149,10 @@ function QrScanner({ onScan }: QrScannerProps) {
   
   const startScanner = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: isMobile && /iPhone|iPad|iPod/.test(navigator.userAgent)
-          ? { facingMode: { exact: "environment" } } // iPhone: usar cámara trasera
-          : selectedCamera
-            ? { deviceId: { exact: selectedCamera } }
-            : true,
-      });
-
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       stream.getTracks().forEach(track => track.stop());
 
       const devices = await navigator.mediaDevices.enumerateDevices();
-      console.log(devices);
       const cameras = devices.filter(device => device.kind === "videoinput");
 
       if (cameras.length === 0) {
