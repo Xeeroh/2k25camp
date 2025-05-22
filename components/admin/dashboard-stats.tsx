@@ -5,6 +5,7 @@ import { Users, DollarSign, Church, CheckSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { CHURCHES_DATA } from '@/lib/churches-data';
+import { useRefresh } from './refresh-context';
 
 export default function DashboardStats() {
   const initialStats = [
@@ -41,6 +42,7 @@ export default function DashboardStats() {
   const [stats, setStats] = useState(initialStats);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { registerRefreshCallback } = useRefresh();
 
   // Función para convertir montos a números de forma segura
   const safeParseNumber = (value: any): number => {
@@ -88,13 +90,13 @@ export default function DashboardStats() {
       // Procesar pagos
       const confirmedAttendees = attendees.filter(a => a.paymentstatus === 'Pagado');
       
-      // Total recaudado
-      const totalAmount = confirmedAttendees.reduce((sum, attendee) => {
+      // Total recaudado - ahora incluye todos los pagos sin importar su estado
+      const totalAmount = attendees.reduce((sum, attendee) => {
         return sum + safeParseNumber(attendee.paymentamount);
       }, 0);
       
-      // Total recaudado el mes pasado
-      const lastMonthAmount = confirmedAttendees
+      // Total recaudado el mes pasado - también incluye todos los pagos
+      const lastMonthAmount = attendees
         .filter(a => new Date(a.registrationdate) < lastMonthDate)
         .reduce((sum, attendee) => sum + safeParseNumber(attendee.paymentamount), 0);
       
@@ -157,40 +159,47 @@ export default function DashboardStats() {
     }
   };
 
+  // Registrar la función de actualización en el contexto
+  useEffect(() => {
+    registerRefreshCallback(loadStats);
+  }, [registerRefreshCallback]);
+
   // Cargar datos cuando el componente se monte
   useEffect(() => {
     loadStats();
   }, []);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, index) => (
-        <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {stat.title}
-            </CardTitle>
-            {stat.icon}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? "..." : stat.value}
-            </div>
-            <p className={`text-xs ${
-              stat.changeType === 'positive' 
-                ? 'text-green-600 dark:text-green-400' 
-                : stat.changeType === 'negative'
-                  ? 'text-destructive'
-                  : 'text-muted-foreground'
-            }`}>
-              {loading ? "Cargando..." : stat.change}
-            </p>
-            {error && index === 0 && (
-              <p className="text-xs text-destructive mt-2">{error}</p>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
+          <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {stat.title}
+              </CardTitle>
+              {stat.icon}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? "..." : stat.value}
+              </div>
+              <p className={`text-xs ${
+                stat.changeType === 'positive' 
+                  ? 'text-green-600 dark:text-green-400' 
+                  : stat.changeType === 'negative'
+                    ? 'text-destructive'
+                    : 'text-muted-foreground'
+              }`}>
+                {loading ? "Cargando..." : stat.change}
+              </p>
+              {error && index === 0 && (
+                <p className="text-xs text-destructive mt-2">{error}</p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

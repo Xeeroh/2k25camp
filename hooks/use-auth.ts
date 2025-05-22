@@ -4,65 +4,105 @@ import { AuthUser, UserRole } from '@/lib/types';
 
 // Cache para perfiles de usuario
 const profileCache = new Map<string, {role: string, timestamp: number}>();
-const CACHE_EXPIRY = 2 * 60 * 1000; // Reducido a 2 minutos
+const CACHE_EXPIRY = 2 * 60 * 1000; // 2 minutos
+
+// Función para limpiar el caché
+const clearCache = () => {
+  profileCache.clear();
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('supabase.auth.token');
+    sessionStorage.clear();
+  }
+};
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true); // Cambiado a true por defecto
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Función simplificada para obtener perfil
-    const fetchUserProfile = async (userId: string, userEmail: string) => {
-      try {
-        // Limpiar caché expirado
-        const now = Date.now();
-        Array.from(profileCache.keys()).forEach(key => {
-          const value = profileCache.get(key);
-          if (value && now - value.timestamp > CACHE_EXPIRY) {
-            profileCache.delete(key);
-          }
+  // Función para reconectar
+  const reconnect = async () => {
+    try {
+      clearCache();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const userId = session.user.id;
+        const userEmail = session.user.email || '';
+        
+        // Obtener rol
+        const role = await fetchUserProfile(userId, userEmail);
+        
+        // Establecer usuario
+        setUser({
+          id: userId,
+          email: userEmail,
+          role
         });
+      } else {
+        setUser(null);
+      }
+    } catch (err) {
+      console.error('Error al reconectar:', err);
+      setUser(null);
+      setError('Error al reconectar');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Verificar caché primero
-        const cachedProfile = profileCache.get(userId);
-        if (cachedProfile && (Date.now() - cachedProfile.timestamp < CACHE_EXPIRY)) {
-          return cachedProfile.role as UserRole;
+  // Función simplificada para obtener perfil
+  const fetchUserProfile = async (userId: string, userEmail: string) => {
+    try {
+      // Limpiar caché expirado
+      const now = Date.now();
+      Array.from(profileCache.keys()).forEach(key => {
+        const value = profileCache.get(key);
+        if (value && now - value.timestamp > CACHE_EXPIRY) {
+          profileCache.delete(key);
         }
+      });
 
-        // Consultar perfil
-        const { data: profile, error: profileError } = await supabase
+      // Verificar caché primero
+      const cachedProfile = profileCache.get(userId);
+      if (cachedProfile && (Date.now() - cachedProfile.timestamp < CACHE_EXPIRY)) {
+        return cachedProfile.role as UserRole;
+      }
+
+      // Consultar perfil
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      // Si existe, usarlo
+      if (profile) {
+        const role = profile.role || 'viewer';
+        profileCache.set(userId, { role, timestamp: Date.now() });
+        return role as UserRole;
+      }
+
+      // Si no existe, crear perfil por defecto
+      if (profileError && profileError.code === 'PGRST116') {
+        await supabase
           .from('profiles')
-          .select('role')
-          .eq('id', userId)
-          .single();
-
-        // Si existe, usarlo
-        if (profile) {
-          const role = profile.role || 'viewer';
-          profileCache.set(userId, { role, timestamp: Date.now() });
-          return role as UserRole;
-        }
-
-        // Si no existe, crear perfil por defecto
-        if (profileError && profileError.code === 'PGRST116') {
-          await supabase
-            .from('profiles')
-            .insert([{ id: userId, email: userEmail, role: 'viewer' }]);
-          
-          profileCache.set(userId, { role: 'viewer', timestamp: Date.now() });
-          return 'viewer' as UserRole;
-        }
-
-        // Perfil por defecto
-        return 'viewer' as UserRole;
-      } catch (err) {
-        console.error('Error al obtener perfil:', err);
+          .insert([{ id: userId, email: userEmail, role: 'viewer' }]);
+        
+        profileCache.set(userId, { role: 'viewer', timestamp: Date.now() });
         return 'viewer' as UserRole;
       }
-    };
 
-    // Comprobar sesión actual de forma simplificada
+      // Perfil por defecto
+      return 'viewer' as UserRole;
+    } catch (err) {
+      console.error('Error al obtener perfil:', err);
+      return 'viewer' as UserRole;
+    }
+  };
+
+  useEffect(() => {
+    // Comprobar sesión actual
     const checkCurrentSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -112,7 +152,10 @@ export function useAuth() {
         });
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        profileCache.clear();
+        clearCache();
+      } else if (event === 'TOKEN_REFRESHED') {
+        // Reconectar cuando se refresca el token
+        await reconnect();
       }
     });
 
@@ -126,6 +169,7 @@ export function useAuth() {
     setError(null);
     
     try {
+      clearCache(); // Limpiar caché antes de iniciar sesión
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -133,13 +177,11 @@ export function useAuth() {
       
       if (error) throw error;
       
-      // No necesitamos establecer el usuario aquí, lo hará onAuthStateChange
       return data;
     } catch (err: any) {
       setLoading(false);
       console.error('Error al iniciar sesión:', err);
       
-      // Establecer mensaje de error más descriptivo
       if (err.message?.includes('Invalid login credentials')) {
         setError('Credenciales inválidas');
       } else if (err.message?.includes('Email not confirmed')) {
@@ -156,7 +198,7 @@ export function useAuth() {
     try {
       await supabase.auth.signOut();
       setUser(null);
-      profileCache.clear();
+      clearCache();
     } catch (err) {
       console.error('Error al cerrar sesión:', err);
       setError('Error al cerrar sesión');
@@ -182,6 +224,7 @@ export function useAuth() {
     error,
     signIn,
     signOut,
-    hasRole
+    hasRole,
+    reconnect // Exportar la función de reconexión
   };
 } 

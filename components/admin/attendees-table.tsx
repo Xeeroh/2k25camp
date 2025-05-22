@@ -20,9 +20,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { MoreHorizontal, Search, CheckCircle2, XCircle, AlertTriangle, Image, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import AttendeeModal from "./attendee-modal";
+import { useRefresh } from './refresh-context';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ export default function AttendeesTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { registerRefreshCallback } = useRefresh();
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,10 +50,6 @@ export default function AttendeesTable() {
   // Delete dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [attendeeToDelete, setAttendeeToDelete] = useState<Attendee | null>(null);
-
-  useEffect(() => {
-    fetchAttendees();
-  }, []);
 
   const fetchAttendees = async () => {
     try {
@@ -70,6 +68,16 @@ export default function AttendeesTable() {
       setLoading(false);
     }
   };
+
+  // Registrar la función de actualización en el contexto
+  useEffect(() => {
+    registerRefreshCallback(fetchAttendees);
+  }, [registerRefreshCallback]);
+
+  // Cargar datos cuando el componente se monte
+  useEffect(() => {
+    fetchAttendees();
+  }, []);
 
   const openModal = (attendee: Attendee, mode: 'view' | 'edit' | 'receipt') => {
     // Extraer el número del sector sin el prefijo
@@ -218,14 +226,16 @@ export default function AttendeesTable() {
     const email = attendee.email.toLowerCase();
     const church = attendee.church.toLowerCase();
     const sector = attendee.sector.toLowerCase();
-    const attendanceNumber = attendee.attendance_number?.toString() || '';
+    const attendanceNumber = attendee.attendance_number?.toString().padStart(3, '0') || '';
+    const attendanceNumberWithHash = `#${attendanceNumber}`;
 
     return (
       fullName.includes(searchLower) ||
       email.includes(searchLower) ||
       church.includes(searchLower) ||
       sector.includes(searchLower) ||
-      attendanceNumber.includes(searchLower)
+      attendanceNumber.includes(searchTerm) ||
+      attendanceNumberWithHash.includes(searchTerm)
     );
   });
 
@@ -263,104 +273,114 @@ export default function AttendeesTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="relative w-1/3">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar asistente..." 
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar asistentes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
         </div>
-        <Button 
-          onClick={fetchAttendees}
-          variant="outline"
-          disabled={loading}
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            "Actualizar"
-          )}
-        </Button>
       </div>
-      
-      <div className="border rounded-md">
+
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Número</TableHead>
               <TableHead>Nombre</TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead>Correo</TableHead>
               <TableHead>Iglesia</TableHead>
               <TableHead>Sector</TableHead>
               <TableHead>Monto</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Talla</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead></TableHead>
+              <TableHead>Estado de Pago</TableHead>
+              <TableHead>Comprobante</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAttendees.map((attendee) => (
-              <TableRow key={attendee.id} className={attendee.istest ? "bg-gray-50" : ""}>
-                <TableCell>
-                  {attendee.attendance_number ? (
-                    <Badge variant="outline" className="bg-green-50">
-                      #{attendee.attendance_number}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">N/A</span>
-                  )}
-                </TableCell>
-                <TableCell>{attendee.firstname} {attendee.lastname}</TableCell>
-                <TableCell>{attendee.email}</TableCell>
-                <TableCell>{attendee.church}</TableCell>
-                <TableCell>{attendee.sector}</TableCell>
-                <TableCell>${attendee.paymentamount}</TableCell>
-                <TableCell>{getPaymentBadge(attendee.paymentstatus)}</TableCell>
-                <TableCell>
-                  {attendee.tshirtsize ? (
-                    <Badge variant="outline" className="bg-blue-50">{attendee.tshirtsize}</Badge>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">N/A</span>
-                  )}
-                </TableCell>
-                <TableCell>{new Date(attendee.registrationdate).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openModal(attendee, 'view')}>
-                        Ver detalles
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openModal(attendee, 'edit')}>
-                        Editar
-                      </DropdownMenuItem>
-                      {attendee.paymentreceipturl && (
-                        <DropdownMenuItem onClick={() => openModal(attendee, 'receipt')}>
-                          Ver comprobante
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem 
-                        className="text-destructive"
-                        onClick={() => {
-                          setAttendeeToDelete(attendee);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                      >
-                        Eliminar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={9} className="h-24 text-center">
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : filteredAttendees.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="h-24 text-center">
+                  No se encontraron asistentes
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredAttendees.map((attendee) => (
+                <TableRow key={attendee.id}>
+                  <TableCell>
+                    {attendee.attendance_number ? (
+                      <Badge 
+                        variant="outline" 
+                        className="bg-primary/10 text-primary font-mono px-2 py-1"
+                      >
+                        #{attendee.attendance_number.toString().padStart(3, '0')}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">Pendiente</span>
+                    )}
+                  </TableCell>
+                  <TableCell>{`${attendee.firstname} ${attendee.lastname}`}</TableCell>
+                  <TableCell>{attendee.email}</TableCell>
+                  <TableCell>{attendee.church}</TableCell>
+                  <TableCell>{attendee.sector}</TableCell>
+                  <TableCell>${attendee.paymentamount}</TableCell>
+                  <TableCell>{getPaymentBadge(attendee.paymentstatus)}</TableCell>
+                  <TableCell>
+                    {attendee.paymentreceipturl ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openModal(attendee, 'receipt')}
+                        className="h-8 px-2"
+                      >
+                        <Image className="h-4 w-4 text-blue-500" />
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">Sin comprobante</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openModal(attendee, 'view')}>
+                          Ver detalles
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openModal(attendee, 'edit')}>
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => {
+                            setAttendeeToDelete(attendee);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          Eliminar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
