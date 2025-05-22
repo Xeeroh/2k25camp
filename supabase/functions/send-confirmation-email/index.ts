@@ -79,32 +79,36 @@ serve(async (req) => {
         to: body.email,
         subject: 'Confirmación de Registro - MDP Noroeste',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb; text-align: center;">¡Registro Completado!</h1>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
+            <h1 style="color: #2563eb; text-align: center; margin-bottom: 20px;">¡Registro Completado!</h1>
             
-            <p>Hola ${body.firstName},</p>
+            <p style="text-align: center; margin-bottom: 20px;">Hola ${body.firstName},</p>
             
-            <p>Gracias por registrarte al Campamento Alfa y Omega Distrito Noroeste . Tu registro ha sido procesado exitosamente.</p>
+            <p style="text-align: center; margin-bottom: 20px;">Gracias por registrarte al Campamento Alfa y Omega Distrito Noroeste. Tu registro ha sido procesado exitosamente.</p>
             
             ${tshirtMessage}
 
-            <h2 style="color: #2563eb;">Detalles del Registro:</h2>
-            <ul style="list-style: none; padding: 0;">
-              <li style="margin-bottom: 8px;"><strong>Nombre:</strong> ${body.firstName} ${body.lastName}</li>
-              <li style="margin-bottom: 8px;"><strong>Iglesia:</strong> ${body.church}</li>
-              <li style="margin-bottom: 8px;"><strong>Sector:</strong> ${body.sector}</li>
-              ${body.receivesTshirt && body.tshirtSize ? `<li style="margin-bottom: 8px;"><strong>Talla de Camiseta:</strong> ${body.tshirtSize}</li>` : ''}
-            </ul>
-
-            <div style="text-align: center; margin: 20px 0;">
-              <h3 style="color: #2563eb;">Tu Código QR de Acceso</h3>
-              <img src="${qrImageUrl}" alt="Código QR" style="max-width: 200px; margin: 20px auto; display: block;" />
-              <p style="font-size: 14px; color: #666;">Presenta este código QR al ingresar al evento</p>
+            <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+              <h2 style="color: #2563eb; margin-bottom: 15px;">Detalles del Registro:</h2>
+              <ul style="list-style: none; padding: 0; margin: 0; display: inline-block; text-align: left;">
+                <li style="margin-bottom: 8px;"><strong>Nombre:</strong> ${body.firstName} ${body.lastName}</li>
+                <li style="margin-bottom: 8px;"><strong>Iglesia:</strong> ${body.church}</li>
+                <li style="margin-bottom: 8px;"><strong>Sector:</strong> ${body.sector}</li>
+                ${body.receivesTshirt && body.tshirtSize ? `<li style="margin-bottom: 8px;"><strong>Talla de Camiseta:</strong> ${body.tshirtSize}</li>` : ''}
+              </ul>
             </div>
 
-            <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+            <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8fafc; border-radius: 8px;">
+              <h3 style="color: #2563eb; margin-bottom: 15px;">Tu Código QR de Acceso</h3>
+              <div style="background-color: white; padding: 15px; border-radius: 8px; display: inline-block; margin: 0 auto;">
+                <img src="${qrImageUrl}" alt="Código QR" style="max-width: 200px; margin: 0 auto; display: block;" />
+              </div>
+              <p style="font-size: 14px; color: #666; margin-top: 15px;">Presenta este código QR al ingresar al evento</p>
+            </div>
+
+            <p style="text-align: center; margin-bottom: 20px;">Si tienes alguna pregunta, no dudes en contactarnos.</p>
             
-            <p style="margin-top: 30px;">
+            <p style="margin-top: 30px; text-align: center;">
               Saludos,<br>
               <strong>Equipo MDP Noroeste</strong>
             </p>
