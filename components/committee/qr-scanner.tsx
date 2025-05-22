@@ -188,11 +188,12 @@ function QrScanner({ onScan }: QrScannerProps) {
         fps: 10
       };
 
-      const cameraConfig = isIPhone
-          ? (selectedCamera === "front"
-              ? { facingMode: "user" }
-              : { facingMode: { exact: "environment" } })
-          : { deviceId: { exact: selectedCamera } };
+      const cameraConfig =
+        selectedCamera === 'front'
+          ? { facingMode: 'user' } // Solo cuando es explícitamente "front"
+          : selectedCamera === 'back'
+            ? { facingMode: { exact: 'environment' } }
+            : { deviceId: { exact: selectedCamera } }; 
 
 
       await html5QrCode.start(
@@ -258,7 +259,7 @@ function QrScanner({ onScan }: QrScannerProps) {
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-center gap-4">
+      {/* <div className="flex flex-col sm:flex-row justify-center gap-4">
         {isIPhone ? (
           <Select
             value={selectedCamera}
@@ -309,7 +310,52 @@ function QrScanner({ onScan }: QrScannerProps) {
         >
           Detener
         </Button>
-      </div>
+      </div> */}
+
+      <div className="flex flex-col sm:flex-row justify-center gap-4">
+  <Select
+    value={selectedCamera}
+    onValueChange={setSelectedCamera}
+    disabled={scanning}
+  >
+    <SelectTrigger className="w-full sm:w-[200px]">
+      <SelectValue placeholder="Seleccionar cámara" />
+    </SelectTrigger>
+    <SelectContent>
+      {isIPhone ? (
+        <>
+          <SelectItem value="front">Cámara frontal</SelectItem>
+          <SelectItem value="back">Cámara trasera</SelectItem>
+        </>
+      ) : (
+        availableCameras.map((camera) => (
+          <SelectItem key={camera.deviceId} value={camera.deviceId}>
+            {camera.label || `Cámara ${camera.deviceId.slice(0, 5)}`}
+          </SelectItem>
+        ))
+      )}
+    </SelectContent>
+  </Select>
+
+  <Button
+    onClick={startScanner}
+    className="flex items-center gap-2 w-full sm:w-auto"
+    disabled={scanning}
+  >
+    <Camera className="h-4 w-4" />
+    {scanning ? 'Escaneando...' : 'Iniciar Escáner'}
+  </Button>
+
+  <Button
+    variant="outline"
+    onClick={stopScanner}
+    disabled={!scanning}
+    className="w-full sm:w-auto"
+  >
+    Detener
+  </Button>
+</div>
+
 
       {isMobile && scanning && (
         <div className="text-center text-sm text-muted-foreground mt-2">
