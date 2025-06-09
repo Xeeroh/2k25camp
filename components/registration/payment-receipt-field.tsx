@@ -8,7 +8,7 @@ interface PaymentReceiptFieldProps {
   isLoading: boolean;
   isSubmitting: boolean;
   uploadProgress: number;
-  onFileChange: (file: File) => void;
+  onFileChange: (file: File | null) => void;
   paymentReceiptFile: File | null;
 }
 
