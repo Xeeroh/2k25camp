@@ -5,9 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Navbar from '@/components/shared/navbar';
-import Footer from '@/components/shared/footer';
+import FooterL from '@/components/shared/footerL';
 import RegistrationForm from '@/components/registration/registration-form';
-import SuccessMessage from '@/components/registration/success-message';
+import { SuccessMessage } from '@/components/registration/success-message'
 
 interface AttendeeData {
   id: string;
@@ -57,10 +57,10 @@ export default function RegistroPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-try ">
       <Navbar showInternalLinks={false} />
       
-      <div className="flex-1 py-12 bg-muted/30">
+      <div className="flex-1 py-12 bg-muted/30 bg-try">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {isSubmitted ? (
             <SuccessMessage 
@@ -72,11 +72,11 @@ export default function RegistroPage() {
             />
           ) : (
             <>
-              <div className="text-center mb-10">
+              <div className="text-center mb-10 ">
                 <h1 className="text-3xl md:text-4xl font-bold mb-4">
                   Registro Campamento 2025 "Alfa y Omega"
                 </h1>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-lg text-muted-foreground ">
                   Complete el formulario para registrarse
                 </p>
               </div>
@@ -87,7 +87,7 @@ export default function RegistroPage() {
         </div>
       </div>
       
-      <Footer />
+      <FooterL />
     </div>
   );
 }

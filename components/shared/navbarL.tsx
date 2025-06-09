@@ -70,7 +70,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
   if (loading) {
     return (
       <nav className="sticky top-0 z-50 w-full backdrop-blur-sm shadow-sm body-glassmorphisim">
-        <div className="px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <Link href="/" className="flex items-center space-x-2">
               <img 
@@ -90,8 +90,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
       {isEditor && (
         <Link 
           href={createInternalLink('/comite')}
-          // CAMBIO AQUÍ
-          className="text-white/50 hover:text-gray-300 transition-colors"
+          className="text-foreground hover:text-primary transition-colors"
           onClick={() => handleNavigation('/comite')}
         >
           Comité
@@ -100,8 +99,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
       {isAdmin && (
         <Link 
           href={createInternalLink('/admin')}
-          // CAMBIO AQUÍ
-          className="text-white/50 hover:text-gray-300 transition-colors"
+          className="text-foreground hover:text-primary transition-colors"
           onClick={() => handleNavigation('/admin')}
         >
           Dashboard
@@ -127,16 +125,14 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
       <div className="px-4 pt-2 pb-4 space-y-1 card-glass">
         <Link 
           href={user ? createInternalLink('/') : '/'}
-          // CAMBIO AQUÍ
-          className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+          className="block w-full text-left px-3 py-2 rounded-md hover:bg-accent"
           onClick={() => handleNavigation('/')}
         >
           Inicio
         </Link>
         <Link 
           href={user ? createInternalLink('/registro') : '/registro'}
-          // CAMBIO AQUÍ
-          className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+          className="block w-full text-left px-3 py-2 rounded-md hover:bg-accent"
           onClick={() => handleNavigation('/registro')}
         >
           Registro
@@ -147,8 +143,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             {isEditor && (
               <Link 
                 href={createInternalLink('/comite')}
-                // CAMBIO AQUÍ
-                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+                className="block w-full text-left px-3 py-2 rounded-md hover:bg-accent"
                 onClick={() => handleNavigation('/comite')}
               >
                 Comité
@@ -157,8 +152,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             {isAdmin && (
               <Link 
                 href={createInternalLink('/admin')}
-                // CAMBIO AQUÍ
-                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+                className="block w-full text-left px-3 py-2 rounded-md hover:bg-accent"
                 onClick={() => handleNavigation('/admin')}
               >
                 Dashboard
@@ -190,7 +184,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
           : "bg-transparent"
       )}
     >
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center">
             <Link
@@ -216,16 +210,14 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
           <div className="hidden md:flex items-center space-x-8">
             <Link 
               href={user ? createInternalLink('/') : '/'} 
-              // CAMBIO AQUÍ
-              className="text-white/50 hover:text-gray-300 transition-colors"
+              className="text-foreground hover:text-primary transition-colors"
               onClick={() => handleNavigation('/')}
             >
               Inicio
             </Link>
             <Link 
               href={user ? createInternalLink('/registro') : '/registro'} 
-              // CAMBIO AQUÍ
-              className="text-white/50 hover:text-gray-300 transition-colors"
+              className="text-foreground hover:text-primary transition-colors"
               onClick={() => handleNavigation('/registro')}
             >
               Registro

@@ -6,6 +6,13 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+
+  /* Added custom color variables */
+  --tangelo: 27 92% 50%; /* HSL equivalent of #f4540a */
+  --persian-red: 9 60% 46%; /* HSL equivalent of #bd452f */
+  --fawn: 31 92% 69%; /* HSL equivalent of #f9b368 */
+  --federal-blue: 240 72% 18%; /* HSL equivalent of #0d0d50 */
+  --yinmn-blue: 205 100% 27%; /* HSL equivalent of #005089 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -76,9 +83,86 @@
   * {
     @apply border-border;
   }
+
+  html,
   body {
-    @apply bg-background text-foreground;
+     /* ✅ SE AGREGA EL RESETEO DE MARGEN */
+     @apply h-full w-full;
+     margin: 0;
+     padding: 0;
+ 
+    /* Applied background gradient using the new palette */
+    background: linear-gradient(180deg, var(--federal-blue), var(--yinmn-blue));
+    color: #ffffff; /* Ensure text is readable on dark background */
   }
+}
+
+/* Added glassmorphism utility class */
+.body-glassmorphism {
+  background-color: #111927;
+  background-image: 
+      radial-gradient(at 47% 33%, hsl(204.96, 100%, 27%) 0, transparent 59%), 
+      radial-gradient(at 82% 65%, hsl(218.00, 39%, 11%) 0, transparent 55%);
+}
+
+/* Glassmorphism card effect */
+.card-glass{
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(17, 25, 40, 0.75);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+  
+
+
+.bg-try {
+background-color: #6C76FF;
+background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 1600 800'%3E%3Cg stroke='%2337384F' stroke-width='66.7' stroke-opacity='0.05' %3E%3Ccircle fill='%236C76FF' cx='0' cy='0' r='1800'/%3E%3Ccircle fill='%236670f1' cx='0' cy='0' r='1700'/%3E%3Ccircle fill='%236069e2' cx='0' cy='0' r='1600'/%3E%3Ccircle fill='%235a63d4' cx='0' cy='0' r='1500'/%3E%3Ccircle fill='%23545cc6' cx='0' cy='0' r='1400'/%3E%3Ccircle fill='%234e56b8' cx='0' cy='0' r='1300'/%3E%3Ccircle fill='%234950ab' cx='0' cy='0' r='1200'/%3E%3Ccircle fill='%23434a9d' cx='0' cy='0' r='1100'/%3E%3Ccircle fill='%233e4490' cx='0' cy='0' r='1000'/%3E%3Ccircle fill='%23393e83' cx='0' cy='0' r='900'/%3E%3Ccircle fill='%23333876' cx='0' cy='0' r='800'/%3E%3Ccircle fill='%232e3269' cx='0' cy='0' r='700'/%3E%3Ccircle fill='%23292d5d' cx='0' cy='0' r='600'/%3E%3Ccircle fill='%23242751' cx='0' cy='0' r='500'/%3E%3Ccircle fill='%23202145' cx='0' cy='0' r='400'/%3E%3Ccircle fill='%231b1c3a' cx='0' cy='0' r='300'/%3E%3Ccircle fill='%2316172f' cx='0' cy='0' r='200'/%3E%3Ccircle fill='%23121124' cx='0' cy='0' r='100'/%3E%3C/g%3E%3C/svg%3E");
+background-attachment: fixed;
+background-size: cover;
+}
+
+/* Clase para tu navbar cuando NO hay scroll (completamente transparente) */
+.bg-transparent {
+  background-color: transparent !important;
+}
+
+/* Clase para tu navbar cuando HAY scroll (efecto glassmorphism) */
+.navbar-glassmorphism {
+  background: rgba(255, 255, 255, 0.0) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Variantes alternativas para diferentes temas */
+
+/* Para tema oscuro con glassmorphism */
+.navbar-glassmorphism-dark {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Glassmorphism más sutil */
+.navbar-glassmorphism-subtle {
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Glassmorphism más intenso */
+.navbar-glassmorphism-intense {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 /* Custom animations */
