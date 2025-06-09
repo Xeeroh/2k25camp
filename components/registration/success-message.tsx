@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface SuccessMessageProps {
-  qrData: string;
+  qrData: string | null;
   onReset: () => void;
 }
 
@@ -30,6 +30,11 @@ export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
   
   const handleDownloadQR = () => {
     console.log('Iniciando descarga del QR');
+    if (!qrData) {
+      console.warn('No hay datos de QR para descargar');
+      return;
+    }
+    
     if (qrRef.current) {
       const svg = qrRef.current.querySelector('svg');
       if (svg) {
@@ -127,13 +132,15 @@ export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
         
         <div className="flex justify-center mb-4" ref={qrRef}>
           <div className="bg-white p-4 rounded-lg">
-            <QRCodeSVG 
-              value={qrData}
-              size={200}
-              level="H"
-              includeMargin={true}
-              style={{ width: '200px', height: '200px' }}
-            />
+            {qrData && (
+              <QRCodeSVG 
+                value={qrData}
+                size={200}
+                level="H"
+                includeMargin={true}
+                style={{ width: '200px', height: '200px' }}
+              />
+            )}
           </div>
         </div>
         
