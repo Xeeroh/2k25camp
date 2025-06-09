@@ -196,7 +196,7 @@ function QrScanner({ onScan }: QrScannerProps) {
           variant="outline"
           onClick={stopScanner}
           disabled={!scanning}
-          className="w-full sm:w-auto"
+          className="bg-blue-900 w-full sm:w-auto"
         >
           Detener
         </Button>

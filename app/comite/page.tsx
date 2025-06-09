@@ -3,13 +3,13 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/shared/navbar';
-import Footer from '@/components/shared/footer';
 import LoginForm from '@/components/committee/login-form';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import FooterL from '@/components/shared/footerL';
 
 // Lazy load componentes pesados
 const QrScanner = lazy(() => import('@/components/committee/qr-scanner'));
@@ -214,15 +214,14 @@ export default function ComitePage() {
   // Si el usuario no está autenticado, mostrar formulario de inicio de sesión
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="bg-try min-h-screen flex flex-col">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center p-4">
-          <div className="bg-card shadow-lg border border-border rounded-lg p-6 w-full max-w-md">
+          <div className="card-glass shadow-lg border border-border rounded-lg p-6 w-full max-w-md">
             <h1 className="text-2xl font-bold mb-6">Iniciar sesión - Comité</h1>
             <LoginForm />
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -246,13 +245,12 @@ export default function ComitePage() {
             </div>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="bg-try min-h-screen flex flex-col">
       <Navbar showInternalLinks={true} />
       
       <div className="flex-1 py-4 sm:py-8">
@@ -266,26 +264,26 @@ export default function ComitePage() {
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <span className="text-sm text-muted-foreground truncate">{user.email}</span>
-              <Button 
+              {/*<Button 
                 variant="outline"
                 onClick={signOut}
                 className="whitespace-nowrap"
               >
                 Cerrar sesión
-              </Button>
+              </Button> */}
             </div>
           </div>
           
           <Tabs defaultValue="scanner" className="mt-4 sm:mt-8">
-            <TabsList className="grid grid-cols-2 w-full sm:w-[400px] mb-6 sm:mb-8">
+            <TabsList className="grid grid-cols-1 w-full sm:w-[590px] mb-6 sm:mb-8">
               <TabsTrigger value="scanner">Escáner QR</TabsTrigger>
-              <TabsTrigger value="info">Información</TabsTrigger>
+              {/* <TabsTrigger value="info">Información</TabsTrigger> */}
             </TabsList>
             
             <TabsContent value="scanner">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
-                <div className="bg-card p-4 sm:p-6 rounded-lg shadow-sm border border-border">
-                  <h2 className="text-lg sm:text-xl font-semibold mb-4">Escáner de Código QR</h2>
+                <div className="card-clear p-4 sm:p-6 rounded-lg shadow-sm border border-border">
+                  <h2 className="relative text-center text-lg sm:text-xl font-semibold mb-4">Escáner de Código QR</h2>
                   <Suspense fallback={<LoadingFallback />}>
                     <QrScanner onScan={handleQrScan} />
                   </Suspense>
@@ -302,7 +300,7 @@ export default function ComitePage() {
               </div>
             </TabsContent>
             
-            <TabsContent value="info">
+            {/* <TabsContent value="info">
               <div className="bg-card p-4 sm:p-6 rounded-lg shadow-sm border border-border">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4">Información</h2>
                 <div className="space-y-4">
@@ -321,12 +319,11 @@ export default function ComitePage() {
                   </div>
                 </div>
               </div>
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </div>
       </div>
-      
-      <Footer />
+    
     </div>
   );
 }
