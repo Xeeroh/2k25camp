@@ -106,7 +106,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
   });
 
   return (
-    <Card className="w-full">
+    <Card className="card-clear w-full">
       <CardHeader className="p-4 sm:p-6">
         <CardTitle className="font-bold text-center text-lg sm:text-xl">
           {fullName}
