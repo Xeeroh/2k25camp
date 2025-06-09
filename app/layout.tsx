@@ -7,11 +7,11 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Campamento • Registro',
-  description: 'Sistema de registro para campamento MDP 2025',
+  description: 'Sistema de registro para campamento Alfa y Omega MDP Noroeste 2025',
   icons: {
     icon: [
       {
-        url: '/favicon.ico',
+        url: 'favicon.ico',
         sizes: 'any',
       },
     ],
