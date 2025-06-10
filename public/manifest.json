@@ -1,6 +1,7 @@
 {
   "name": "Campamento Alfa y Omega MDP Noroeste 2025",
   "short_name": "Campamento 2025",
+  "start_url":"/",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
