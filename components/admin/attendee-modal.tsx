@@ -138,7 +138,8 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
     switch (mode) {
       case 'view':
         return (
-          <div className="space-y-4">
+          <div className=" dark:bg-zinc-800/60 backdrop-blur-md rounded-xl p-6 shadow-inner space-y-4">
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground">Nombre</h4>
@@ -188,7 +189,8 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">Comprobante de Pago</h4>
                 <Button 
-                  variant="outline" 
+                  variant="outline"
+                  className='bg-blue-900' 
                   onClick={() => window.open(attendee.paymentReceiptUrl, '_blank')}
                 >
                   Ver Comprobante
@@ -388,12 +390,12 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
               <DialogFooter>
                 <Button 
                   type="button" 
-                  variant="outline" 
                   onClick={onClose}
+                  className='bg-blue-900'
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button className='bg-blue-900' type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -438,7 +440,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="card-glass sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{getModalTitle()}</DialogTitle>
           <DialogDescription>

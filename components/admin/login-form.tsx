@@ -74,7 +74,7 @@ export default function LoginForm() {
   };
   
   return (
-    <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+    <div className="card-glass p-6 rounded-lg shadow-sm border border-border">
       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
         <Shield className="h-6 w-6 text-primary" />
       </div>

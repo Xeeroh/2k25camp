@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/shared/navbar';
-import Footer from '@/components/shared/footer';
+import FooterL from '@/components/shared/footerL';
 import LoginForm from '@/components/admin/login-form';
 import Dashboard from '@/components/admin/dashboard';
 import { useAuth } from '@/hooks/use-auth';
@@ -44,7 +44,7 @@ export default function AdminPage() {
   
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="bg-try min-h-screen flex flex-col">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -61,14 +61,14 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-        <Footer />
+        <FooterL/>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="bg-try min-h-screen flex flex-col">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -85,6 +85,7 @@ export default function AdminPage() {
                 <Button 
                   onClick={handleForceSignOut}
                   variant="destructive"
+                
                 >
                   Cerrar sesión
                 </Button>
@@ -92,16 +93,16 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-        <Footer />
+        <FooterL />
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen flex flex-col ">
+    <div className="bg-try min-h-screen flex flex-col ">
       <Navbar showInternalLinks={true} />
       
-      <div className="flex-1 py-8">
+      <div className="bg-try flex-1 py-8">
         {user ? (
           <Dashboard onLogout={signOut} />
         ) : (
@@ -117,8 +118,7 @@ export default function AdminPage() {
           </div>
         )}
       </div>
-      
-      <Footer />
+    
     </div>
   );
 }

@@ -157,7 +157,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           
           <Button 
             type="submit" 
-            className="w-full" 
+            variant="outline"
+            className="bg-blue-600/50 w-full" 
             disabled={isLoading || isSubmitting}
           >
             {isLoading ? (

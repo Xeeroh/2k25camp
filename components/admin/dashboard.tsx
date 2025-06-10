@@ -24,6 +24,7 @@ function DashboardContent() {
         <Button
           variant="outline"
           size="sm"
+          className='bg-blue-850/50 hover:text-black hover:bg-clear'
           onClick={refreshAll}
           disabled={isRefreshing}
         >
@@ -39,13 +40,13 @@ function DashboardContent() {
 export default function Dashboard({ onLogout }: DashboardProps) {
   return (
     <RefreshProvider>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="bg-try max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Panel de Administración</h1>
           <Button 
             variant="outline" 
             onClick={onLogout}
-            className="flex items-center gap-2"
+            className="bg-blue-850/50 hover:text-black hover:bg-clear flex items-center gap-2"
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión
@@ -56,8 +57,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         
         <Tabs defaultValue="attendees" className="mt-8">
           <TabsList className="grid grid-cols-2 md:w-[400px] mb-8">
-            <TabsTrigger value="attendees">Asistentes</TabsTrigger>
-            <TabsTrigger value="payments">Pagos y Estadísticas</TabsTrigger>
+            <TabsTrigger 
+              value="attendees"
+              className="text-black data-[state=active]:bg-slate-500/80 data-[state=active]:text-slate-900"
+              >
+              Asistentes
+              </TabsTrigger>
+            <TabsTrigger 
+            value="payments"
+            className="text-black data-[state=active]:bg-slate-500/80 data[state=active]:text-slate-900"
+            >
+              Pagos y Estadísticas
+              </TabsTrigger>
           </TabsList>
           
           <TabsContent value="attendees">

@@ -38,22 +38,25 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
   // Si no hay datos, mostrar mensaje para escanear QR
   if (!attendee) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Información del Asistente
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-muted/30 rounded-lg p-6 text-center">
-            <User className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-            <p className="text-muted-foreground">
-              Escanee un código QR para ver la información del asistente
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <Card className="card-clear w-full min-h-dvh max-h-dvh overflow-hidden">
+
+      <CardHeader>
+      <CardTitle className="relative text-center text-white">
+          <span className="absolute left-0">
+          <User className="text-muted-foreground" />
+          </span>
+          Información del Asistente
+      </CardTitle>
+
+      </CardHeader>
+      <CardContent className="flex flex-col items-center justify-center h-full text-center">
+        <User className="h-10 w-10 mb-3 text-muted-foreground" />
+        <p className="text-muted-foreground">
+          Escanee un código QR para ver la información del asistente
+        </p>
+      </CardContent>
+    </Card>
+    
     );
   }
 
@@ -104,7 +107,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
   });
 
   return (
-    <Card className="w-full">
+    <Card className="card-clear w-full">
       <CardHeader className="p-4 sm:p-6">
         <CardTitle className="font-bold text-center text-lg sm:text-xl">
           {fullName}
