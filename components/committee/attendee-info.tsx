@@ -38,7 +38,8 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
   // Si no hay datos, mostrar mensaje para escanear QR
   if (!attendee) {
     return (
-      <Card className="card-clear w-full h-[70vh] md:h-[60vh]">
+      <Card className="card-clear w-full min-h-dvh max-h-dvh overflow-hidden">
+
       <CardHeader>
       <CardTitle className="relative text-center text-white">
           <span className="absolute left-0">

@@ -58,7 +58,7 @@ export const PaymentReceiptField = ({
               <Button
                 type="button"
                 variant="outline"
-                className="flex items-center justify-center text-sm p-2 h-auto space-y-1 flex-col py-3"
+                className="bg-blue-600/50 flex items-center justify-center text-sm p-2 h-auto space-y-1 flex-col py-3"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
@@ -83,7 +83,7 @@ export const PaymentReceiptField = ({
               <Button
                 type="button"
                 variant="outline"
-                className="flex items-center justify-center text-sm p-2 h-auto space-y-1 flex-col py-3"
+                className="bg-blue-600/50 flex items-center justify-center text-sm p-2 h-auto space-y-1 flex-col py-3"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
