@@ -5,8 +5,7 @@ export default function FooterL() {
   const currentYear = new Date().getFullYear();
 
   return (
-    // Clases corregidas y mejoradas aquí
-    <footer className=" bottom-0 left-0 w-full py-6 ">
+    <footer className="w-full py-6 mt-auto bg-transparent">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 text-center md:grid-cols-3 md:text-left">
           
