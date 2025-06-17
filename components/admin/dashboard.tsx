@@ -18,6 +18,14 @@ interface DashboardProps {
 function DashboardContent() {
   const { refreshAll, isRefreshing } = useRefresh();
 
+  const handleRefresh = async () => {
+    try {
+      await refreshAll();
+    } catch (error) {
+      console.error('Error al actualizar:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
@@ -25,7 +33,7 @@ function DashboardContent() {
           variant="outline"
           size="sm"
           className='bg-blue-850/50 hover:text-black hover:bg-clear'
-          onClick={refreshAll}
+          onClick={handleRefresh}
           disabled={isRefreshing}
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />

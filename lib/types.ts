@@ -22,12 +22,12 @@ export interface Attendee {
   church: string;
   sector: string;
   paymentamount: number;
-  paymentstatus: 'Pendiente' | 'Pagado';
+  paymentstatus: 'Pendiente' | 'Pagado' | 'Revisado';
+  paymentreceipturl?: string;
   registrationdate: string;
-  paymentreceipturl: string;
-  tshirtsize?: string;
-  istest?: boolean;
   attendance_number?: number;
   attendance_confirmed?: boolean;
   attendance_confirmed_at?: string;
+  tshirtsize?: string;
+  istest?: boolean;
 } 
