@@ -413,82 +413,81 @@ export default function AttendeesTable() {
             )}
           </div>
         ) : (
-          // Versión escritorio: tabla completa
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
+                <TableHead className="text-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('attendance_number')}
-                    className="flex items-center gap-1"
+                    className="flex items-center justify-center gap-1 w-full"
                   >
                     Número
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="text-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('firstname')}
-                    className="flex items-center gap-1"
+                    className="flex items-center justify-center gap-1 w-full"
                   >
                     Nombre
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="text-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('email')}
-                    className="flex items-center gap-1"
+                    className="flex items-center justify-center gap-1 w-full"
                   >
                     Correo
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="text-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('church')}
-                    className="flex items-center gap-1"
+                    className="flex items-center justify-center gap-1 w-full"
                   >
                     Iglesia
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="text-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('sector')}
-                    className="flex items-center gap-1"
+                    className="flex items-center justify-center gap-1 w-full"
                   >
                     Sector
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="text-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('paymentamount')}
-                    className="flex items-center gap-1"
+                    className="flex items-center justify-center gap-1 w-full"
                   >
                     Monto
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>
+                <TableHead className="text-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('paymentstatus')}
-                    className="flex items-center gap-1"
+                    className="flex items-center justify-center gap-1 w-full"
                   >
-                    Estado de Pago
+                    Estado
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead>Comprobante</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableHead className="w-[60px] text-center">Comp.</TableHead>
+                <TableHead className="w-[60px] text-center">Acc.</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -509,7 +508,7 @@ export default function AttendeesTable() {
               ) : (
                 filteredAndSortedAttendees.map((attendee) => (
                   <TableRow key={attendee.id}>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {attendee.attendance_number ? (
                         <Badge 
                           variant="outline" 
@@ -521,30 +520,30 @@ export default function AttendeesTable() {
                         <span className="text-muted-foreground text-xs">Pendiente</span>
                       )}
                     </TableCell>
-                    <TableCell>{`${attendee.firstname} ${attendee.lastname}`}</TableCell>
-                    <TableCell>{attendee.email}</TableCell>
-                    <TableCell>{attendee.church}</TableCell>
-                    <TableCell>{attendee.sector}</TableCell>
-                    <TableCell>${attendee.paymentamount}</TableCell>
-                    <TableCell>{getPaymentBadge(attendee.paymentstatus)}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">{`${attendee.firstname} ${attendee.lastname}`}</TableCell>
+                    <TableCell className="text-center">{attendee.email}</TableCell>
+                    <TableCell className="text-center">{attendee.church}</TableCell>
+                    <TableCell className="text-center">{attendee.sector}</TableCell>
+                    <TableCell className="text-center">${attendee.paymentamount}</TableCell>
+                    <TableCell className="text-center">{getPaymentBadge(attendee.paymentstatus)}</TableCell>
+                    <TableCell className="w-[60px] text-center">
                       {attendee.paymentreceipturl ? (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => openModal(attendee, 'receipt')}
-                          className="h-8 px-2"
+                          className="h-8 w-8 p-0 mx-auto"
                         >
                           <ImageIcon className="h-4 w-4 text-blue-500" />
                         </Button>
                       ) : (
-                        <span className="text-muted-foreground text-xs">Sin comprobante</span>
+                        <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="w-[60px] text-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
+                          <Button variant="ghost" className="h-8 w-8 p-0 mx-auto">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
