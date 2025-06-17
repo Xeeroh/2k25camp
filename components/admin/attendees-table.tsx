@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, CheckCircle2, XCircle, MoreHorizontal, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, MoreHorizontal, Loader2, Image as ImageIcon, ArrowUpDown } from 'lucide-react';
 import { toast } from "sonner";
 import AttendeeModal from "./attendee-modal";
 import { useRefresh } from './refresh-context';
@@ -41,7 +41,14 @@ export default function AttendeesTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const { registerRefreshCallback } = useRefresh();
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Attendee;
+    direction: 'asc' | 'desc';
+  }>({
+    key: 'registrationdate',
+    direction: 'desc'
+  });
+  const { registerRefreshCallback, refreshAll } = useRefresh();
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -124,7 +131,11 @@ export default function AttendeesTable() {
         description: "El asistente ha sido eliminado con éxito",
       });
       
-      fetchAttendees();
+      // Actualizar la tabla y todas las estadísticas
+      await Promise.all([
+        fetchAttendees(),
+        refreshAll()
+      ]);
     } catch (error) {
       toast.error("Error", {
         description: error instanceof Error ? error.message : "No se pudo eliminar el asistente",
@@ -160,77 +171,157 @@ export default function AttendeesTable() {
     }
   };
 
-  const handleUpdateAttendee = async (updatedAttendee: Attendee) => {
+  const handleUpdateAttendee = async (updatedAttendee: any) => {
     try {
-      // Si se está confirmando la asistencia y no tiene número, asignar el siguiente
-      if (updatedAttendee.attendance_confirmed && !updatedAttendee.attendance_number) {
-        const nextNumber = await getNextAttendanceNumber();
-        updatedAttendee.attendance_number = nextNumber;
-        updatedAttendee.attendance_confirmed_at = new Date().toISOString();
+      if (!updatedAttendee.id) {
+        throw new Error('ID del asistente no proporcionado');
       }
 
-      const { error } = await supabase
+      // Validar el estado de pago
+      const validPaymentStatus = ['Pendiente', 'Pagado', 'Revisado'] as const;
+      const paymentStatus = String(updatedAttendee.paymentstatus || '').trim();
+      
+      if (!paymentStatus || !validPaymentStatus.includes(paymentStatus as typeof validPaymentStatus[number])) {
+        throw new Error(`Estado de pago no válido. Debe ser uno de: ${validPaymentStatus.join(', ')}`);
+      }
+
+      // Si se está confirmando la asistencia y no tiene número, asignar el siguiente
+      if (updatedAttendee.attendance_confirmed && !updatedAttendee.attendance_number) {
+        try {
+          const nextNumber = await getNextAttendanceNumber();
+          updatedAttendee.attendance_number = nextNumber;
+          updatedAttendee.attendance_confirmed_at = new Date().toISOString();
+        } catch (error) {
+          console.error('Error al asignar número de asistencia:', error);
+          throw new Error('No se pudo asignar el número de asistencia');
+        }
+      }
+
+      const updateData = {
+        firstname: String(updatedAttendee.firstname || '').trim(),
+        lastname: String(updatedAttendee.lastname || '').trim(),
+        email: String(updatedAttendee.email || '').trim(),
+        church: String(updatedAttendee.church || '').trim(),
+        sector: String(updatedAttendee.sector || '').trim(),
+        paymentamount: Number(updatedAttendee.paymentamount) || 0,
+        paymentstatus: paymentStatus,
+        attendance_number: updatedAttendee.attendance_number,
+        attendance_confirmed: updatedAttendee.attendance_confirmed,
+        attendance_confirmed_at: updatedAttendee.attendance_confirmed_at,
+        tshirtsize: String(updatedAttendee.tshirtsize || '').trim()
+      };
+
+      const { error: updateError } = await supabase
         .from('attendees')
-        .update({
-          firstname: updatedAttendee.firstname,
-          lastname: updatedAttendee.lastname,
-          email: updatedAttendee.email,
-          church: updatedAttendee.church,
-          sector: updatedAttendee.sector,
-          paymentamount: updatedAttendee.paymentamount,
-          paymentstatus: updatedAttendee.paymentstatus,
-          attendance_number: updatedAttendee.attendance_number,
-          attendance_confirmed: updatedAttendee.attendance_confirmed,
-          attendance_confirmed_at: updatedAttendee.attendance_confirmed_at,
-          tshirtsize: updatedAttendee.tshirtsize
-        })
+        .update(updateData)
         .eq('id', updatedAttendee.id);
 
-      if (error) throw error;
+      if (updateError) {
+        console.error('Error de Supabase:', updateError);
+        throw new Error(`Error al actualizar en la base de datos: ${updateError.message}`);
+      }
 
       toast.success("Asistente actualizado", {
         description: "La información del asistente ha sido actualizada con éxito",
       });
 
-      fetchAttendees();
+      await Promise.all([
+        fetchAttendees(),
+        refreshAll()
+      ]);
+      
       closeModal();
     } catch (error) {
-      toast.error("Error", {
+      console.error('Error al actualizar asistente:', error);
+      toast.error("Error al actualizar", {
         description: error instanceof Error ? error.message : "No se pudo actualizar el asistente",
       });
+      throw error;
     }
   };
 
-  const filteredAttendees = attendees.filter(attendee => {
-    const searchLower = searchTerm.toLowerCase();
-    const fullName = `${attendee.firstname} ${attendee.lastname}`.toLowerCase();
-    const email = attendee.email.toLowerCase();
-    const church = attendee.church.toLowerCase();
-    const sector = attendee.sector.toLowerCase();
-    const attendanceNumber = attendee.attendance_number?.toString().padStart(3, '0') || '';
-    const attendanceNumberWithHash = `#${attendanceNumber}`;
+  const handleSort = (key: keyof Attendee) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
 
-    return (
-      fullName.includes(searchLower) ||
-      email.includes(searchLower) ||
-      church.includes(searchLower) ||
-      sector.includes(searchLower) ||
-      attendanceNumber.includes(searchTerm) ||
-      attendanceNumberWithHash.includes(searchTerm)
-    );
-  });
+  const getSortedAttendees = (attendees: Attendee[]) => {
+    return [...attendees].sort((a, b) => {
+      if (sortConfig.key === 'attendance_number') {
+        // Manejar números de asistencia (incluyendo undefined)
+        const aNum = a.attendance_number ?? Infinity;
+        const bNum = b.attendance_number ?? Infinity;
+        return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
+      }
+
+      if (sortConfig.key === 'registrationdate') {
+        // Ordenar por fecha
+        const dateA = new Date(a.registrationdate).getTime();
+        const dateB = new Date(b.registrationdate).getTime();
+        return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+
+      // Ordenamiento por texto
+      const aValue = String(a[sortConfig.key] ?? '').toLowerCase();
+      const bValue = String(b[sortConfig.key] ?? '').toLowerCase();
+      
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const filteredAndSortedAttendees = getSortedAttendees(
+    attendees.filter(attendee => {
+      const searchLower = searchTerm.toLowerCase();
+      const fullName = `${attendee.firstname} ${attendee.lastname}`.toLowerCase();
+      const email = attendee.email.toLowerCase();
+      const church = attendee.church.toLowerCase();
+      const sector = attendee.sector.toLowerCase();
+      const attendanceNumber = attendee.attendance_number?.toString().padStart(3, '0') || '';
+      const attendanceNumberWithHash = `#${attendanceNumber}`;
+
+      return (
+        fullName.includes(searchLower) ||
+        email.includes(searchLower) ||
+        church.includes(searchLower) ||
+        sector.includes(searchLower) ||
+        attendanceNumber.includes(searchTerm) ||
+        attendanceNumberWithHash.includes(searchTerm)
+      );
+    })
+  );
 
   const getPaymentBadge = (status: Attendee['paymentstatus']) => {
+    const getBadgeStyles = (status: Attendee['paymentstatus']) => {
+      switch (status) {
+        case 'Pagado':
+          return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        case 'Revisado':
+          return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+        default:
+          return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      }
+    };
+
+    const getIcon = (status: Attendee['paymentstatus']) => {
+      switch (status) {
+        case 'Pagado':
+        case 'Revisado':
+          return <CheckCircle2 className="h-3 w-3 mr-1" />;
+        default:
+          return <XCircle className="h-3 w-3 mr-1" />;
+      }
+    };
+
     return (
       <Badge 
         variant={status === 'Pagado' ? 'default' : 'secondary'}
-        className={status === 'Pagado' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'}
+        className={getBadgeStyles(status)}
       >
-        {status === 'Pagado' ? (
-          <CheckCircle2 className="h-3 w-3 mr-1" />
-        ) : (
-          <XCircle className="h-3 w-3 mr-1" />
-        )}
+        {getIcon(status)}
         {status}
       </Badge>
     );
@@ -272,10 +363,10 @@ export default function AttendeesTable() {
         {isMobile ? (
           // Versión móvil: lista simplificada
           <div className="space-y-4 p-2">
-            {filteredAttendees.length === 0 && !loading ? (
+            {filteredAndSortedAttendees.length === 0 && !loading ? (
               <p className="text-center text-muted-foreground">No se encontraron asistentes</p>
             ) : (
-              filteredAttendees.map((attendee) => (
+              filteredAndSortedAttendees.map((attendee) => (
                 <div
                   key={attendee.id}
                   className="border rounded p-3 shadow-sm flex flex-col space-y-1"
@@ -326,13 +417,76 @@ export default function AttendeesTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Número</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Correo</TableHead>
-                <TableHead>Iglesia</TableHead>
-                <TableHead>Sector</TableHead>
-                <TableHead>Monto</TableHead>
-                <TableHead>Estado de Pago</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('attendance_number')}
+                    className="flex items-center gap-1"
+                  >
+                    Número
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('firstname')}
+                    className="flex items-center gap-1"
+                  >
+                    Nombre
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('email')}
+                    className="flex items-center gap-1"
+                  >
+                    Correo
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('church')}
+                    className="flex items-center gap-1"
+                  >
+                    Iglesia
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('sector')}
+                    className="flex items-center gap-1"
+                  >
+                    Sector
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('paymentamount')}
+                    className="flex items-center gap-1"
+                  >
+                    Monto
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('paymentstatus')}
+                    className="flex items-center gap-1"
+                  >
+                    Estado de Pago
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Comprobante</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -346,14 +500,14 @@ export default function AttendeesTable() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : filteredAttendees.length === 0 ? (
+              ) : filteredAndSortedAttendees.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="h-24 text-center">
                     No se encontraron asistentes
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAttendees.map((attendee) => (
+                filteredAndSortedAttendees.map((attendee) => (
                   <TableRow key={attendee.id}>
                     <TableCell>
                       {attendee.attendance_number ? (

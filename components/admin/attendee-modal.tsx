@@ -33,6 +33,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CHURCHES_DATA } from '@/lib/churches-data';
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 // Form schema for editing attendee
 const formSchema = z.object({
@@ -42,7 +43,10 @@ const formSchema = z.object({
   sector: z.string(),
   church: z.string(),
   paymentAmount: z.coerce.number().min(0, "El monto no puede ser negativo"),
-  paymentStatus: z.string(),
+  paymentStatus: z.enum(['Pendiente', 'Pagado', 'Revisado'], {
+    required_error: "El estado de pago es requerido",
+    invalid_type_error: "Estado de pago no válido",
+  }),
   tshirtsize: z.string().optional(),
 });
 
@@ -69,7 +73,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
       sector: "",
       church: "",
       paymentAmount: 0,
-      paymentStatus: "",
+      paymentStatus: "Pendiente" as const,
       tshirtsize: "",
     },
   });
@@ -79,13 +83,13 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
     if (attendee) {
       console.log('Resetting form with attendee data:', attendee);
       form.reset({
-        firstName: attendee.firstName || "",
-        lastName: attendee.lastName || "",
+        firstName: attendee.firstName || attendee.firstname || "",
+        lastName: attendee.lastName || attendee.lastname || "",
         email: attendee.email || "",
         sector: attendee.sector || "",
         church: attendee.church || "",
-        paymentAmount: attendee.paymentAmount || 0,
-        paymentStatus: attendee.paymentStatus || "Pendiente",
+        paymentAmount: attendee.paymentAmount || attendee.paymentamount || 0,
+        paymentStatus: (attendee.paymentStatus || attendee.paymentstatus || "Pendiente") as "Pendiente" | "Pagado" | "Revisado",
         tshirtsize: attendee.tshirtsize || "",
       });
       
@@ -100,16 +104,34 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
     setIsLoading(true);
     
     try {
+      // Asegurarnos de que el estado de pago sea uno de los valores permitidos
+      const validPaymentStatus = ['Pendiente', 'Pagado', 'Revisado'] as const;
+      const paymentStatus = data.paymentStatus as typeof validPaymentStatus[number];
+      
+      if (!validPaymentStatus.includes(paymentStatus)) {
+        throw new Error(`Estado de pago no válido. Debe ser uno de: ${validPaymentStatus.join(', ')}`);
+      }
+
       const updatedAttendee = {
         ...attendee,
-        ...data,
-        id: attendee.id // Aseguramos que el ID esté presente
+        firstname: data.firstName,
+        lastname: data.lastName,
+        email: data.email,
+        church: data.church,
+        sector: data.sector,
+        paymentamount: data.paymentAmount,
+        paymentstatus: paymentStatus,
+        tshirtsize: data.tshirtsize,
+        id: attendee.id
       };
       
       console.log('Enviando datos para actualizar:', updatedAttendee);
       await onUpdate(updatedAttendee);
     } catch (error) {
       console.error("Error al actualizar:", error);
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "No se pudo actualizar el asistente",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -339,6 +361,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                       <Select 
                         onValueChange={field.onChange}
                         value={field.value}
+                        defaultValue="Pendiente"
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -347,7 +370,8 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="Pendiente">Pendiente</SelectItem>
-                          <SelectItem value="Completado">Completado</SelectItem>
+                          <SelectItem value="Revisado">Revisado</SelectItem>
+                          <SelectItem value="Pagado">Pagado</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
