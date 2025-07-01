@@ -420,7 +420,7 @@ export default function AttendeesTable() {
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('attendance_number')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white"
                   >
                     Número
                     <ArrowUpDown className="h-4 w-4" />
@@ -430,7 +430,7 @@ export default function AttendeesTable() {
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('firstname')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white"
                   >
                     Nombre
                     <ArrowUpDown className="h-4 w-4" />
@@ -440,7 +440,7 @@ export default function AttendeesTable() {
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('email')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white"
                   >
                     Correo
                     <ArrowUpDown className="h-4 w-4" />
@@ -450,7 +450,7 @@ export default function AttendeesTable() {
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('church')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white"
                   >
                     Iglesia
                     <ArrowUpDown className="h-4 w-4" />
@@ -460,7 +460,7 @@ export default function AttendeesTable() {
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('sector')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white"
                   >
                     Sector
                     <ArrowUpDown className="h-4 w-4" />
@@ -470,7 +470,7 @@ export default function AttendeesTable() {
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('paymentamount')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white"
                   >
                     Monto
                     <ArrowUpDown className="h-4 w-4" />
@@ -480,14 +480,14 @@ export default function AttendeesTable() {
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('paymentstatus')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white"
                   >
                     Estado
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="w-[60px] text-center">Comp.</TableHead>
-                <TableHead className="w-[60px] text-center">Acc.</TableHead>
+                <TableHead className="w-[60px] text-center text-white">Comp.</TableHead>
+                <TableHead className="w-[60px] text-center text-white">Acc.</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -517,7 +517,7 @@ export default function AttendeesTable() {
                           #{attendee.attendance_number.toString().padStart(3, '0')}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground text-xs">Pendiente</span>
+                        <span className="text-muted-foreground text-xs text-white">Pendiente</span>
                       )}
                     </TableCell>
                     <TableCell className="text-center">{`${attendee.firstname} ${attendee.lastname}`}</TableCell>
