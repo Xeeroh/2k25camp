@@ -18,6 +18,7 @@ import { Loader2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
 
 const formSchema = z.object({
   password: z.string()
@@ -37,7 +38,9 @@ export default function UpdatePasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
   const router = useRouter();
+  const { hasRole } = useAuth();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -46,11 +49,24 @@ export default function UpdatePasswordPage() {
       confirmPassword: "",
     },
   });
+
+  // Función para determinar la ruta de redirección según el rol
+  const getRedirectPath = () => {
+    if (hasRole('admin')) {
+      return '/admin';
+    } else if (hasRole('editor')) {
+      return '/comite';
+    } else {
+      return '/';
+    }
+  };
   
   useEffect(() => {
-    const checkResetToken = async () => {
+    const validateResetToken = async () => {
       try {
-        // Verificar si hay un error en la URL
+        setIsValidating(true);
+        
+        // Verificar si hay errores en la URL
         const searchParams = new URLSearchParams(window.location.search);
         const error = searchParams.get('error');
         const errorCode = searchParams.get('error_code');
@@ -65,40 +81,54 @@ export default function UpdatePasswordPage() {
 
         // Verificar si hay un token de restablecimiento en la URL
         const hash = window.location.hash;
-        if (!hash) {
-          console.log('No hay token de restablecimiento, redirigiendo a login');
+        const searchType = searchParams.get('type');
+        const searchToken = searchParams.get('token');
+        
+        console.log('Validando token de restablecimiento:', {
+          hash: hash ? 'Presente' : 'No presente',
+          searchType,
+          searchToken: searchToken ? 'Presente' : 'No presente'
+        });
+
+        // Si no hay hash ni parámetros de búsqueda válidos, redirigir
+        if (!hash && (!searchType || !searchToken)) {
+          console.log('No hay token de restablecimiento válido, redirigiendo a login');
+          toast.error('Enlace de restablecimiento inválido');
           router.push('/admin');
           return;
         }
 
-        // Verificar si el token es válido intentando obtener la sesión
+        // Verificar si ya hay una sesión activa
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error('Error al verificar token:', sessionError);
+          console.error('Error al verificar sesión:', sessionError);
+          toast.error('Error al verificar la sesión');
           router.push('/admin');
           return;
         }
 
-        // Si no hay sesión pero hay hash, es normal porque el usuario aún no ha actualizado la contraseña
-        if (!session && hash) {
-          console.log('Token de restablecimiento válido');
+        // Si hay una sesión activa, el usuario ya está autenticado
+        if (session) {
+          console.log('Usuario ya autenticado, redirigiendo según rol');
+          const redirectPath = getRedirectPath();
+          router.push(redirectPath);
           return;
         }
 
-        // Si hay sesión y hash, el usuario ya actualizó la contraseña
-        if (session && hash) {
-          console.log('Usuario ya actualizó la contraseña, redirigiendo a admin');
-          router.push('/admin');
-        }
+        // Si llegamos aquí, el token es válido y podemos proceder
+        console.log('Token de restablecimiento válido, mostrando formulario');
+        setIsValidating(false);
+        
       } catch (error) {
-        console.error('Error al verificar token:', error);
+        console.error('Error al validar token:', error);
+        toast.error('Error al validar el enlace de restablecimiento');
         router.push('/admin');
       }
     };
     
-    checkResetToken();
-  }, [router]);
+    validateResetToken();
+  }, [router, hasRole]);
   
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -108,89 +138,129 @@ export default function UpdatePasswordPage() {
     try {
       // Obtener el token del hash de la URL
       const hash = window.location.hash;
-      console.log('Hash de la URL:', hash);
+      const searchParams = new URLSearchParams(window.location.search);
+      const searchType = searchParams.get('type');
+      const searchToken = searchParams.get('token');
       
-      if (!hash) {
-        throw new Error('No se encontró el token de restablecimiento');
+      console.log('Procesando actualización de contraseña:', {
+        hash: hash ? 'Presente' : 'No presente',
+        searchType,
+        searchToken: searchToken ? 'Presente' : 'No presente'
+      });
+      
+      let accessToken: string | null = null;
+      let refreshToken: string | null = null;
+
+      // Intentar extraer tokens del hash primero
+      if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+        accessToken = params.get('access_token');
+        refreshToken = params.get('refresh_token');
+        
+        console.log('Tokens del hash:', {
+          accessToken: accessToken ? 'Presente' : 'No presente',
+          refreshToken: refreshToken ? 'Presente' : 'No presente'
+        });
       }
 
-      // Extraer el token del hash
-      const params = new URLSearchParams(hash.substring(1));
-      console.log('Parámetros del hash:', Object.fromEntries(params.entries()));
-      
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      
-      console.log('Access Token:', accessToken ? 'Presente' : 'No presente');
-      console.log('Refresh Token:', refreshToken ? 'Presente' : 'No presente');
-      
-      if (!accessToken || !refreshToken) {
-        // Intentar obtener el token de los parámetros de búsqueda como respaldo
-        const searchParams = new URLSearchParams(window.location.search);
-        const type = searchParams.get('type');
-        const token = searchParams.get('token');
+      // Si no hay tokens en el hash, intentar con los parámetros de búsqueda
+      if (!accessToken && searchType === 'recovery' && searchToken) {
+        console.log('Usando token de recuperación de parámetros de búsqueda');
         
-        console.log('Parámetros de búsqueda:', {
-          type,
-          token: token ? 'Presente' : 'No presente'
+        // Intentar actualizar la contraseña directamente con el token de recuperación
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: data.password
         });
         
-        if (type === 'recovery' && token) {
-          // Si tenemos un token de recuperación, intentar usarlo directamente
-          const { error: updateError } = await supabase.auth.updateUser({
-            password: data.password
-          });
-          
-          if (updateError) throw updateError;
-          
-          setSuccess(true);
-          toast.success('Contraseña actualizada exitosamente');
-          
-          setTimeout(() => {
-            router.push('/admin');
-          }, 2000);
-          return;
+        if (updateError) {
+          console.error('Error al actualizar contraseña con token de recuperación:', updateError);
+          throw updateError;
         }
         
-        throw new Error('Token de acceso no encontrado');
+        setSuccess(true);
+        toast.success('Contraseña actualizada exitosamente');
+        
+        // Esperar un momento para que se actualice el estado de autenticación
+        setTimeout(() => {
+          const redirectPath = getRedirectPath();
+          router.push(redirectPath);
+        }, 2000);
+        return;
       }
 
-      // Establecer la sesión
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      });
+      // Si tenemos tokens del hash, establecer la sesión primero
+      if (accessToken && refreshToken) {
+        console.log('Estableciendo sesión con tokens del hash');
+        
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
 
-      if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error('Error al establecer sesión:', sessionError);
+          throw sessionError;
+        }
 
-      // Actualizar la contraseña
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: data.password
-      });
+        // Ahora actualizar la contraseña
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: data.password
+        });
+        
+        if (updateError) {
+          console.error('Error al actualizar contraseña:', updateError);
+          throw updateError;
+        }
+        
+        setSuccess(true);
+        toast.success('Contraseña actualizada exitosamente');
+        
+        // Esperar un momento para que se actualice el estado de autenticación
+        setTimeout(() => {
+          const redirectPath = getRedirectPath();
+          router.push(redirectPath);
+        }, 2000);
+        return;
+      }
+
+      // Si no tenemos tokens válidos
+      throw new Error('No se encontraron tokens de restablecimiento válidos');
       
-      if (updateError) throw updateError;
-      
-      setSuccess(true);
-      toast.success('Contraseña actualizada exitosamente');
-      
-      setTimeout(() => {
-        router.push('/admin');
-      }, 2000);
     } catch (error: any) {
       console.error("Error al actualizar la contraseña:", error);
       let errorMessage = "Hubo un error al actualizar la contraseña. Por favor intente de nuevo.";
       
-      if (error.message?.includes('No se encontró') || error.message?.includes('Token de acceso')) {
+      if (error.message?.includes('No se encontraron tokens') || 
+          error.message?.includes('Token de acceso') ||
+          error.message?.includes('Invalid token') ||
+          error.message?.includes('expired')) {
         errorMessage = "El enlace de restablecimiento ha expirado o es inválido. Por favor, solicite un nuevo enlace.";
-        router.push('/admin/reset-password');
+        toast.error(errorMessage);
+        setTimeout(() => {
+          router.push('/admin/reset-password');
+        }, 2000);
+      } else {
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
-      
-      setError(errorMessage);
-      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // Mostrar loading mientras se valida el token
+  if (isValidating) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-md space-y-8 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+            <p className="text-muted-foreground">Validando enlace de restablecimiento...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col">
