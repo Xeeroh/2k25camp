@@ -1,49 +1,54 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 
 interface RouteGuardProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'editor' | 'viewer';
+  requiredRole?: 'admin' | 'editor' | 'viewer' | Array<'admin' | 'editor' | 'viewer'>;
 }
 
 export default function RouteGuard({ children, requiredRole = 'viewer' }: RouteGuardProps) {
   const { user, loading, hasRole } = useAuth();
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
 
+  function hasAnyRole(required: typeof requiredRole): boolean {
+    if (!user) return false;
+    if (Array.isArray(required)) {
+      return required.some(role => hasRole(role));
+    }
+    return hasRole(required);
+  }
+
+  // Efecto para redirección si no cumple requisitos
   useEffect(() => {
     console.log('RouteGuard - Estado actual:', { 
       loading, 
       user: user ? { email: user.email, role: user.role } : null,
       requiredRole,
-      hasRequiredRole: user ? hasRole(requiredRole) : false
+      hasRequiredRole: user ? hasAnyRole(requiredRole) : false
     });
 
     if (!loading) {
-      setIsChecking(false);
-      
       if (!user) {
         console.log('RouteGuard - Usuario no autenticado, redirigiendo a /registro');
         toast.error('Debes iniciar sesión para acceder a esta página');
         router.push('/registro');
         return;
       }
-      
-      if (!hasRole(requiredRole)) {
+      if (!hasAnyRole(requiredRole)) {
         console.log('RouteGuard - Usuario no tiene el rol requerido, redirigiendo a /');
-        toast.error(`No tienes permisos de ${requiredRole} para acceder a esta página`);
+        toast.error(`No tienes permisos para acceder a esta página`);
         router.push('/');
         return;
       }
     }
   }, [user, loading, hasRole, requiredRole, router]);
 
-  // Si está cargando o verificando, mostrar el spinner
-  if (loading || isChecking) {
+  // Mostrar spinner solo si loading es true
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -55,7 +60,7 @@ export default function RouteGuard({ children, requiredRole = 'viewer' }: RouteG
   }
 
   // Si no hay usuario o no tiene el rol requerido, no mostrar nada
-  if (!user || !hasRole(requiredRole)) {
+  if (!user || !hasAnyRole(requiredRole)) {
     return null;
   }
 
