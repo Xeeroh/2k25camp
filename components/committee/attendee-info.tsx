@@ -95,12 +95,23 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
     }
   };
   
+  // Función robusta para obtener el siguiente número de asistencia
+  const getNextAttendanceNumberRobusto = async () => {
+    const { data: lastAttendee, error: lastError } = await supabase
+      .from('attendees')
+      .select('attendance_number')
+      .order('attendance_number', { ascending: false })
+      .limit(1)
+      .single();
+    return (lastAttendee?.attendance_number || 0) + 1;
+  };
+
   // Manejar confirmación de asistencia
   const handleConfirm = async () => {
     if (!localAttendee?.id) return;
     let assignedNumber = localAttendee.attendance_number;
     if (!assignedNumber) {
-      assignedNumber = await getNextAttendanceNumber();
+      assignedNumber = await getNextAttendanceNumberRobusto();
     }
     const { error } = await supabase.from('attendees').update({
       attendance_confirmed: true,
