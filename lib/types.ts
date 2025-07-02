@@ -30,4 +30,5 @@ export interface Attendee {
   attendance_confirmed_at?: string;
   tshirtsize?: string;
   istest?: boolean;
+  expectedamount?: number;
 } 

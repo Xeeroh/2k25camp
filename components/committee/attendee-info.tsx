@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { CheckCircle, XCircle, User, Calendar, Building, Mail, CreditCard, QrCode, ShieldCheck, Shirt, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { getNextAttendanceNumber } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 // Interfaz sencilla para los datos del asistente
 interface AttendeeData {
@@ -30,6 +32,11 @@ interface AttendeeInfoProps {
 }
 
 export default function AttendeeInfo({ attendee, onConfirmAttendance }: AttendeeInfoProps) {
+  const [localAttendee, setLocalAttendee] = useState(attendee);
+  useEffect(() => {
+    setLocalAttendee(attendee);
+  }, [attendee]);
+
   // Logs para depuración
   useEffect(() => {
     console.log('AttendeeInfo - Datos recibidos:', attendee);
@@ -89,11 +96,23 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
   };
   
   // Manejar confirmación de asistencia
-  const handleConfirm = () => {
-    if (onConfirmAttendance && attendee.id) {
-      onConfirmAttendance(attendee.id);
-    } else {
+  const handleConfirm = async () => {
+    if (!localAttendee?.id) return;
+    let assignedNumber = localAttendee.attendance_number;
+    if (!assignedNumber) {
+      assignedNumber = await getNextAttendanceNumber();
+    }
+    const { error } = await supabase.from('attendees').update({
+      attendance_confirmed: true,
+      attendance_confirmed_at: new Date().toISOString(),
+      attendance_number: assignedNumber
+    }).eq('id', localAttendee.id);
+    if (!error) {
       toast.success(`Asistencia confirmada para ${fullName}`);
+      setLocalAttendee({ ...localAttendee, attendance_confirmed: true, attendance_confirmed_at: new Date().toISOString(), attendance_number: assignedNumber });
+      if (onConfirmAttendance) onConfirmAttendance(localAttendee.id);
+    } else {
+      toast.error('Error al confirmar asistencia');
     }
   };
 
@@ -113,7 +132,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           {fullName}
         </CardTitle>
         <CardDescription className="text-center text-xs sm:text-sm">
-          {attendee.id}
+          {localAttendee?.id}
         </CardDescription>
       </CardHeader>
       
@@ -126,11 +145,11 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
         
         <div className="flex items-center justify-center border-2 border-dashed border-primary/20 p-2 rounded-lg mb-2">
           <div className="flex items-center gap-2">
-            {attendee.attendance_confirmed ? (
+            {localAttendee?.attendance_confirmed ? (
               <>
                 <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                 <span className="font-medium text-xs sm:text-sm">
-                  Asistencia Confirmada - Número: {attendee.attendance_number}
+                  Asistencia Confirmada - Número: {localAttendee.attendance_number}
                 </span>
               </>
             ) : (
@@ -140,6 +159,18 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
               </>
             )}
           </div>
+        </div>
+
+        {/* Mostrar si es acreedor a camiseta */}
+        <div className="flex items-center justify-center mb-2">
+          {localAttendee?.tshirtsize ? (
+            <Badge className="bg-purple-600 text-white px-3 py-1 text-xs flex items-center gap-2">
+              <Shirt className="h-4 w-4 mr-1" />
+              Acreedor a camiseta — Talla: <span className="font-bold ml-1">{localAttendee.tshirtsize}</span>
+            </Badge>
+          ) : (
+            <Badge className="bg-gray-400 text-white px-3 py-1 text-xs">N/A</Badge>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -166,7 +197,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           </div>
         </div>
 
-        {!attendee.attendance_confirmed && (
+        {!localAttendee?.attendance_confirmed && (
           <Button 
             onClick={handleConfirm}
             className="w-full mt-4"
