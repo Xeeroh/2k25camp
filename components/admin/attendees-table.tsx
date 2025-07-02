@@ -48,13 +48,6 @@ export default function AttendeesTable() {
     key: 'registrationdate',
     direction: 'desc'
   });
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof Attendee;
-    direction: 'asc' | 'desc';
-  }>({
-    key: 'registrationdate',
-    direction: 'desc'
-  });
   const { registerRefreshCallback, refreshAll, refreshAll } = useRefresh();
 
   // Modal states
@@ -143,11 +136,6 @@ export default function AttendeesTable() {
         fetchAttendees(),
         refreshAll()
       ]);
-      // Actualizar la tabla y todas las estadísticas
-      await Promise.all([
-        fetchAttendees(),
-        refreshAll()
-      ]);
     } catch (error) {
       toast.error("Error", {
         description: error instanceof Error ? error.message : "No se pudo eliminar el asistente",
@@ -197,49 +185,8 @@ export default function AttendeesTable() {
         throw new Error(`Estado de pago no válido. Debe ser uno de: ${validPaymentStatus.join(', ')}`);
       }
 
-  const handleUpdateAttendee = async (updatedAttendee: any) => {
-    try {
-      if (!updatedAttendee.id) {
-        throw new Error('ID del asistente no proporcionado');
-      }
-
-      // Validar el estado de pago
-      const validPaymentStatus = ['Pendiente', 'Pagado', 'Revisado'] as const;
-      const paymentStatus = String(updatedAttendee.paymentstatus || '').trim();
-      
-      if (!paymentStatus || !validPaymentStatus.includes(paymentStatus as typeof validPaymentStatus[number])) {
-        throw new Error(`Estado de pago no válido. Debe ser uno de: ${validPaymentStatus.join(', ')}`);
-      }
-
       // Si se está confirmando la asistencia y no tiene número, asignar el siguiente
       if (updatedAttendee.attendance_confirmed && !updatedAttendee.attendance_number) {
-        try {
-          const nextNumber = await getNextAttendanceNumber();
-          updatedAttendee.attendance_number = nextNumber;
-          updatedAttendee.attendance_confirmed_at = new Date().toISOString();
-        } catch (error) {
-          console.error('Error al asignar número de asistencia:', error);
-          throw new Error('No se pudo asignar el número de asistencia');
-        }
-      }
-
-      const updateData = {
-        firstname: String(updatedAttendee.firstname || '').trim(),
-        lastname: String(updatedAttendee.lastname || '').trim(),
-        email: String(updatedAttendee.email || '').trim(),
-        church: String(updatedAttendee.church || '').trim(),
-        sector: String(updatedAttendee.sector || '').trim(),
-        paymentamount: Number(updatedAttendee.paymentamount) || 0,
-        paymentstatus: paymentStatus,
-        attendance_number: updatedAttendee.attendance_number,
-        attendance_confirmed: updatedAttendee.attendance_confirmed,
-        attendance_confirmed_at: updatedAttendee.attendance_confirmed_at,
-        tshirtsize: String(updatedAttendee.tshirtsize || '').trim()
-      };
-
-      const { error: updateError } = await supabase
-        .from('attendees')
-        .update(updateData)
         try {
           const nextNumber = await getNextAttendanceNumber();
           updatedAttendee.attendance_number = nextNumber;
@@ -273,10 +220,6 @@ export default function AttendeesTable() {
         console.error('Error de Supabase:', updateError);
         throw new Error(`Error al actualizar en la base de datos: ${updateError.message}`);
       }
-      if (updateError) {
-        console.error('Error de Supabase:', updateError);
-        throw new Error(`Error al actualizar en la base de datos: ${updateError.message}`);
-      }
 
       toast.success("Asistente actualizado", {
         description: "La información del asistente ha sido actualizada con éxito",
@@ -287,20 +230,12 @@ export default function AttendeesTable() {
         refreshAll()
       ]);
       
-      await Promise.all([
-        fetchAttendees(),
-        refreshAll()
-      ]);
-      
       closeModal();
     } catch (error) {
       console.error('Error al actualizar asistente:', error);
       toast.error("Error al actualizar", {
-      console.error('Error al actualizar asistente:', error);
-      toast.error("Error al actualizar", {
         description: error instanceof Error ? error.message : "No se pudo actualizar el asistente",
       });
-      throw error;
       throw error;
     }
   };
@@ -347,59 +282,7 @@ export default function AttendeesTable() {
       const sector = attendee.sector.toLowerCase();
       const attendanceNumber = attendee.attendance_number?.toString().padStart(3, '0') || '';
       const attendanceNumberWithHash = `#${attendanceNumber}`;
-  const handleSort = (key: keyof Attendee) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
 
-  const getSortedAttendees = (attendees: Attendee[]) => {
-    return [...attendees].sort((a, b) => {
-      if (sortConfig.key === 'attendance_number') {
-        // Manejar números de asistencia (incluyendo undefined)
-        const aNum = a.attendance_number ?? Infinity;
-        const bNum = b.attendance_number ?? Infinity;
-        return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
-      }
-
-      if (sortConfig.key === 'registrationdate') {
-        // Ordenar por fecha
-        const dateA = new Date(a.registrationdate).getTime();
-        const dateB = new Date(b.registrationdate).getTime();
-        return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
-      }
-
-      // Ordenamiento por texto
-      const aValue = String(a[sortConfig.key] ?? '').toLowerCase();
-      const bValue = String(b[sortConfig.key] ?? '').toLowerCase();
-      
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  };
-
-  const filteredAndSortedAttendees = getSortedAttendees(
-    attendees.filter(attendee => {
-      const searchLower = searchTerm.toLowerCase();
-      const fullName = `${attendee.firstname} ${attendee.lastname}`.toLowerCase();
-      const email = attendee.email.toLowerCase();
-      const church = attendee.church.toLowerCase();
-      const sector = attendee.sector.toLowerCase();
-      const attendanceNumber = attendee.attendance_number?.toString().padStart(3, '0') || '';
-      const attendanceNumberWithHash = `#${attendanceNumber}`;
-
-      return (
-        fullName.includes(searchLower) ||
-        email.includes(searchLower) ||
-        church.includes(searchLower) ||
-        sector.includes(searchLower) ||
-        attendanceNumber.includes(searchTerm) ||
-        attendanceNumberWithHash.includes(searchTerm)
-      );
-    })
-  );
       return (
         fullName.includes(searchLower) ||
         email.includes(searchLower) ||
@@ -433,34 +316,11 @@ export default function AttendeesTable() {
       }
     };
 
-    const getBadgeStyles = (status: Attendee['paymentstatus']) => {
-      switch (status) {
-        case 'Pagado':
-          return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-        case 'Revisado':
-          return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-        default:
-          return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      }
-    };
-
-    const getIcon = (status: Attendee['paymentstatus']) => {
-      switch (status) {
-        case 'Pagado':
-        case 'Revisado':
-          return <CheckCircle2 className="h-3 w-3 mr-1" />;
-        default:
-          return <XCircle className="h-3 w-3 mr-1" />;
-      }
-    };
-
     return (
       <Badge 
         variant={status === 'Pagado' ? 'default' : 'secondary'}
         className={getBadgeStyles(status)}
-        className={getBadgeStyles(status)}
       >
-        {getIcon(status)}
         {getIcon(status)}
         {status}
       </Badge>
@@ -504,10 +364,8 @@ export default function AttendeesTable() {
           // Versión móvil: lista simplificada
           <div className="space-y-4 p-2">
             {filteredAndSortedAttendees.length === 0 && !loading ? (
-            {filteredAndSortedAttendees.length === 0 && !loading ? (
               <p className="text-center text-muted-foreground">No se encontraron asistentes</p>
             ) : (
-              filteredAndSortedAttendees.map((attendee) => (
               filteredAndSortedAttendees.map((attendee) => (
                 <div
                   key={attendee.id}
@@ -644,7 +502,6 @@ export default function AttendeesTable() {
                   </TableCell>
                 </TableRow>
               ) : filteredAndSortedAttendees.length === 0 ? (
-              ) : filteredAndSortedAttendees.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="h-24 text-center text-xs px-1">
                     No se encontraron asistentes
@@ -678,19 +535,16 @@ export default function AttendeesTable() {
                           size="sm"
                           onClick={() => openModal(attendee, 'receipt')}
                           className="h-8 w-8 p-0 mx-auto"
-                          className="h-8 w-8 p-0 mx-auto"
                         >
                           <ImageIcon className="h-4 w-4 text-blue-500" />
                         </Button>
                       ) : (
-                        <span className="text-muted-foreground text-xs">-</span>
                         <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
                     <TableCell className="w-[60px] text-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 mx-auto">
                           <Button variant="ghost" className="h-8 w-8 p-0 mx-auto">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
@@ -746,7 +600,7 @@ export default function AttendeesTable() {
           <AlertDialogFooter>
             <AlertDialogCancel className='text-black '>
               Cancelar
-              </AlertDialogCancel>
+            </AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               Eliminar
             </AlertDialogAction>

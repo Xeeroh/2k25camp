@@ -45,22 +45,10 @@ export default function DashboardStats() {
   const { registerRefreshCallback } = useRefresh();
 
   const fetchStats = async () => {
-  const fetchStats = async () => {
     try {
       setLoading(true);
       const { data: attendees, error: attendeesError } = await supabase
-      const { data: attendees, error: attendeesError } = await supabase
         .from('attendees')
-        .select('*')
-        .not('istest', 'eq', true); // Excluir registros de prueba
-
-      if (attendeesError) throw attendeesError;
-
-      const totalAttendees = attendees?.length || 0;
-      const totalAmount = attendees?.reduce((sum, attendee) => sum + (attendee.paymentamount || 0), 0) || 0;
-      const uniqueChurches = new Set(attendees?.map(a => a.church)).size;
-      const confirmedAttendees = attendees?.filter(a => a.attendance_confirmed).length || 0;
-
         .select('*')
         .not('istest', 'eq', true); // Excluir registros de prueba
 
@@ -75,10 +63,7 @@ export default function DashboardStats() {
         {
           title: "Total de Asistentes",
           value: totalAttendees.toString(),
-          value: totalAttendees.toString(),
           icon: <Users className="h-5 w-5 text-muted-foreground" />,
-          change: "Total registrados",
-          changeType: "neutral"
           change: "Total registrados",
           changeType: "neutral"
         },
@@ -88,31 +73,23 @@ export default function DashboardStats() {
           icon: <DollarSign className="h-5 w-5 text-muted-foreground" />,
           change: "Monto total",
           changeType: "neutral"
-          change: "Monto total",
-          changeType: "neutral"
         },
         {
           title: "Iglesias Participantes",
           value: uniqueChurches.toString(),
-          value: uniqueChurches.toString(),
           icon: <Church className="h-5 w-5 text-muted-foreground" />,
-          change: "Total de iglesias",
           change: "Total de iglesias",
           changeType: "neutral"
         },
         {
           title: "Confirmados",
           value: confirmedAttendees.toString(),
-          value: confirmedAttendees.toString(),
           icon: <CheckSquare className="h-5 w-5 text-muted-foreground" />,
-          change: "Asistentes confirmados",
           change: "Asistentes confirmados",
           changeType: "neutral"
         }
       ]);
     } catch (err) {
-      console.error('Error al cargar estadísticas:', err);
-      setError('Error al cargar las estadísticas');
       console.error('Error al cargar estadísticas:', err);
       setError('Error al cargar las estadísticas');
     } finally {
@@ -122,21 +99,11 @@ export default function DashboardStats() {
 
   useEffect(() => {
     registerRefreshCallback(fetchStats);
-    registerRefreshCallback(fetchStats);
   }, [registerRefreshCallback]);
 
   useEffect(() => {
     fetchStats();
-    fetchStats();
   }, []);
-
-  if (error) {
-    return (
-      <div className="text-center text-destructive p-4">
-        {error}
-      </div>
-    );
-  }
 
   if (error) {
     return (
