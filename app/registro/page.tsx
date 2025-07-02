@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -26,6 +26,16 @@ interface AttendeeData {
 export default function RegistroPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [qrData, setQrData] = useState<string | null>(null);
+  const [registroCerrado, setRegistroCerrado] = useState(false);
+
+  useEffect(() => {
+    // Fecha límite: 15 de julio de 2025, 23:59:59
+    const fechaLimite = new Date('2025-07-15T23:59:59');
+    const ahora = new Date();
+    if (ahora > fechaLimite) {
+      setRegistroCerrado(true);
+    }
+  }, []);
 
   const handleSuccessfulSubmission = (data: AttendeeData, qrCode: string) => {
     console.log('RegistroPage - handleSuccessfulSubmission recibió:');
@@ -61,8 +71,16 @@ export default function RegistroPage() {
       <Navbar showInternalLinks={false} />
       
       <div className="flex-1 py-12 bg-muted/30 bg-try">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {isSubmitted ? (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-1 min-h-[60vh] items-center justify-center">
+          {registroCerrado ? (
+            <div className="text-center mt-20 mb-20 p-8 card-glass rounded-xl shadow-lg">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-blue-200">🕔 ¡El registro en linea ha finalizado! 🕔</h1>
+            <p className="text-lg text-blue-100 mb-4">🚫 El registro en línea está cerrado, pero aún puedes ser parte del campamento .</p>
+            <p className="text-md text-blue-100 mb-2"> 🏕️ Solo llega el día del evento y 📝 regístrate directamente en el área de bienvenida.
+            ¡Nos encantaría verte ahí!</p>
+            <p className="text-md text-blue-100"> 👋🏼 ¡Nos vemos pronto!</p>
+            </div>
+          ) : isSubmitted ? (
             <SuccessMessage 
               qrData={qrData} 
               onReset={() => {

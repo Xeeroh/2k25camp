@@ -70,7 +70,7 @@ export default function CajaPage() {
 
   const handlePagoCompleto = async () => {
     if (!attendee) return;
-    const total = 900;
+    const total = attendee.expectedamount || 900;
     const anterior = attendee.paymentamount || 0;
 
     const { error: updateError } = await supabase
@@ -230,8 +230,8 @@ export default function CajaPage() {
                   </span>
                 </div>
                 <div><span className="font-medium">Monto pagado:</span> ${attendee.paymentamount || 0}</div>
-                <div><span className="font-medium">Total a pagar:</span> $900</div>
-                <div><span className="font-medium text-red-600">Debe:</span> ${900 - (attendee.paymentamount || 0)}</div>
+                <div><span className="font-medium">Total a pagar:</span> ${attendee.expectedamount || 900}</div>
+                <div><span className="font-medium text-red-600">Debe:</span> ${(attendee.expectedamount || 900) - (attendee.paymentamount || 0)}</div>
               </div>
 
               {attendee.paymentstatus !== 'Pagado' && (

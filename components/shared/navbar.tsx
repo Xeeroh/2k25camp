@@ -114,6 +114,15 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
           Caja
         </Link>
       )}
+      {(isAdmin || isEditor) && (
+        <Link 
+          href={createInternalLink('/registro-presencial')}
+          className="text-white/50 hover:text-gray-300 transition-colors"
+          onClick={() => handleNavigation('/registro-presencial')}
+        >
+          Walk-in
+        </Link>
+      )}
       {isAdmin && (
         <Link 
           href={createInternalLink('/admin')}
@@ -174,6 +183,15 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
                 onClick={() => handleNavigation('/comite/caja')}
               >
                 Caja
+              </Link>
+            )}
+            {(isAdmin || isEditor) && (
+              <Link 
+                href={createInternalLink('/registro-presencial')}
+                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+                onClick={() => handleNavigation('/registro-presencial')}
+              >
+                Walk-in
               </Link>
             )}
             {isAdmin && (
