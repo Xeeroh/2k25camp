@@ -3,10 +3,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
-import { CheckCircle, XCircle, User, Calendar, Building, Mail, CreditCard, QrCode, ShieldCheck, Shirt, AlertTriangle } from 'lucide-react';
+import { User,  QrCode, ShieldCheck, Shirt, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
-import { getNextAttendanceNumber } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 
 // Interfaz sencilla para los datos del asistente
@@ -89,46 +88,54 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
       return 'Fecha no disponible';
     }
   };
-  
-  // Función robusta para obtener el siguiente número de asistencia
-  const getNextAttendanceNumberRobusto = async () => {
-    const { data: lastAttendee, error: lastError } = await supabase
-      .from('attendees')
-      .select('attendance_number')
-      .order('attendance_number', { ascending: false })
-      .limit(1)
-      .single();
-    return (lastAttendee?.attendance_number || 0) + 1;
+
+  // Función para confirmar asistencia
+  const confirmAttendance = async (id: string) => {
+    try {
+      // Obtener el último número de asistencia
+      const { data: lastAttendee, error: lastError } = await supabase
+        .from('attendees')
+        .select('attendance_number')
+        .order('attendance_number', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (lastError && lastError.code !== 'PGRST116') {
+        throw lastError;
+      }
+
+      // Calcular el nuevo número de asistencia
+      const nextAttendanceNumber = (lastAttendee?.attendance_number || 0) + 1;
+
+      // Actualizar el asistente con el número y la confirmación
+      const { error: updateError } = await supabase
+        .from('attendees')
+        .update({
+          attendance_number: nextAttendanceNumber,
+          attendance_confirmed: true,
+          attendance_confirmed_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''} - Número: ${nextAttendanceNumber}`);
+      
+      // Actualizar el estado local
+      if (attendee) {
+        setAttendee({
+          ...attendee,
+          attendance_number: nextAttendanceNumber,
+          attendance_confirmed: true,
+          attendance_confirmed_at: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('Error al confirmar asistencia:', error);
+      toast.error('Error al confirmar la asistencia');
+    }
   };
 
-  // Manejar confirmación de asistencia
-  const handleConfirm = async () => {
-    if (!attendee?.id) return;
-    let assignedNumber = attendee.attendance_number;
-    if (!assignedNumber) {
-      assignedNumber = await getNextAttendanceNumberRobusto();
-    }
-    const { error } = await supabase.from('attendees').update({
-      attendance_confirmed: true,
-      attendance_confirmed_at: new Date().toISOString(),
-      attendance_number: assignedNumber
-    }).eq('id', attendee.id);
-    if (!error) {
-      toast.success(`Asistencia confirmada para ${fullName}`);
-      if (onConfirmAttendance && attendee.id) onConfirmAttendance(attendee.id);
-    } else {
-      toast.error('Error al confirmar asistencia');
-    }
-  };
-
-  console.log('AttendeeInfo - Renderizando con datos:', {
-    fullName, 
-    email: attendee.email,
-    church: attendee.church,
-    sector: attendee.sector,
-    paymentamount: attendee.paymentamount,
-    isPaid
-  });
 
   return (
     <Card className="card-clear w-full">
@@ -137,7 +144,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           {fullName}
         </CardTitle>
         <CardDescription className="text-center text-xs sm:text-sm">
-          {attendee?.id}
+          {attendee.id}
         </CardDescription>
       </CardHeader>
       
@@ -150,7 +157,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
         
         <div className="flex items-center justify-center border-2 border-dashed border-primary/20 p-2 rounded-lg mb-2">
           <div className="flex items-center gap-2">
-            {attendee?.attendance_confirmed ? (
+            {attendee.attendance_confirmed ? (
               <>
                 <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                 <span className="font-medium text-xs sm:text-sm">
@@ -168,7 +175,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
 
         {/* Mostrar si es acreedor a camiseta */}
         <div className="flex items-center justify-center mb-2">
-          {attendee?.tshirtsize ? (
+          {attendee.tshirtsize ? (
             <Badge className="bg-purple-600 text-white px-3 py-1 text-xs flex items-center gap-2">
               <Shirt className="h-4 w-4 mr-1" />
               Acreedor a camiseta — Talla: <span className="font-bold ml-1">{attendee.tshirtsize}</span>
@@ -202,9 +209,9 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           </div>
         </div>
 
-        {!attendee?.attendance_confirmed && (
+        {!attendee.attendance_confirmed && (
           <Button 
-            onClick={handleConfirm}
+            onClick={confirmAttendance}
             className="w-full mt-4"
             size="sm"
           >
