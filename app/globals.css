@@ -196,3 +196,13 @@ background-size: cover;
 .animation-delay-400 {
   animation-delay: 400ms;
 }
+
+/* Animación de spin para el loader */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

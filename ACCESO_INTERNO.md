@@ -14,11 +14,13 @@ El sistema de restablecimiento de contraseña funciona de la siguiente manera:
    - Usuario ingresa su email
    - Sistema envía enlace de restablecimiento a través de Supabase
    - URL de redirección: `${origin}/admin/reset-callback`
+   - **Diseño**: Fondo `bg-try`, tarjeta `card-glass`, icono de email
 
 2. **Procesamiento del Enlace** (`/admin/reset-callback`)
    - Captura el enlace de Supabase con tokens de autenticación
    - Espera que Supabase procese la sesión automáticamente
    - Redirige a `/admin/update-password?from_reset=true`
+   - **Diseño**: Fondo `bg-try`, tarjeta `card-glass`, icono de escudo, spinner animado
 
 3. **Actualización de Contraseña** (`/admin/update-password`)
    - Detecta si el usuario viene de un enlace de restablecimiento
@@ -27,12 +29,14 @@ El sistema de restablecimiento de contraseña funciona de la siguiente manera:
    - Actualiza contraseña y redirige según rol:
      - Admin → `/admin`
      - Editor → `/comite`
+   - **Diseño**: Fondo `bg-try`, tarjeta `card-glass`, icono de candado, botones de mostrar/ocultar contraseña
 
 ### Características de Seguridad
 - **Rate Limiting**: Protección contra spam de solicitudes
 - **Validación de Tokens**: Verificación de enlaces válidos y no expirados
 - **Redirección Inteligente**: Basada en rol del usuario
 - **Manejo de Errores**: Mensajes claros para diferentes tipos de errores
+- **Interfaz de Usuario**: Diseño consistente con el resto de la aplicación
 
 ### URLs del Sistema
 - **Login Admin**: `/admin`
@@ -52,6 +56,23 @@ Para que el restablecimiento funcione correctamente, verificar en el dashboard d
 
 2. **Auth > Templates > Reset Password**
    - Verificar que use la URL de redirección correcta
+
+---
+
+## 🎨 Sistema de Diseño
+
+### Estilos Aplicados
+- **Fondo**: `bg-try` (fondo principal de la aplicación)
+- **Tarjetas**: `card-glass` (efecto de cristal con sombra)
+- **Botones**: `bg-blue-850` (color principal de la marca)
+- **Iconos**: Lucide React con colores consistentes
+- **Formularios**: Validación visual y estados de carga
+
+### Componentes de UI
+- **Inputs**: Altura `h-11`, bordes redondeados
+- **Botones**: Altura `h-11`, iconos integrados
+- **Alertas**: Bordes y colores consistentes
+- **Loading**: Spinners animados con iconos temáticos
 
 ---
 
@@ -107,6 +128,8 @@ npm run start        # Iniciar servidor de producción
 - Tailwind CSS para estilos
 - Shadcn/ui para componentes
 - React Hook Form con Zod para validación
+- Diseño responsivo y accesible
+- Manejo robusto de errores y estados de carga
 
 # Acceso a secciones internas
 
