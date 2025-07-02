@@ -145,11 +145,11 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
         
         <div className="flex items-center justify-center border-2 border-dashed border-primary/20 p-2 rounded-lg mb-2">
           <div className="flex items-center gap-2">
-            {localAttendee?.attendance_confirmed ? (
+            {attendee?.attendance_confirmed ? (
               <>
                 <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                 <span className="font-medium text-xs sm:text-sm">
-                  Asistencia Confirmada - Número: {localAttendee.attendance_number}
+                  Asistencia Confirmada - Número: {attendee.attendance_number}
                 </span>
               </>
             ) : (
@@ -163,10 +163,10 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
 
         {/* Mostrar si es acreedor a camiseta */}
         <div className="flex items-center justify-center mb-2">
-          {localAttendee?.tshirtsize ? (
+          {attendee?.tshirtsize ? (
             <Badge className="bg-purple-600 text-white px-3 py-1 text-xs flex items-center gap-2">
               <Shirt className="h-4 w-4 mr-1" />
-              Acreedor a camiseta — Talla: <span className="font-bold ml-1">{localAttendee.tshirtsize}</span>
+              Acreedor a camiseta — Talla: <span className="font-bold ml-1">{attendee.tshirtsize}</span>
             </Badge>
           ) : (
             <Badge className="bg-gray-400 text-white px-3 py-1 text-xs">N/A</Badge>
