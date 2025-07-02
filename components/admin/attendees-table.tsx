@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, CheckCircle2, XCircle, MoreHorizontal, Loader2, Image as ImageIcon, ArrowUpDown, ArrowUpDown } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, MoreHorizontal, Loader2, Image as ImageIcon, ArrowUpDown } from 'lucide-react';
 import { toast } from "sonner";
 import AttendeeModal from "./attendee-modal";
 import { useRefresh } from './refresh-context';
@@ -48,7 +48,7 @@ export default function AttendeesTable() {
     key: 'registrationdate',
     direction: 'desc'
   });
-  const { registerRefreshCallback, refreshAll, refreshAll } = useRefresh();
+  const { registerRefreshCallback, refreshAll } = useRefresh();
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
