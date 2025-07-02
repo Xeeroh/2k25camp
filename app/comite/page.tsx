@@ -196,14 +196,15 @@ export default function ComitePage() {
 
       toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''} - Número: ${nextAttendanceNumber}`);
       
-      // Actualizar el estado local
-      if (attendee) {
-        setAttendee({
-          ...attendee,
-          attendance_number: nextAttendanceNumber,
-          attendance_confirmed: true,
-          attendance_confirmed_at: new Date().toISOString()
-        });
+      // Recargar el asistente actualizado desde la base de datos
+      let { data, error } = await supabase
+        .from('attendees')
+        .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize')
+        .eq('id', id)
+        .single();
+
+      if (!error && data) {
+        setAttendee(data);
       }
     } catch (error) {
       console.error('Error al confirmar asistencia:', error);
