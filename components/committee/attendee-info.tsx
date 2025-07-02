@@ -32,11 +32,6 @@ interface AttendeeInfoProps {
 }
 
 export default function AttendeeInfo({ attendee, onConfirmAttendance }: AttendeeInfoProps) {
-  const [localAttendee, setLocalAttendee] = useState(attendee);
-  useEffect(() => {
-    setLocalAttendee(attendee);
-  }, [attendee]);
-
   // Logs para depuración
   useEffect(() => {
     console.log('AttendeeInfo - Datos recibidos:', attendee);
@@ -120,7 +115,6 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
     }).eq('id', attendee.id);
     if (!error) {
       toast.success(`Asistencia confirmada para ${fullName}`);
-      setLocalAttendee({ ...attendee, attendance_confirmed: true, attendance_confirmed_at: new Date().toISOString(), attendance_number: assignedNumber });
       if (onConfirmAttendance && attendee.id) onConfirmAttendance(attendee.id);
     } else {
       toast.error('Error al confirmar asistencia');
@@ -143,7 +137,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           {fullName}
         </CardTitle>
         <CardDescription className="text-center text-xs sm:text-sm">
-          {localAttendee?.id}
+          {attendee?.id}
         </CardDescription>
       </CardHeader>
       
@@ -208,7 +202,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           </div>
         </div>
 
-        {!localAttendee?.attendance_confirmed && (
+        {!attendee?.attendance_confirmed && (
           <Button 
             onClick={handleConfirm}
             className="w-full mt-4"
