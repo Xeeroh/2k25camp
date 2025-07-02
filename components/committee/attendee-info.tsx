@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { User,  QrCode, ShieldCheck, Shirt, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
@@ -121,15 +121,9 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
 
       toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''} - Número: ${nextAttendanceNumber}`);
       
-      // Actualizar el estado local
-      if (attendee) {
-        setAttendee({
-          ...attendee,
-          attendance_number: nextAttendanceNumber,
-          attendance_confirmed: true,
-          attendance_confirmed_at: new Date().toISOString()
-        });
-      }
+      // Notificar al padre para recargar el asistente actualizado
+      if (onConfirmAttendance && id) onConfirmAttendance(id);
+
     } catch (error) {
       console.error('Error al confirmar asistencia:', error);
       toast.error('Error al confirmar la asistencia');
@@ -211,7 +205,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
 
         {!attendee.attendance_confirmed && (
           <Button 
-            onClick={confirmAttendance}
+            onClick={() => confirmAttendance(attendee.id!)}
             className="w-full mt-4"
             size="sm"
           >

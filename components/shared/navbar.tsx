@@ -178,7 +178,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             )}
             {(isAdmin || isEditor) && (
               <Link 
-                href={createInternalLink('/admin/caja')}
+                href={createInternalLink('/comite/caja')}
                 className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
                 onClick={() => handleNavigation('/comite/caja')}
               >
