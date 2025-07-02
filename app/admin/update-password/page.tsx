@@ -40,7 +40,7 @@ export default function UpdatePasswordPage() {
   const [success, setSuccess] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
   const router = useRouter();
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,31 +70,11 @@ export default function UpdatePasswordPage() {
         const searchParams = new URLSearchParams(window.location.search);
         const error = searchParams.get('error');
         const errorCode = searchParams.get('error_code');
-        const errorDescription = searchParams.get('error_description');
+        const fromReset = searchParams.get('from_reset');
 
         if (error === 'access_denied' && errorCode === 'otp_expired') {
-          console.log('Enlace expirado, redirigiendo a reset-password');
           toast.error('El enlace de restablecimiento ha expirado. Por favor, solicite uno nuevo.');
           router.push('/admin/reset-password');
-          return;
-        }
-
-        // Verificar si hay un token de restablecimiento en la URL
-        const hash = window.location.hash;
-        const searchType = searchParams.get('type');
-        const searchToken = searchParams.get('token');
-        
-        console.log('Validando token de restablecimiento:', {
-          hash: hash ? 'Presente' : 'No presente',
-          searchType,
-          searchToken: searchToken ? 'Presente' : 'No presente'
-        });
-
-        // Si no hay hash ni parámetros de búsqueda válidos, redirigir
-        if (!hash && (!searchType || !searchToken)) {
-          console.log('No hay token de restablecimiento válido, redirigiendo a login');
-          toast.error('Enlace de restablecimiento inválido');
-          router.push('/admin');
           return;
         }
 
@@ -108,16 +88,27 @@ export default function UpdatePasswordPage() {
           return;
         }
 
-        // Si hay una sesión activa, el usuario ya está autenticado
-        if (session) {
-          console.log('Usuario ya autenticado, redirigiendo según rol');
+        // Verificar si venimos de un enlace de restablecimiento
+        const hash = window.location.hash;
+        const searchType = searchParams.get('type');
+        const searchToken = searchParams.get('token');
+        
+        const isFromResetLink = hash || (searchType && searchToken) || fromReset === 'true';
+
+        // Si hay una sesión activa pero NO venimos de un enlace de restablecimiento
+        if (session && !isFromResetLink) {
           const redirectPath = getRedirectPath();
           router.push(redirectPath);
           return;
         }
 
-        // Si llegamos aquí, el token es válido y podemos proceder
-        console.log('Token de restablecimiento válido, mostrando formulario');
+        // Si hay una sesión activa Y venimos de un enlace de restablecimiento
+        if (session && isFromResetLink) {
+          setIsValidating(false);
+          return;
+        }
+
+        // Si no hay sesión, mostrar el formulario (modo desarrollo)
         setIsValidating(false);
         
       } catch (error) {
@@ -127,8 +118,9 @@ export default function UpdatePasswordPage() {
       }
     };
     
+    // Solo ejecutar una vez al montar el componente
     validateResetToken();
-  }, [router, hasRole]);
+  }, []); // Sin dependencias para evitar loops
   
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -136,105 +128,43 @@ export default function UpdatePasswordPage() {
     setSuccess(false);
     
     try {
-      // Obtener el token del hash de la URL
-      const hash = window.location.hash;
-      const searchParams = new URLSearchParams(window.location.search);
-      const searchType = searchParams.get('type');
-      const searchToken = searchParams.get('token');
-      
-      console.log('Procesando actualización de contraseña:', {
-        hash: hash ? 'Presente' : 'No presente',
-        searchType,
-        searchToken: searchToken ? 'Presente' : 'No presente'
+      // Intentar actualizar la contraseña directamente
+      // Supabase manejará automáticamente la sesión
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: data.password
       });
       
-      let accessToken: string | null = null;
-      let refreshToken: string | null = null;
-
-      // Intentar extraer tokens del hash primero
-      if (hash) {
-        const params = new URLSearchParams(hash.substring(1));
-        accessToken = params.get('access_token');
-        refreshToken = params.get('refresh_token');
-        
-        console.log('Tokens del hash:', {
-          accessToken: accessToken ? 'Presente' : 'No presente',
-          refreshToken: refreshToken ? 'Presente' : 'No presente'
-        });
+      if (updateError) {
+        console.error('Error al actualizar contraseña:', updateError);
+        throw updateError;
       }
-
-      // Si no hay tokens en el hash, intentar con los parámetros de búsqueda
-      if (!accessToken && searchType === 'recovery' && searchToken) {
-        console.log('Usando token de recuperación de parámetros de búsqueda');
-        
-        // Intentar actualizar la contraseña directamente con el token de recuperación
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: data.password
-        });
-        
-        if (updateError) {
-          console.error('Error al actualizar contraseña con token de recuperación:', updateError);
-          throw updateError;
-        }
-        
-        setSuccess(true);
-        toast.success('Contraseña actualizada exitosamente');
-        
-        // Esperar un momento para que se actualice el estado de autenticación
-        setTimeout(() => {
-          const redirectPath = getRedirectPath();
-          router.push(redirectPath);
-        }, 2000);
-        return;
-      }
-
-      // Si tenemos tokens del hash, establecer la sesión primero
-      if (accessToken && refreshToken) {
-        console.log('Estableciendo sesión con tokens del hash');
-        
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-
-        if (sessionError) {
-          console.error('Error al establecer sesión:', sessionError);
-          throw sessionError;
-        }
-
-        // Ahora actualizar la contraseña
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: data.password
-        });
-        
-        if (updateError) {
-          console.error('Error al actualizar contraseña:', updateError);
-          throw updateError;
-        }
-        
-        setSuccess(true);
-        toast.success('Contraseña actualizada exitosamente');
-        
-        // Esperar un momento para que se actualice el estado de autenticación
-        setTimeout(() => {
-          const redirectPath = getRedirectPath();
-          router.push(redirectPath);
-        }, 2000);
-        return;
-      }
-
-      // Si no tenemos tokens válidos
-      throw new Error('No se encontraron tokens de restablecimiento válidos');
+      
+      setSuccess(true);
+      toast.success('Contraseña actualizada exitosamente');
+      
+      // Esperar un momento para que se actualice el estado de autenticación
+      setTimeout(() => {
+        const redirectPath = getRedirectPath();
+        router.push(redirectPath);
+      }, 2000);
       
     } catch (error: any) {
       console.error("Error al actualizar la contraseña:", error);
       let errorMessage = "Hubo un error al actualizar la contraseña. Por favor intente de nuevo.";
       
-      if (error.message?.includes('No se encontraron tokens') || 
-          error.message?.includes('Token de acceso') ||
-          error.message?.includes('Invalid token') ||
-          error.message?.includes('expired')) {
-        errorMessage = "El enlace de restablecimiento ha expirado o es inválido. Por favor, solicite un nuevo enlace.";
+      // Manejar errores específicos de Supabase
+      if (error.message?.includes('Invalid recovery token')) {
+        errorMessage = "Token de recuperación inválido. Necesitas un enlace válido de restablecimiento.";
+        toast.error(errorMessage);
+        setTimeout(() => {
+          router.push('/admin/reset-password');
+        }, 2000);
+      } else if (error.message?.includes('User not found')) {
+        errorMessage = "Usuario no encontrado. Debes estar autenticado o tener un token válido.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } else if (error.message?.includes('expired')) {
+        errorMessage = "El enlace de restablecimiento ha expirado. Por favor, solicite un nuevo enlace.";
         toast.error(errorMessage);
         setTimeout(() => {
           router.push('/admin/reset-password');
@@ -271,7 +201,10 @@ export default function UpdatePasswordPage() {
               Actualizar Contraseña
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Ingresa tu nueva contraseña. Asegúrate de que sea segura y fácil de recordar.
+              {user ? 
+                "Tu sesión ha sido restaurada. Ahora puedes establecer tu nueva contraseña." :
+                "Ingresa tu nueva contraseña. Asegúrate de que sea segura y fácil de recordar."
+              }
             </p>
           </div>
           

@@ -1,3 +1,113 @@
+# ACCESO INTERNO - 2K25 CAMP
+
+## 🔐 Sistema de Autenticación
+
+### Roles de Usuario
+- **Admin**: Acceso completo al dashboard administrativo
+- **Editor**: Acceso al comité para escaneo de QR y gestión de asistentes
+
+### Flujo de Restablecimiento de Contraseña
+
+El sistema de restablecimiento de contraseña funciona de la siguiente manera:
+
+1. **Solicitud de Restablecimiento** (`/admin/reset-password`)
+   - Usuario ingresa su email
+   - Sistema envía enlace de restablecimiento a través de Supabase
+   - URL de redirección: `${origin}/admin/reset-callback`
+
+2. **Procesamiento del Enlace** (`/admin/reset-callback`)
+   - Captura el enlace de Supabase con tokens de autenticación
+   - Espera que Supabase procese la sesión automáticamente
+   - Redirige a `/admin/update-password?from_reset=true`
+
+3. **Actualización de Contraseña** (`/admin/update-password`)
+   - Detecta si el usuario viene de un enlace de restablecimiento
+   - Muestra formulario para nueva contraseña
+   - Valida requisitos de seguridad (8+ caracteres, mayúscula, minúscula, número)
+   - Actualiza contraseña y redirige según rol:
+     - Admin → `/admin`
+     - Editor → `/comite`
+
+### Características de Seguridad
+- **Rate Limiting**: Protección contra spam de solicitudes
+- **Validación de Tokens**: Verificación de enlaces válidos y no expirados
+- **Redirección Inteligente**: Basada en rol del usuario
+- **Manejo de Errores**: Mensajes claros para diferentes tipos de errores
+
+### URLs del Sistema
+- **Login Admin**: `/admin`
+- **Login Comité**: `/comite`
+- **Restablecimiento**: `/admin/reset-password`
+- **Callback**: `/admin/reset-callback`
+- **Actualización**: `/admin/update-password`
+
+### Configuración de Supabase
+Para que el restablecimiento funcione correctamente, verificar en el dashboard de Supabase:
+
+1. **Auth > URL Configuration**
+   - Site URL: `http://localhost:3000` (desarrollo)
+   - Redirect URLs: 
+     - `http://localhost:3000/admin/reset-callback`
+     - `http://localhost:3000/admin/update-password`
+
+2. **Auth > Templates > Reset Password**
+   - Verificar que use la URL de redirección correcta
+
+---
+
+## 📊 Dashboard Administrativo
+
+### Funcionalidades Principales
+- Gestión de asistentes
+- Estadísticas de registro
+- Gráficos de pagos
+- Exportación de datos
+
+### Acceso
+- URL: `/admin`
+- Requiere rol de administrador
+
+---
+
+## 📱 Comité de Escaneo
+
+### Funcionalidades
+- Escaneo de códigos QR
+- Verificación de asistentes
+- Gestión de caja
+
+### Acceso
+- URL: `/comite`
+- Requiere rol de editor o administrador
+
+---
+
+## 🔧 Desarrollo
+
+### Variables de Entorno Requeridas
+```env
+NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+```
+
+### Comandos de Desarrollo
+```bash
+npm run dev          # Iniciar servidor de desarrollo
+npm run build        # Construir para producción
+npm run start        # Iniciar servidor de producción
+```
+
+---
+
+## 📝 Notas de Implementación
+
+- El sistema utiliza Supabase para autenticación y base de datos
+- Next.js 14 con App Router
+- Tailwind CSS para estilos
+- Shadcn/ui para componentes
+- React Hook Form con Zod para validación
+
 # Acceso a secciones internas
 
 Este documento explica cómo acceder a las secciones de **Comité** y **Administración** que ahora están protegidas.
