@@ -38,12 +38,21 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
 
   const handleSignOut = async () => {
     try {
+      // Prevenir múltiples llamadas
+      if (loading) return;
+      
       await signOut();
       toast.success('Sesión cerrada correctamente');
       router.push('/');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al cerrar sesión:', error);
-      toast.error('Error al cerrar sesión');
+      // Solo mostrar error si no es el error de sesión faltante
+      if (!error?.message?.includes('Auth session missing')) {
+        toast.error('Error al cerrar sesión');
+      } else {
+        // Si la sesión ya no existe, redirigir de todas formas
+        router.push('/');
+      }
     }
   };
 
@@ -90,7 +99,6 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
       {isEditor && (
         <Link 
           href={createInternalLink('/comite')}
-          // CAMBIO AQUÍ
           className="text-white/50 hover:text-gray-300 transition-colors"
           onClick={() => handleNavigation('/comite')}
         >
@@ -118,7 +126,6 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
       {isAdmin && (
         <Link 
           href={createInternalLink('/admin')}
-          // CAMBIO AQUÍ
           className="text-white/50 hover:text-gray-300 transition-colors"
           onClick={() => handleNavigation('/admin')}
         >
@@ -145,7 +152,6 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
       <div className="px-4 pt-2 pb-4 space-y-1 card-glass">
         <Link 
           href={user ? createInternalLink('/') : '/'}
-          // CAMBIO AQUÍ
           className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
           onClick={() => handleNavigation('/')}
         >
@@ -153,7 +159,6 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
         </Link>
         <Link 
           href={user ? createInternalLink('/registro') : '/registro'}
-          // CAMBIO AQUÍ
           className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
           onClick={() => handleNavigation('/registro')}
         >
@@ -165,7 +170,6 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             {isEditor && (
               <Link 
                 href={createInternalLink('/comite')}
-                // CAMBIO AQUÍ
                 className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
                 onClick={() => handleNavigation('/comite')}
               >
@@ -193,7 +197,6 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             {isAdmin && (
               <Link 
                 href={createInternalLink('/admin')}
-                // CAMBIO AQUÍ
                 className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
                 onClick={() => handleNavigation('/admin')}
               >
@@ -252,7 +255,6 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
           <div className="hidden md:flex items-center space-x-8">
             <Link 
               href={user ? createInternalLink('/') : '/'} 
-              // CAMBIO AQUÍ
               className="text-white/50 hover:text-gray-300 transition-colors"
               onClick={() => handleNavigation('/')}
             >
@@ -260,7 +262,6 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             </Link>
             <Link 
               href={user ? createInternalLink('/registro') : '/registro'} 
-              // CAMBIO AQUÍ
               className="text-white/50 hover:text-gray-300 transition-colors"
               onClick={() => handleNavigation('/registro')}
             >

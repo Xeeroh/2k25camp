@@ -28,7 +28,39 @@ export const authService = {
   },
 
   async signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      // Verificar si hay una sesión activa antes de intentar cerrar
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('No hay sesión activa para cerrar');
+        // Limpiar el almacenamiento local de todas formas
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('mdpnoroeste.auth.token');
+          sessionStorage.clear();
+        }
+        return;
+      }
+
+      // Si hay sesión, proceder con el cierre
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error al cerrar sesión:', error);
+        // Aún así, limpiar el almacenamiento local
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('mdpnoroeste.auth.token');
+          sessionStorage.clear();
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error en signOut:', error);
+      // Asegurar que el almacenamiento se limpie incluso si hay error
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('mdpnoroeste.auth.token');
+        sessionStorage.clear();
+      }
+      throw error;
+    }
   }
 }; 

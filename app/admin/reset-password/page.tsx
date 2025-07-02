@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/admin/update-password`,
+        redirectTo: `${window.location.origin}/admin/reset-callback`,
       });
       
       if (error) throw error;
@@ -95,81 +95,115 @@ export default function ResetPasswordPage() {
   };
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="bg-try min-h-screen flex flex-col">
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <Link 
-              href="/admin" 
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Volver al inicio de sesión
-            </Link>
-            
-            <h2 className="text-3xl font-bold tracking-tight">
-              Restablecer Contraseña
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
-            </p>
-          </div>
-          
-          {error && (
-            <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-          
-          {success && (
-            <div className="bg-green-50 text-green-700 p-3 rounded-md text-sm">
-              <div className="flex items-center">
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                <span>
-                  Se ha enviado un correo electrónico con las instrucciones para restablecer tu contraseña.
-                </span>
-              </div>
-            </div>
-          )}
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Correo Electrónico</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email" 
-                        placeholder="ejemplo@correo.com" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading || cooldownTime > 0}
+        <div className="w-full max-w-md">
+          <div className="card-glass shadow-lg border border-border rounded-lg p-8">
+            <div className="text-center mb-8">
+              <Link 
+                href="/admin" 
+                className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : cooldownTime > 0 ? (
-                  `Esperar ${cooldownTime} segundos`
-                ) : (
-                  "Enviar enlace de restablecimiento"
-                )}
-              </Button>
-            </form>
-          </Form>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver al inicio de sesión
+              </Link>
+              
+              <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Mail className="h-6 w-6 text-primary" />
+              </div>
+              
+              <h2 className="text-3xl font-bold tracking-tight mb-2">
+                Restablecer Contraseña
+              </h2>
+              <p className="text-muted-foreground">
+                Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
+              </p>
+            </div>
+            
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg text-sm mb-6">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p>{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg text-sm mb-6">
+                <div className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div className="ml-3">
+                    <p className="font-medium">¡Enlace enviado!</p>
+                    <p className="mt-1">
+                      Se ha enviado un correo electrónico con las instrucciones para restablecer tu contraseña.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Correo Electrónico</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="ejemplo@correo.com" 
+                          className="h-11"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 bg-blue-850 hover:bg-blue-850/90 text-white" 
+                  disabled={isLoading || cooldownTime > 0}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : cooldownTime > 0 ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Esperar {cooldownTime} segundos
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Enviar enlace de restablecimiento
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
+            
+            <div className="mt-6 text-center">
+              <p className="text-xs text-muted-foreground">
+                ¿Recordaste tu contraseña?{' '}
+                <Link href="/admin" className="text-primary hover:underline">
+                  Iniciar sesión
+                </Link>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

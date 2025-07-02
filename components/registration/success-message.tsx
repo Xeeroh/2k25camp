@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { CheckCircle2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
@@ -12,21 +12,6 @@ interface SuccessMessageProps {
 
 export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
   const qrRef = useRef<HTMLDivElement>(null);
-  
-  // Agregar logs para depuración
-  useEffect(() => {
-    console.log('SuccessMessage - QR Data recibido:', qrData);
-    try {
-      if (qrData) {
-        const parsedData = JSON.parse(qrData);
-        console.log('SuccessMessage - Datos parseados:', parsedData);
-      } else {
-        console.log('SuccessMessage - No hay datos de QR');
-      }
-    } catch (error) {
-      console.error('SuccessMessage - Error al parsear qrData:', error);
-    }
-  }, [qrData]);
   
   const handleDownloadQR = () => {
     console.log('Iniciando descarga del QR');
@@ -87,23 +72,9 @@ export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
     );
   }
 
-  let attendeeName = '';
-  let attendeeEmail = '';
-  
-  try {
-    const data = JSON.parse(qrData);
-    console.log('Mostrando datos del QR:', data);
-    
-    // Extraer los datos relevantes
-    attendeeName = data.nombre || '';
-    attendeeEmail = data.email || '';
-    
-    if (!attendeeEmail) {
-      console.warn('No se encontró email en los datos del QR');
-    }
-  } catch (error) {
-    console.error('Error al procesar los datos para el QR:', error);
-    // Continuar con el render pero con datos vacíos
+  let attendeeId = '';
+  if (qrData && qrData.startsWith('id:')) {
+    attendeeId = qrData.replace('id:', '');
   }
   
   return (
@@ -115,16 +86,10 @@ export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
       <h2 className="text-2xl font-bold mb-4">¡Registro Completado!</h2>
       
       <p className="text-muted-foreground mb-6">
-        Gracias por registrarse al Campamento Alfa y Omega . Su registro ha sido procesado exitosamente.
-        <br /><br />
-        {attendeeEmail ? (
-          <strong>Hemos enviado un correo a: {attendeeEmail}</strong>
-        ) : (
-          <strong>
-            Hemos enviado un correo de confirmación a su dirección de correo registrada.
-             Si no lo encuentra en su bandeja de entrada, por favor revise su carpeta de spam o correo no deseado.
-          </strong>
-        )}
+        Gracias por registrarse al Campamento Alfa y Omega. Su registro ha sido procesado exitosamente.<br /><br />
+        <strong>
+          Hemos enviado un correo de confirmación a su dirección de correo registrada. Si no lo encuentra en su bandeja de entrada, por favor revise su carpeta de spam o correo no deseado.
+        </strong>
       </p>
       
       <div className="card-glass border border-border rounded-lg p-6 mb-6 bg-muted/30">
@@ -145,7 +110,8 @@ export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
         </div>
         
         <p className="text-sm text-muted-foreground mb-4">
-          Presente este código QR al ingresar al evento. Guárdelo o descárguelo para su uso posterior.
+          Presente este código QR al ingresar al evento. Guarde o descargue su QR. <br />
+          <span className="font-semibold">ID de registro: {attendeeId}</span>
         </p>
         
         <Button

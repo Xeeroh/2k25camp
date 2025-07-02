@@ -111,20 +111,7 @@ export const useRegistration = () => {
 
       if (error) throw error;
 
-      const qrData = {
-        id: attendeeData.id,
-        nombre: `${data.firstName} ${data.lastName}`,
-        email: data.email,
-        iglesia: data.church,
-        sector: data.sector,
-        monto: registrationData.paymentamount,
-        estado: 'Pendiente',
-        fecha: registrationData.registrationdate,
-        paymentreceipturl: registrationData.paymentreceipturl,
-        tshirtsize: attendeeData.tshirtsize
-      };
-
-      const qrValue = JSON.stringify(qrData);
+      const qrValue = `id:${attendeeData.id}`;
 
       // Enviar correo de confirmación
       try {

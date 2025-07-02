@@ -8,10 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import Navbar from '@/components/shared/navbar';
-import Footer from '@/components/shared/footer';
+import FooterL from '@/components/shared/footerL';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/use-auth';
+import LoginForm from '@/components/admin/login-form';
 
 export default function QRGeneratorPage() {
+  const { user, loading, error, hasRole } = useAuth();
   const [manualId, setManualId] = useState('');
   const [attendees, setAttendees] = useState<any[]>([]);
   const [selectedAttendee, setSelectedAttendee] = useState<any>(null);
@@ -157,9 +160,38 @@ export default function QRGeneratorPage() {
     }
   };
   
+  if (loading) {
+    return (
+      <div className="bg-try min-h-screen flex flex-col">
+        <Navbar showInternalLinks={true} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-primary border-r-transparent rounded-full animate-spin inline-block" />
+          <p className="mt-2 text-muted-foreground">Cargando...</p>
+        </div>
+        <FooterL />
+      </div>
+    );
+  }
+
+  if (!user || !hasRole('admin')) {
+    return (
+      <div className="bg-try min-h-screen flex flex-col">
+        <Navbar showInternalLinks={true} />
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
+          <div className="card-glass border rounded-lg shadow p-6 w-full max-w-md">
+            <h1 className="text-2xl font-bold mb-6 text-center">Acceso restringido</h1>
+            <p className="mb-4 text-center text-muted-foreground">Solo los administradores pueden acceder a esta página.</p>
+            <LoginForm />
+          </div>
+        </div>
+        <FooterL />
+      </div>
+    );
+  }
+  
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="bg-try min-h-screen flex flex-col">
+      <Navbar showInternalLinks={true} />
       
       <main className="flex-1 py-10">
         <div className="max-w-4xl mx-auto px-4">
@@ -172,11 +204,11 @@ export default function QRGeneratorPage() {
             </TabsList>
             
             <TabsContent value="fromdb">
-              <Card>
+              <Card className='card-glass'>
                 <CardHeader>
-                  <CardTitle>Seleccionar Asistente</CardTitle>
+                  <CardTitle className='text-white' >Seleccionar Asistente</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className=" space-y-4">
                   <select 
                     className="w-full p-2 border rounded"
                     disabled={isLoading}
@@ -309,7 +341,7 @@ export default function QRGeneratorPage() {
         </div>
       </main>
       
-      <Footer />
+      <FooterL />
     </div>
   );
 } 

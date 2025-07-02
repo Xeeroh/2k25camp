@@ -58,5 +58,6 @@ export const CHURCHES_DATA = [
   { sector: 5, name: "Iglesia Visión" },
   { sector: 5, name: "Misión Bethel" },
   { sector: 5, name: "Iglesia La Vid Verdadera" },
+  { sector: 5, name: "Castillo de Fe" },
   { sector: "Foráneo", name: "Sin Iglesia Sectoral" }
 ];
