@@ -120,15 +120,34 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       await authService.signOut();
+      
       if (mounted.current) {
         setUser(null);
         setLoading(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error al cerrar sesión:', err);
+      
+      // Si el error es que no hay sesión, no es realmente un error
+      if (err.message?.includes('Auth session missing') || err.message?.includes('No session')) {
+        console.log('Sesión ya cerrada o no existía');
+        if (mounted.current) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
+      
       setError(ERROR_MESSAGES.SIGN_OUT_ERROR);
       throw err;
+    } finally {
+      if (mounted.current) {
+        setLoading(false);
+      }
     }
   };
 

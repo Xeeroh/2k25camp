@@ -38,12 +38,21 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
 
   const handleSignOut = async () => {
     try {
+      // Prevenir múltiples llamadas
+      if (loading) return;
+      
       await signOut();
       toast.success('Sesión cerrada correctamente');
       router.push('/');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al cerrar sesión:', error);
-      toast.error('Error al cerrar sesión');
+      // Solo mostrar error si no es el error de sesión faltante
+      if (!error?.message?.includes('Auth session missing')) {
+        toast.error('Error al cerrar sesión');
+      } else {
+        // Si la sesión ya no existe, redirigir de todas formas
+        router.push('/');
+      }
     }
   };
 
