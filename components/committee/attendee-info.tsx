@@ -108,8 +108,8 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
 
   // Manejar confirmación de asistencia
   const handleConfirm = async () => {
-    if (!localAttendee?.id) return;
-    let assignedNumber = localAttendee.attendance_number;
+    if (!attendee?.id) return;
+    let assignedNumber = attendee.attendance_number;
     if (!assignedNumber) {
       assignedNumber = await getNextAttendanceNumberRobusto();
     }
@@ -117,11 +117,11 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
       attendance_confirmed: true,
       attendance_confirmed_at: new Date().toISOString(),
       attendance_number: assignedNumber
-    }).eq('id', localAttendee.id);
+    }).eq('id', attendee.id);
     if (!error) {
       toast.success(`Asistencia confirmada para ${fullName}`);
-      setLocalAttendee({ ...localAttendee, attendance_confirmed: true, attendance_confirmed_at: new Date().toISOString(), attendance_number: assignedNumber });
-      if (onConfirmAttendance) onConfirmAttendance(localAttendee.id);
+      setLocalAttendee({ ...attendee, attendance_confirmed: true, attendance_confirmed_at: new Date().toISOString(), attendance_number: assignedNumber });
+      if (onConfirmAttendance && attendee.id) onConfirmAttendance(attendee.id);
     } else {
       toast.error('Error al confirmar asistencia');
     }
