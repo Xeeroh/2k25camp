@@ -105,11 +105,11 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
           Qr Scanner
         </Link>
       )}
-      {(isAdmin || isEditor) && (
+      {isAdmin && (
         <Link 
-          href={createInternalLink('/comite/caja')}
+          href={createInternalLink('/admin/caja')}
           className="text-white/50 hover:text-gray-300 transition-colors"
-          onClick={() => handleNavigation('/comite/caja')}
+          onClick={() => handleNavigation('/admin/caja')}
         >
           Caja
         </Link>
@@ -176,11 +176,11 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
                 Qr Scanner
               </Link>
             )}
-            {(isAdmin || isEditor) && (
+            {isAdmin && (
               <Link 
-                href={createInternalLink('/comite/caja')}
+                href={createInternalLink('/admin/caja')}
                 className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors"
-                onClick={() => handleNavigation('/comite/caja')}
+                onClick={() => handleNavigation('/admin/caja')}
               >
                 Caja
               </Link>

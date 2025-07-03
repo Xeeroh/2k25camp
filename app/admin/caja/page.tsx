@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import CajaHistorial from '@/components/caja/caja-historial';
 
 export default function CajaPage() {
-  const { user, loading, error: authError, hasRole } = useAuth();
+  const { user, loading, error: authError, hasRole, signOut } = useAuth();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [attendee, setAttendee] = useState<Attendee | null>(null);
@@ -22,11 +22,13 @@ export default function CajaPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user && !hasRole('admin') && !hasRole('editor')) {
-      toast.error('No tienes permisos para acceder a esta página');
-      router.push('/');
+    if (!loading && user) {
+      if (!hasRole('admin')) {
+        toast.error('No tienes permisos de administrador');
+        router.push('/');
+      }
     }
-  }, [user, hasRole, router]);
+  }, [user, loading, hasRole, router]);
 
   const handleSearch = async () => {
     setLoadingSearch(true);
@@ -106,9 +108,17 @@ export default function CajaPage() {
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-primary border-r-transparent rounded-full animate-spin inline-block" />
             <p className="mt-2 text-muted-foreground">Cargando...</p>
+            <div className="mt-6">
+              <Button 
+                variant="outline" 
+                onClick={signOut}
+                className="text-sm"
+              >
+                Forzar cierre de sesión
+              </Button>
+            </div>
           </div>
         </div>
-      
       </div>
     );
   }
@@ -123,7 +133,6 @@ export default function CajaPage() {
             <LoginForm />
           </div>
         </div>
-        
       </div>
     );
   }
@@ -143,9 +152,13 @@ export default function CajaPage() {
             </div>
           </div>
         </div>
-        
       </div>
     );
+  }
+
+  // Solo admins pueden ver el contenido
+  if (!hasRole('admin')) {
+    return null;
   }
 
   return (
@@ -205,7 +218,6 @@ export default function CajaPage() {
                   </span>  
               </h2>
 
-
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div><span className="font-medium">Nombre:</span> {attendee.firstname} {attendee.lastname}</div>
                 <div><span className="font-medium">Correo:</span> {attendee.email}</div>
@@ -246,7 +258,6 @@ export default function CajaPage() {
           <CajaHistorial />
         </div>
       </div>
-      
     </div>
   );
 }
