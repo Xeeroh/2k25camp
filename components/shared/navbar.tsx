@@ -147,19 +147,19 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
   const renderMobileMenu = () => (
     <div className={cn(
       "md:hidden transition-all duration-300 overflow-hidden",
-      isOpen ? "max-h-60 border-b" : "max-h-0"
+      isOpen ? "max-h-96 border-b" : "max-h-0"
     )}>
-      <div className="px-4 pt-2 pb-4 space-y-1 card-glass">
+      <div className="px-4 pt-2 pb-3 space-y-1 card-glass">
         <Link 
           href={user ? createInternalLink('/') : '/'}
-          className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+          className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors"
           onClick={() => handleNavigation('/')}
         >
           Inicio
         </Link>
         <Link 
           href={user ? createInternalLink('/registro') : '/registro'}
-          className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+          className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors"
           onClick={() => handleNavigation('/registro')}
         >
           Registro
@@ -170,7 +170,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             {isEditor && (
               <Link 
                 href={createInternalLink('/comite')}
-                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors"
                 onClick={() => handleNavigation('/comite')}
               >
                 Qr Scanner
@@ -179,7 +179,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             {(isAdmin || isEditor) && (
               <Link 
                 href={createInternalLink('/comite/caja')}
-                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors"
                 onClick={() => handleNavigation('/comite/caja')}
               >
                 Caja
@@ -188,7 +188,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             {(isAdmin || isEditor) && (
               <Link 
                 href={createInternalLink('/registro-presencial')}
-                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors"
                 onClick={() => handleNavigation('/registro-presencial')}
               >
                 Walk-in
@@ -197,24 +197,27 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             {isAdmin && (
               <Link 
                 href={createInternalLink('/admin')}
-                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
+                className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10 transition-colors"
                 onClick={() => handleNavigation('/admin')}
               >
                 Dashboard
               </Link>
             )}
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => {
-                handleSignOut();
-                setIsOpen(false);
-              }}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Cerrar sesión
-            </Button>
           </>
+        )}
+        
+        {user && (
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 py-2"
+            onClick={() => {
+              handleSignOut();
+              setIsOpen(false);
+            }}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Cerrar sesión
+          </Button>
         )}
       </div>
     </div>
