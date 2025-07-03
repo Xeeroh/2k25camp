@@ -118,16 +118,16 @@ export default function DashboardStats() {
       {stats.map((stat, index) => (
         <Card key={index} className="card-clear shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-white">
               {stat.title}
             </CardTitle>
             {stat.icon}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-white">
               {loading ? "..." : stat.value}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground text-white">
               {loading ? "Cargando..." : stat.change}
             </p>
           </CardContent>

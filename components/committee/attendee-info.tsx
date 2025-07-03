@@ -31,11 +31,6 @@ interface AttendeeInfoProps {
 }
 
 export default function AttendeeInfo({ attendee, onConfirmAttendance }: AttendeeInfoProps) {
-  // Logs para depuración
-  useEffect(() => {
-    console.log('AttendeeInfo - Datos recibidos:', attendee);
-  }, [attendee]);
-
   // Si no hay datos, mostrar mensaje para escanear QR
   if (!attendee) {
     return (
@@ -89,48 +84,6 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
     }
   };
 
-  // Función para confirmar asistencia
-  const confirmAttendance = async (id: string) => {
-    try {
-      // Obtener el último número de asistencia
-      const { data: lastAttendee, error: lastError } = await supabase
-        .from('attendees')
-        .select('attendance_number')
-        .order('attendance_number', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (lastError && lastError.code !== 'PGRST116') {
-        throw lastError;
-      }
-
-      // Calcular el nuevo número de asistencia
-      const nextAttendanceNumber = (lastAttendee?.attendance_number || 0) + 1;
-
-      // Actualizar el asistente con el número y la confirmación
-      const { error: updateError } = await supabase
-        .from('attendees')
-        .update({
-          attendance_number: nextAttendanceNumber,
-          attendance_confirmed: true,
-          attendance_confirmed_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
-
-      toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''} - Número: ${nextAttendanceNumber}`);
-      
-      // Notificar al padre para recargar el asistente actualizado
-      if (onConfirmAttendance && id) onConfirmAttendance(id);
-
-    } catch (error) {
-      console.error('Error al confirmar asistencia:', error);
-      toast.error('Error al confirmar la asistencia');
-    }
-  };
-
-
   return (
     <Card className="card-clear w-full">
       <CardHeader className="p-4 sm:p-6">
@@ -144,12 +97,12 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
       
       <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
         <div className="flex justify-center mb-2 sm:mb-4">
-          <div className="p-2 sm:p-3 bg-primary/10 rounded-full">
+          <div className="p-2 sm:p-3 bg-black/20 rounded-full">
             <QrCode className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
           </div>
         </div>
         
-        <div className="flex items-center justify-center border-2 border-dashed border-primary/20 p-2 rounded-lg mb-2">
+        <div className="flex items-center justify-center border-2 border-dashed border-blue-400/50 p-2 rounded-lg mb-2">
           <div className="flex items-center gap-2">
             {attendee.attendance_confirmed ? (
               <>
@@ -179,24 +132,24 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 justify-center mx-auto">
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">Email</p>
+            <p className="text-xs sm:text-sm text-blue-400/70 ">Email</p>
             <p className="text-sm sm:text-base font-medium break-all">{attendee.email || 'No disponible'}</p>
           </div>
           
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">Iglesia</p>
+            <p className="text-xs sm:text-sm  text-blue-400/70 ">Iglesia</p>
             <p className="text-sm sm:text-base font-medium">{attendee.church || 'No disponible'}</p>
           </div>
           
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">Sector</p>
+            <p className="text-xs sm:text-sm  text-blue-400/70 ">Sector</p>
             <p className="text-sm sm:text-base font-medium">{attendee.sector || 'No disponible'}</p>
           </div>
           
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">Monto</p>
+            <p className="text-xs sm:text-sm t text-blue-400/70 ">Monto</p>
             <p className="text-sm sm:text-base font-medium">
               {attendee.paymentamount ? `$${attendee.paymentamount}` : 'No disponible'}
             </p>
@@ -205,7 +158,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
 
         {!attendee.attendance_confirmed && (
           <Button 
-            onClick={() => confirmAttendance(attendee.id!)}
+            onClick={() => onConfirmAttendance && attendee.id && onConfirmAttendance(attendee.id)}
             className="w-full mt-4"
             size="sm"
           >

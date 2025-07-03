@@ -47,35 +47,53 @@ export default function ComitePage() {
   const [lastScannedQR, setLastScannedQR] = useState<string | null>(null);
   const [scanCount, setScanCount] = useState(0);
   const [lastScanTime, setLastScanTime] = useState<number>(0);
+  const [hasShownWelcome, setHasShownWelcome] = useState(false);
   
-  // Verificación de permisos simplificada
+  // Verificación de permisos
   useEffect(() => {
-    if (user && !hasRole('editor') && !hasRole('admin')) {
-      toast.error('No tienes permisos para acceder a esta página', {duration: 2000});
-      router.push('/');
-    } else if (user) {
-      toast.success(`Bienvenido, ${user.email}`, {duration: 2000});
+    if (user) {
+      const hasEditorRole = hasRole('editor');
+      const hasAdminRole = hasRole('admin');
+      
+      if (!hasEditorRole && !hasAdminRole) {
+        toast.error('No tienes permisos para acceder a esta página', {duration: 2000});
+        router.push('/');
+      } else if (!hasShownWelcome) {
+        toast.success(`Bienvenido, ${user.email} (${user.role})`, {
+          id: 'welcome-toast',
+          duration: 2000 
+        });
+        setHasShownWelcome(true);
+      }
     }
-  }, [user, hasRole, router]);
+  }, [user, hasRole, router, hasShownWelcome]);
 
   // Función para manejar el escaneo del QR
-  const handleQrScan = async (qrData: string) => {
+  const handleQrScan = async (result: string) => {
     // Prevenir escaneos múltiples rápidos
     const now = Date.now();
     if (now - lastScanTime < 2000) {
-      toast.warning('Por favor espere antes de escanear otro código');
+      toast.warning('Por favor espere antes de escanear otro código', { 
+        id: 'scan-warning',
+        duration: 2000 
+      });
       return;
     }
     setLastScanTime(now);
 
+    // Limpiar estado anterior
     setIsLoading(true);
-    setLastScannedQR(qrData);
+    setAttendee(null);
+    setLastScannedQR(result);
     setScanCount(prev => prev + 1);
 
-    const toastId = toast.loading('Consultando información...', {duration: 2000});
-    
+    // Crear un único toast con ID único
+    const toastId = `qr-scan-${Date.now()}`;
+    toast.loading('Escaneando código QR...', { id: toastId });
+
     try {
-      const attendeeId = extractAttendeeId(qrData);
+      // Extraer el ID del asistente del QR
+      const attendeeId = extractAttendeeId(result);
       
       if (!attendeeId) {
         toast.error('No se pudo extraer un ID válido del QR', { id: toastId });
@@ -87,9 +105,9 @@ export default function ComitePage() {
       // Consultar la base de datos con el ID extraído
       const { data, error } = await supabase
         .from('attendees')
-        .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at')
+        .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize')
         .eq('id', attendeeId)
-        .single(); // Usar single() para obtener un solo resultado
+        .single();
         
       if (error) {
         console.error('Error al consultar la base de datos:', error);
@@ -100,20 +118,21 @@ export default function ComitePage() {
       }
       
       if (!data) {
-        console.log('No se encontró asistente con ID:', attendeeId);
         toast.error('No se encontró el asistente en la base de datos', { id: toastId });
         setIsLoading(false);
         setAttendee(null);
         return;
       }
       
-      // Actualizar estado con los datos obtenidos
       setAttendee(data as AttendeeData);
       toast.success('Información cargada correctamente', { id: toastId });
 
       // Validar que los datos estén completos
       if (!data.firstname || !data.lastname || !data.email) {
-        toast.warning('Algunos datos del asistente están incompletos');
+        toast.warning('Algunos datos del asistente están incompletos', { 
+          id: 'incomplete-data-warning',
+          duration: 3000 
+        });
       }
       
     } catch (err) {
@@ -138,13 +157,28 @@ export default function ComitePage() {
           if (parsedData?.id) return parsedData.id;
           if (parsedData?.ID) return parsedData.ID;
           if (parsedData?.Id) return parsedData.Id;
-        } catch {}
+        } catch (jsonError) {
+          // JSON malformado, continuar con otros métodos
+        }
       }
       
-      // Caso 2: JSON malformado
+      // Caso 2: JSON malformado - buscar ID con regex
       if (cleanQrData.startsWith('{')) {
         const idMatch = cleanQrData.match(/"id"\s*:\s*"([^"]+)"/);
         if (idMatch && idMatch[1]) return idMatch[1];
+        
+        // Intentar con diferentes variaciones del campo ID
+        const variations = [
+          /"ID"\s*:\s*"([^"]+)"/,
+          /"Id"\s*:\s*"([^"]+)"/,
+          /"attendee_id"\s*:\s*"([^"]+)"/,
+          /"attendeeId"\s*:\s*"([^"]+)"/
+        ];
+        
+        for (const pattern of variations) {
+          const match = cleanQrData.match(pattern);
+          if (match && match[1]) return match[1];
+        }
       }
       
       // Caso 3: UUID directo
@@ -152,14 +186,29 @@ export default function ComitePage() {
       const matches = cleanQrData.match(uuidRegex);
       if (matches && matches[0]) return matches[0];
       
-      // Caso 4: Texto simple (si no es muy largo)
+      // Caso 4: Buscar cualquier patrón que parezca un ID
+      const generalIdPatterns = [
+        /[0-9a-f]{32}/i, // 32 caracteres hexadecimales
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i, // UUID con guiones
+        /[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}/i, // UUID sin guiones
+      ];
+      
+      for (const pattern of generalIdPatterns) {
+        const match = cleanQrData.match(pattern);
+        if (match && match[0]) return match[0];
+      }
+      
+      // Caso 5: Texto simple (si no es muy largo y parece un ID)
       if (cleanQrData.length > 0 && cleanQrData.length < 50) {
-        return cleanQrData;
+        // Verificar que no contenga caracteres problemáticos
+        if (!cleanQrData.includes(' ') && !cleanQrData.includes('\n') && !cleanQrData.includes('\t')) {
+          return cleanQrData;
+        }
       }
       
       return null;
     } catch (err) {
-      console.error('Error al extraer ID:', err);
+      console.error('Error al extraer ID del QR:', err);
       return null;
     }
   };
@@ -171,6 +220,7 @@ export default function ComitePage() {
       const { data: lastAttendee, error: lastError } = await supabase
         .from('attendees')
         .select('attendance_number')
+        .not('attendance_number', 'is', null)
         .order('attendance_number', { ascending: false })
         .limit(1)
         .single();
@@ -194,7 +244,10 @@ export default function ComitePage() {
 
       if (updateError) throw updateError;
 
-      toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''} - Número: ${nextAttendanceNumber}`);
+      toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''} - Número: ${nextAttendanceNumber}`, {
+        id: 'attendance-confirmed',
+        duration: 4000
+      });
       
       // Recargar el asistente actualizado desde la base de datos
       let { data, error } = await supabase
@@ -208,7 +261,10 @@ export default function ComitePage() {
       }
     } catch (error) {
       console.error('Error al confirmar asistencia:', error);
-      toast.error('Error al confirmar la asistencia');
+      toast.error('Error al confirmar la asistencia', {
+        id: 'attendance-error',
+        duration: 4000
+      });
     }
   };
 
@@ -260,7 +316,7 @@ export default function ComitePage() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">Panel del Comité</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Códigos escaneados: {scanCount}
+                Códigos escaneados: {scanCount} | Rol: {user.role}
               </p>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">

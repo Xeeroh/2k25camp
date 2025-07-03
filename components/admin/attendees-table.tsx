@@ -417,79 +417,92 @@ export default function AttendeesTable() {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="text-center">
+              <TableRow className="text-xs">
+                <TableHead className="text-center w-16 px-1 text-xs">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('attendance_number')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
                   >
-                    Número
+                    #
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-center">
+                <TableHead className="text-center w-28 px-1 text-xs">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('firstname')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
                   >
                     Nombre
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-center">
+                <TableHead className="text-center w-32 px-1 text-xs">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('email')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
                   >
                     Correo
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-center">
+                <TableHead className="text-center w-28 px-1 text-xs">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('church')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
                   >
                     Iglesia
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-center">
+                <TableHead className="text-center w-20 px-1 text-xs">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('sector')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
                   >
                     Sector
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-center">
+                <TableHead className="text-center w-16 px-1 text-xs">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('paymentamount')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
                   >
                     Monto
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-center">
+                <TableHead className="text-center w-16 px-1 text-white text-xs">
+                  Debe
+                </TableHead>
+                <TableHead className="text-center w-20 px-1 text-xs">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('paymentstatus')}
-                    className="flex items-center justify-center gap-1 w-full"
+                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
                   >
                     Estado
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </TableHead>
-                <TableHead className="w-[60px] text-center">Comp.</TableHead>
-                <TableHead className="w-[60px] text-center">Acc.</TableHead>
+                <TableHead className="text-center w-20 px-1 text-xs">
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('tshirtsize')}
+                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
+                  >
+                    Talla
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead className="w-12 text-center text-white text-xs px-1">Comp.</TableHead>
+                <TableHead className="w-12 text-center text-white text-xs px-1">Acc.</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="text-xs">
@@ -509,8 +522,8 @@ export default function AttendeesTable() {
                 </TableRow>
               ) : (
                 filteredAndSortedAttendees.map((attendee) => (
-                  <TableRow key={attendee.id}>
-                    <TableCell className="text-center">
+                  <TableRow key={attendee.id} className="text-xs">
+                    <TableCell className="text-center w-16 px-1">
                       {attendee.attendance_number ? (
                         <Badge 
                           variant="outline" 
@@ -522,13 +535,24 @@ export default function AttendeesTable() {
                         <span className="text-muted-foreground text-xs text-white">Pend.</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">{`${attendee.firstname} ${attendee.lastname}`}</TableCell>
-                    <TableCell className="text-center">{attendee.email}</TableCell>
-                    <TableCell className="text-center">{attendee.church}</TableCell>
-                    <TableCell className="text-center">{attendee.sector}</TableCell>
-                    <TableCell className="text-center">${attendee.paymentamount}</TableCell>
-                    <TableCell className="text-center">{getPaymentBadge(attendee.paymentstatus)}</TableCell>
-                    <TableCell className="w-[60px] text-center">
+                    <TableCell className="text-center w-28 px-1">{`${attendee.firstname} ${attendee.lastname}`}</TableCell>
+                    <TableCell className="text-center w-32 px-1">{attendee.email}</TableCell>
+                    <TableCell className="text-center w-28 px-1">{attendee.church}</TableCell>
+                    <TableCell className="text-center w-20 px-1">{attendee.sector}</TableCell>
+                    <TableCell className="text-center w-16 px-1">${attendee.paymentamount}</TableCell>
+                    <TableCell className="text-center w-16 px-1">
+                      ${900 - (attendee.paymentamount || 0)}
+                    </TableCell>
+                    <TableCell className="text-center w-20 px-1">{getPaymentBadge(attendee.paymentstatus)}</TableCell>
+                    <TableCell className="text-center w-20 px-1">
+                      <Badge 
+                        variant="outline" 
+                        className={attendee.tshirtsize ? "bg-purple-400 text-purple-900 dark:bg-purple-900 dark:text-purple-300" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}
+                      >
+                        {attendee.tshirtsize ? attendee.tshirtsize : 'N/A'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="w-12 text-center px-1">
                       {attendee.paymentreceipturl ? (
                         <Button
                           variant="ghost"
@@ -542,7 +566,7 @@ export default function AttendeesTable() {
                         <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="w-[60px] text-center">
+                    <TableCell className="w-12 text-center px-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0 mx-auto">
@@ -600,7 +624,7 @@ export default function AttendeesTable() {
           <AlertDialogFooter>
             <AlertDialogCancel className='text-black '>
               Cancelar
-            </AlertDialogCancel>
+              </AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               Eliminar
             </AlertDialogAction>

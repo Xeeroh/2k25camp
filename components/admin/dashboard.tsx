@@ -10,6 +10,7 @@ import PaymentsChart from '@/components/admin/payments-chart';
 import { RefreshProvider } from './refresh-context';
 import { useRefresh } from './refresh-context';
 import { RefreshCw } from 'lucide-react';
+import DashboardReports from './dashboard-reports';
 
 interface DashboardProps {
   onLogout: () => Promise<void>;
@@ -64,19 +65,25 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         <DashboardContent />
         
         <Tabs defaultValue="attendees" className="mt-8">
-          <TabsList className="grid grid-cols-2 md:w-[400px] mb-8">
+          <TabsList className="grid grid-cols-3 md:w-[600px] mb-8">
             <TabsTrigger 
               value="attendees"
               className="text-black data-[state=active]:bg-slate-500/80 data-[state=active]:text-slate-900"
-              >
+            >
               Asistentes
-              </TabsTrigger>
+            </TabsTrigger>
             <TabsTrigger 
-            value="payments"
-            className="text-black data-[state=active]:bg-slate-500/80 data[state=active]:text-slate-900"
+              value="payments"
+              className="text-black data-[state=active]:bg-slate-500/80 data-[state=active]:text-slate-900"
             >
               Pagos y Estadísticas
-              </TabsTrigger>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="reports"
+              className="text-black data-[state=active]:bg-slate-500/80 data-[state=active]:text-slate-900"
+            >
+              Reportes
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="attendees">
@@ -85,6 +92,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           
           <TabsContent value="payments">
             <PaymentsChart />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <DashboardReports />
           </TabsContent>
         </Tabs>
       </div>
