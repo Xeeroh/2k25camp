@@ -102,7 +102,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
           className="text-white/50 hover:text-gray-300 transition-colors"
           onClick={() => handleNavigation('/comite')}
         >
-          Comité
+          Qr Scanner
         </Link>
       )}
       {(isAdmin || isEditor) && (
@@ -173,7 +173,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
                 className="block w-full text-left px-3 py-2 rounded-md text-white hover:bg-white/10"
                 onClick={() => handleNavigation('/comite')}
               >
-                Comité
+                Qr Scanner
               </Link>
             )}
             {(isAdmin || isEditor) && (
