@@ -11,6 +11,7 @@ import { getNextAttendanceNumber } from '@/lib/utils';
 
 const ROLES = [
   { label: 'Campista', value: 'campista', monto: 900 },
+  { label: 'Pastor/esposa', value: 'campista', monto: 600 },
   { label: 'Ujier', value: 'ujier', monto: 700 },
   { label: 'Multimedia', value: 'multimedia', monto: 700 },
   { label: 'Registro', value: 'registro', monto: 700 },
