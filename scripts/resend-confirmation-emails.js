@@ -1,5 +1,7 @@
-// Script para reenviar correos de confirmación con QR a todos los registros
-// Ejecutar: node scripts/resend-confirmation-emails.js
+// Script para reenviar correos de confirmación con QR
+// Uso: 
+//   node scripts/resend-confirmation-emails.js                    (reenviar a todos)
+//   node scripts/resend-confirmation-emails.js xolomayor1@hotmail.com  (reenviar a email específico)
 
 const { createClient } = require('@supabase/supabase-js');
 
@@ -20,6 +22,10 @@ async function sleep(ms) {
 }
 
 async function main() {
+  // Obtener el email específico de los argumentos de línea de comandos
+  const targetEmail = process.argv[2];
+  const isResendAll = !targetEmail;
+  
   console.log('Obteniendo todos los registros de asistentes...');
   const { data: attendees, error } = await supabase
     .from('attendees')
@@ -32,11 +38,31 @@ async function main() {
 
   console.log(`Total de asistentes encontrados: ${attendees.length}`);
 
-  // Eliminar el filtro, procesar todos los asistentes
-   const filteredAttendees = attendees.filter(a => a.email === 'elrico2345@gmail.com');
-   console.log(`Total de asistentes para prueba: ${filteredAttendees.length}`);
+  // Filtrar asistentes según el parámetro
+  let filteredAttendees;
+  if (isResendAll) {
+    filteredAttendees = attendees;
+    console.log(`Reenviando a TODOS los asistentes: ${filteredAttendees.length}`);
+  } else {
+    filteredAttendees = attendees.filter(a => a.email === targetEmail);
+    console.log(`Reenviando a email específico: ${targetEmail}`);
+    console.log(`Total de asistentes encontrados con este email: ${filteredAttendees.length}`);
+  }
 
-  //for (const attendee of attendees) {
+  if (filteredAttendees.length === 0) {
+    if (isResendAll) {
+      console.log('No hay asistentes para reenviar.');
+    } else {
+      console.log(`No se encontró ningún asistente con el email: ${targetEmail}`);
+    }
+    return;
+  }
+
+  console.log('\n=== INICIANDO REENVÍO DE CORREOS ===');
+  
+  for (const attendee of filteredAttendees) {
+    console.log(`\nProcesando: ${attendee.email} (${attendee.firstname} ${attendee.lastname})`);
+    
     const qrData = `id:${attendee.id}`;
     const payload = {
         firstName: attendee.firstname,
@@ -47,7 +73,7 @@ async function main() {
         qrData,
         receivesTshirt: attendee.receives_tshirt,
         tshirtSize: attendee.tshirtsize,
-        isResend: true // ✅ NUEVO
+        isResend: true
       };
       
 
@@ -62,18 +88,23 @@ async function main() {
       });
       const result = await res.json();
       if (res.ok) {
-        console.log(`Correo reenviado a: ${attendee.email}`);
+        console.log(`✅ Correo reenviado exitosamente a: ${attendee.email}`);
       } else {
-        console.error(`Error al reenviar a ${attendee.email}:`, result.error || result);
+        console.error(`❌ Error al reenviar a ${attendee.email}:`, result.error || result);
       }
     } catch (err) {
-      console.error(`Error de red al reenviar a ${attendee.email}:`, err);
+      console.error(`❌ Error de red al reenviar a ${attendee.email}:`, err);
     }
-    // Esperar 2 segundos entre envíos
-    await sleep(2000);
+    
+    // Esperar 2 segundos entre envíos para no sobrecargar el servidor
+    if (filteredAttendees.length > 1) {
+      console.log('⏳ Esperando 2 segundos antes del siguiente envío...');
+      await sleep(2000);
+    }
   }
 
-  console.log('Proceso de reenvío completado.');
+  console.log('\n=== PROCESO DE REENVÍO COMPLETADO ===');
+  console.log(`Total de correos procesados: ${filteredAttendees.length}`);
 }
 
 main(); 
