@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { CHURCHES_DATA } from '@/lib/churches-data';
 import { useRefresh } from './refresh-context';
 
+
 export default function DashboardStats() {
   const initialStats = [
     {
