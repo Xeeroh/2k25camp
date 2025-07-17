@@ -135,22 +135,39 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 justify-center mx-auto">
           <div className="space-y-1">
             <p className="text-xs sm:text-sm text-blue-400/70 ">Email</p>
-            <p className="text-sm sm:text-base font-medium break-all">{attendee.email || 'No disponible'}</p>
+            <p className="text-sm sm:text-base text-white font-medium break-all">{attendee.email || 'No disponible'}</p>
           </div>
           
           <div className="space-y-1">
             <p className="text-xs sm:text-sm  text-blue-400/70 ">Iglesia</p>
-            <p className="text-sm sm:text-base font-medium">{attendee.church || 'No disponible'}</p>
+            <p className="text-sm sm:text-base text-white font-medium">{attendee.church || 'No disponible'}</p>
           </div>
           
           <div className="space-y-1">
             <p className="text-xs sm:text-sm  text-blue-400/70 ">Sector</p>
-            <p className="text-sm sm:text-base font-medium">{attendee.sector || 'No disponible'}</p>
+            <p className="text-sm sm:text-base text-white font-medium">{attendee.sector || 'No disponible'}</p>
           </div>
           
+          <div className='space-y-1'>
+          <p className="text-xs sm:text-sm  text-blue-400/70 ">Estado</p>
+          <p className="text-sm sm:text-base text-white font-medium">
+            {attendee.paymentstatus ? (
+              <Badge className={
+                isPaid
+                  ? 'bg-green-600 text-white'
+                  : paymentStatus.toLowerCase().includes('pendiente')
+                  ? 'bg-yellow-500 text-black'
+                  : 'bg-gray-400 text-white'
+              }>
+                {attendee.paymentstatus}
+              </Badge>
+            ) : 'No disponible'}
+          </p>
+          </div>
+
           <div className="space-y-1">
             <p className="text-xs sm:text-sm t text-blue-400/70 ">Monto</p>
-            <p className="text-sm sm:text-base font-medium">
+            <p className="text-sm sm:text-base text-white font-medium">
               {attendee.paymentamount ? `$${attendee.paymentamount}` : 'No disponible'}
             </p>
           </div>
