@@ -170,11 +170,16 @@ export default function CajaPage() {
 
           <div className="mb-6 flex gap-2">
             <Input
-              placeholder="Nombre o número de asistente..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="flex-1"
-            />
+  placeholder="Nombre o número de asistente..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  }}
+  className="flex-1"
+/>
             <Button onClick={handleSearch} disabled={loadingSearch}>
               Buscar
             </Button>
