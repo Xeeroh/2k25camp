@@ -16,6 +16,7 @@ const ROLES = [
   { label: 'Ujier', value: 'ujier', monto: 700 },
   { label: 'Multimedia', value: 'multimedia', monto: 700 },
   { label: 'Registro', value: 'registro', monto: 700 },
+  { label: 'Comite', value: 'comite', monto: 0 },
 ];
 
 export default function RegistroPresencial() {
