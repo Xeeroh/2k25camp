@@ -141,11 +141,11 @@ export default function RegistroPresencial() {
       }
       // Validar duplicados
       const existe = await checkDuplicate();
-      if (existe) {
+      /*if (existe) {
         toast.error('Ya existe un registro con ese nombre o teléfono.');
         setIsSubmitting(false);
         return;
-      }
+      }*/
       const nuevoNumero = await getNextAttendanceNumber();
       setNumeroCampista(nuevoNumero);
       // Insertar registro
