@@ -95,7 +95,7 @@ export default function RegistroPresencial() {
     const { data, error } = await supabase
       .from('attendees')
       .select('id')
-      .or(`firstname.ilike.%${form.nombre}%,lastname.ilike.%${form.apellido}%,phone.eq.${form.telefono}`);
+      .or(`firstname.ilike.%${form.nombre}%,lastname.ilike.%${form.apellido}`);
     return data && data.length > 0;
   };
 
