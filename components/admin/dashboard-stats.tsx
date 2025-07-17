@@ -57,7 +57,7 @@ export default function DashboardStats() {
       const totalAttendees = attendees?.length || 0;
       const totalAmount = attendees?.reduce((sum, attendee) => sum + (attendee.paymentamount || 0), 0) || 0;
       const uniqueChurches = new Set(attendees?.map(a => a.church)).size;
-      const confirmedAttendees = attendees?.filter(a => a.attendance_confirmed).length || 0;
+      const confirmedAttendees = attendees?.filter(a => a.attendance_number).length || 0;
 
       setStats([
         {
