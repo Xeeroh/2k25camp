@@ -274,8 +274,10 @@ export default function ComitePage() {
       <div className="bg-try min-h-screen flex flex-col">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center p-4">
-          <div className="card-glass shadow-lg border border-border rounded-lg p-6 w-full max-w-md">
-            <h1 className="text-2xl font-bold mb-6">Iniciar sesión - Comité</h1>
+          <div className="card-glass p-8 w-full max-w-md animate-fade-in shadow-2xl">
+            <h1 className="text-3xl font-black mb-6 text-center bg-gradient-to-r from-white to-orange-400 bg-clip-text text-transparent">
+              ACCESO COMITÉ
+            </h1>
             <LoginForm />
           </div>
         </div>
@@ -314,27 +316,27 @@ export default function ComitePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Panel del Comité</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Códigos escaneados: {scanCount} | Rol: {user.role}
+              <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-br from-white via-white to-blue-300 bg-clip-text text-transparent tracking-tighter">
+                PANEL DEL COMITÉ
+              </h1>
+              <p className="text-sm text-blue-200/60 mt-2 font-light">
+                Escaneos realizados: <span className="font-bold text-orange-400">{scanCount}</span> | Rol: <span className="uppercase tracking-widest text-xs font-bold">{user.role}</span>
               </p>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-sm text-muted-foreground truncate">{user.email}</span>
-              {/*<Button 
-                variant="outline"
-                onClick={signOut}
-                className="whitespace-nowrap"
-              >
-                Cerrar sesión
-              </Button> */}
+            <div className="flex items-center gap-3 w-full sm:w-auto bg-white/5 p-2 rounded-full px-4 border border-white/10 backdrop-blur-md">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs font-medium text-blue-100/80 truncate">{user.email}</span>
             </div>
           </div>
           
           <Tabs defaultValue="scanner" className="mt-4 sm:mt-8">
-            <TabsList className="grid grid-cols-1 w-full sm:w-[590px] mb-6 sm:mb-8">
-              <TabsTrigger value="scanner">Escáner QR</TabsTrigger>
-              {/* <TabsTrigger value="info">Información</TabsTrigger> */}
+            <TabsList className="grid grid-cols-1 w-full sm:w-[590px] mb-6 sm:mb-8 bg-white/5 border border-white/10 p-1.5 h-auto rounded-xl">
+              <TabsTrigger 
+                value="scanner" 
+                className="rounded-lg py-3 data-[state=active]:bg-[#f4540a] data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
+              >
+                ESCANER DE ACCESO
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="scanner">

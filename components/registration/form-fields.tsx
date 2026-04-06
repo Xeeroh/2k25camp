@@ -23,7 +23,7 @@ export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists,
       name="firstName"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Nombre(s)</FormLabel>
+          <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Nombre(s)</FormLabel>
           <FormControl>
             <Input 
               placeholder="Ingrese su nombre(s)" 
@@ -41,7 +41,7 @@ export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists,
       name="lastName"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Apellido(s)</FormLabel>
+          <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Apellido(s)</FormLabel>
           <FormControl>
             <Input 
               placeholder="Ingrese su apellido(s)" 
@@ -59,7 +59,7 @@ export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists,
       name="email"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Correo Electrónico</FormLabel>
+          <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Correo Electrónico</FormLabel>
           <div className="relative">
             <FormControl>
               <Input 
@@ -86,7 +86,7 @@ export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists,
       name="phone"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Teléfono</FormLabel>
+          <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Teléfono</FormLabel>
           <FormControl>
             <Input 
               type="tel" 
@@ -119,7 +119,7 @@ export const ChurchFields = ({ form, isLoading, isSubmitting, sectorValue }: For
         name="sector"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Sector</FormLabel>
+            <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Sector</FormLabel>
             <Select 
               onValueChange={(value) => {
                 field.onChange(value);
@@ -151,7 +151,7 @@ export const ChurchFields = ({ form, isLoading, isSubmitting, sectorValue }: For
         name="church"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Iglesia</FormLabel>
+            <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Iglesia</FormLabel>
             <Select 
               onValueChange={field.onChange}
               value={field.value}
@@ -188,12 +188,12 @@ export const ChurchFields = ({ form, isLoading, isSubmitting, sectorValue }: For
 export const ShirtField = ({ form, isLoading, isSubmitting, shirtAvailable, checkingShirts }: FormFieldsProps) => {
   if (shirtAvailable === false) {
     return (
-      <div className="rounded-md border p-4 bg-amber-50">
-        <p className="text-sm font-medium text-amber-800">
-          Lo sentimos, ya no hay camisetas disponibles
+      <div className="rounded-xl border border-red-500/20 p-4 bg-red-500/10 backdrop-blur-md">
+        <p className="text-sm font-bold text-red-300">
+          CAMISETAS AGOTADAS
         </p>
-        <p className="text-xs text-amber-700 mt-1">
-          Las camisetas eran limitadas para los primeros 100 asistentes y ya se han agotado.
+        <p className="text-xs text-red-200/60 mt-1">
+          Las camisetas eran limitadas para los primeros 100 asistentes y ya no hay stock disponible.
         </p>
       </div>
     );
@@ -206,7 +206,7 @@ export const ShirtField = ({ form, isLoading, isSubmitting, shirtAvailable, chec
         name="tshirtsize"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>
+            <FormLabel className="text-blue-100/80 font-semibold mb-2 block">
               Talla de Camiseta *
               {checkingShirts && (
                 <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin text-muted-foreground" />

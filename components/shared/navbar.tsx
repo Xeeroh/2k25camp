@@ -248,9 +248,17 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
             </Link>
             
             {showInternalNav && user && (
-              <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 border-amber-300">
-                <Shield className="h-3 w-3 mr-1" /> 
-                {isAdmin ? 'Admin' : isEditor ? 'Comité' : 'Acceso Interno'}
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "ml-3 px-3 py-1 border-0 shadow-lg font-bold tracking-widest text-[10px] uppercase",
+                  isAdmin 
+                    ? "bg-red-500/20 text-red-300 shadow-red-900/20" 
+                    : "bg-[#f4540a]/20 text-[#f4540a] shadow-orange-950/20"
+                )}
+              >
+                <Shield className="h-3 w-3 mr-1.5" /> 
+                {isAdmin ? 'System Admin' : 'Staff Comité'}
               </Badge>
             )}
           </div>
@@ -258,14 +266,14 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
           <div className="hidden md:flex items-center space-x-8">
             <Link 
               href={user ? createInternalLink('/') : '/'} 
-              className="text-white/50 hover:text-gray-300 transition-colors"
+              className="text-blue-100/60 hover:text-white transition-all font-medium tracking-wide hover:scale-105 active:scale-95"
               onClick={() => handleNavigation('/')}
             >
               Inicio
             </Link>
             <Link 
               href={user ? createInternalLink('/registro') : '/registro'} 
-              className="text-white/50 hover:text-gray-300 transition-colors"
+              className="text-blue-100/60 hover:text-white transition-all font-medium tracking-wide hover:scale-105 active:scale-95"
               onClick={() => handleNavigation('/registro')}
             >
               Registro

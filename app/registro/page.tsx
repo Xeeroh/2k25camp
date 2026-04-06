@@ -76,7 +76,7 @@ export default function RegistroPage() {
           <div className="flex flex-1 min-h-[60vh] items-center justify-center">
             <div className="text-center mt-20 mb-20 p-8 card-glass rounded-xl shadow-lg">
               <h1 className="text-3xl md:text-4xl font-bold mb-4 text-blue-200">🕔 ¡El registro en linea ha finalizado! 🕔</h1>
-              <p className="text-lg text-blue-100 mb-4">🚫 El registro en línea está cerrado, pero aún puedes ser parte del campamento .</p>
+              <p className="text-lg text-blue-100 mb-4">🚫 El registro en línea está cerrado, pero aún puedes ser parte del CAMPAMENTO 2026.</p>
               <p className="text-md text-blue-100 mb-2"> 🏕️ Solo llega el día del evento y 📝 regístrate directamente en el área de bienvenida.
               ¡Nos encantaría verte ahí!</p>
               <p className="text-md text-blue-100"> 👋🏼 ¡Nos vemos pronto!</p>
@@ -94,12 +94,12 @@ export default function RegistroPage() {
               />
             ) : (
               <>
-                <div className="text-center mb-10 ">
-                  <h1 className="text-3xl md:text-4xl font-bold mb-4 text-blue-100">
-                    Registro Convención 2026
+                <div className="text-center mb-12 animate-fade-in">
+                  <h1 className="text-4xl md:text-6xl font-black mb-4 bg-gradient-to-br from-white via-white to-orange-400 bg-clip-text text-transparent tracking-tighter">
+                    CAMPAMENTO 2026
                   </h1>
-                  <p className="text-lg text-muted-foreground ">
-                    Complete el formulario para registrarse
+                  <p className="text-xl text-blue-100/70 font-light">
+                    Únete a la experiencia que transformará tu 2026.
                   </p>
                 </div>
                 <RegistrationForm onSuccess={handleSuccessfulSubmission} />

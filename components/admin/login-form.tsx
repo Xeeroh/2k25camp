@@ -147,13 +147,14 @@ export default function LoginForm() {
 
           <Button
             type="submit"
-            className="w-full mt-2"
+            variant="tangelo"
+            className="w-full mt-4 h-12 text-lg font-bold"
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Iniciando sesión...
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Validando Acceso...
               </>
             ) : (
               "Iniciar Sesión"

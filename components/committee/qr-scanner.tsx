@@ -192,10 +192,11 @@ function QrScanner({ onScan }: QrScannerProps) {
 
         <Button
           onClick={startScanner}
-          className="flex items-center gap-2 w-full sm:w-auto"
+          variant="tangelo"
+          className="flex items-center gap-2 w-full sm:w-auto font-bold h-11"
           disabled={scanning}
         >
-          <Camera className="h-4 w-4" />
+          <Camera className="h-5 w-5" />
           {scanning ? 'Escaneando...' : 'Iniciar Escáner'}
         </Button>
 

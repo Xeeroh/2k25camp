@@ -108,11 +108,12 @@
 
 /* Glassmorphism card effect */
 .card-glass{
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background-color: rgba(17, 25, 40, 0.75);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.125);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  background-color: rgba(13, 13, 80, 0.4);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
 }
 
 .card-clear{
@@ -126,10 +127,11 @@ border-radius: 10px;
 
 
 .bg-try {
-background-color: #6C76FF;
-background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 1600 800'%3E%3Cg stroke='%2337384F' stroke-width='66.7' stroke-opacity='0.05' %3E%3Ccircle fill='%236C76FF' cx='0' cy='0' r='1800'/%3E%3Ccircle fill='%236670f1' cx='0' cy='0' r='1700'/%3E%3Ccircle fill='%236069e2' cx='0' cy='0' r='1600'/%3E%3Ccircle fill='%235a63d4' cx='0' cy='0' r='1500'/%3E%3Ccircle fill='%23545cc6' cx='0' cy='0' r='1400'/%3E%3Ccircle fill='%234e56b8' cx='0' cy='0' r='1300'/%3E%3Ccircle fill='%234950ab' cx='0' cy='0' r='1200'/%3E%3Ccircle fill='%23434a9d' cx='0' cy='0' r='1100'/%3E%3Ccircle fill='%233e4490' cx='0' cy='0' r='1000'/%3E%3Ccircle fill='%23393e83' cx='0' cy='0' r='900'/%3E%3Ccircle fill='%23333876' cx='0' cy='0' r='800'/%3E%3Ccircle fill='%232e3269' cx='0' cy='0' r='700'/%3E%3Ccircle fill='%23292d5d' cx='0' cy='0' r='600'/%3E%3Ccircle fill='%23242751' cx='0' cy='0' r='500'/%3E%3Ccircle fill='%23202145' cx='0' cy='0' r='400'/%3E%3Ccircle fill='%231b1c3a' cx='0' cy='0' r='300'/%3E%3Ccircle fill='%2316172f' cx='0' cy='0' r='200'/%3E%3Ccircle fill='%23121124' cx='0' cy='0' r='100'/%3E%3C/g%3E%3C/svg%3E");
-background-attachment: fixed;
-background-size: cover;
+  background: radial-gradient(circle at 0% 0%, rgba(20, 20, 100, 0.8) 0%, transparent 50%),
+              radial-gradient(circle at 100% 100%, rgba(244, 84, 10, 0.15) 0%, transparent 50%),
+              linear-gradient(180deg, hsl(var(--federal-blue)) 0%, hsl(var(--yinmn-blue)) 100%);
+  background-attachment: fixed;
+  background-size: cover;
 }
 
 /* Clase para tu navbar cuando NO hay scroll (completamente transparente) */

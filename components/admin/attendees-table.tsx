@@ -21,11 +21,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, CheckCircle2, XCircle, MoreHorizontal, Loader2, Image as ImageIcon, ArrowUpDown } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, MoreHorizontal, Loader2, Image as ImageIcon, ArrowUpDown, Users } from 'lucide-react';
 import { toast } from "sonner";
+import { cn } from '@/lib/utils';
 import AttendeeModal from "./attendee-modal";
 import { useRefresh } from './refresh-context';
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -93,7 +94,7 @@ export default function AttendeesTable() {
     if (attendee.sector.startsWith('Sector ')) {
       sectorValue = attendee.sector.replace('Sector ', '');
     }
-    
+
     const formattedAttendee = {
       ...attendee,
       firstName: attendee.firstname,
@@ -105,7 +106,7 @@ export default function AttendeesTable() {
       paymentReceiptUrl: attendee.paymentreceipturl,
       registrationdate: attendee.registrationdate
     };
-    
+
     setSelectedAttendee(formattedAttendee as any);
     setModalMode(mode);
     setIsModalOpen(true);
@@ -118,19 +119,19 @@ export default function AttendeesTable() {
 
   const handleDelete = async () => {
     if (!attendeeToDelete) return;
-    
+
     try {
       const { error } = await supabase
         .from('attendees')
         .delete()
         .eq('id', attendeeToDelete.id);
-      
+
       if (error) throw error;
-      
+
       toast.success("Asistente eliminado", {
         description: "El asistente ha sido eliminado con éxito",
       });
-      
+
       // Actualizar la tabla y todas las estadísticas
       await Promise.all([
         fetchAttendees(),
@@ -180,7 +181,7 @@ export default function AttendeesTable() {
       // Validar el estado de pago
       const validPaymentStatus = ['Pendiente', 'Pagado', 'Revisado'] as const;
       const paymentStatus = String(updatedAttendee.paymentstatus || '').trim();
-      
+
       if (!paymentStatus || !validPaymentStatus.includes(paymentStatus as typeof validPaymentStatus[number])) {
         throw new Error(`Estado de pago no válido. Debe ser uno de: ${validPaymentStatus.join(', ')}`);
       }
@@ -229,7 +230,7 @@ export default function AttendeesTable() {
         fetchAttendees(),
         refreshAll()
       ]);
-      
+
       closeModal();
     } catch (error) {
       console.error('Error al actualizar asistente:', error);
@@ -266,7 +267,7 @@ export default function AttendeesTable() {
       // Ordenamiento por texto
       const aValue = String(a[sortConfig.key] ?? '').toLowerCase();
       const bValue = String(b[sortConfig.key] ?? '').toLowerCase();
-      
+
       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
@@ -298,11 +299,11 @@ export default function AttendeesTable() {
     const getBadgeStyles = (status: Attendee['paymentstatus']) => {
       switch (status) {
         case 'Pagado':
-          return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+          return 'bg-green-500/20 text-green-300 border-green-500/30';
         case 'Revisado':
-          return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+          return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
         default:
-          return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+          return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
       }
     };
 
@@ -317,9 +318,9 @@ export default function AttendeesTable() {
     };
 
     return (
-      <Badge 
-        variant={status === 'Pagado' ? 'default' : 'secondary'}
-        className={getBadgeStyles(status)}
+      <Badge
+        variant="outline"
+        className={cn("px-2.5 py-0.5 rounded-full font-bold uppercase text-[10px] tracking-wider", getBadgeStyles(status))}
       >
         {getIcon(status)}
         {status}
@@ -344,244 +345,99 @@ export default function AttendeesTable() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar asistentes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-slate-300 pl-8"
-            />
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="relative w-full max-w-md group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-100/40 group-focus-within:text-[#f4540a] transition-colors" />
+          <Input
+            placeholder="Buscar por nombre, correo o iglesia..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-white/5 border-white/10 pl-10 h-12 rounded-2xl text-blue-100 placeholder:text-blue-100/30 focus:ring-1 focus:ring-[#f4540a]/50 focus:border-[#f4540a]/50 backdrop-blur-xl transition-all"
+          />
         </div>
       </div>
 
       <div className="rounded-md border max-h-[500px] overflow-y-auto">
         {isMobile ? (
-          // Versión móvil: lista simplificada
-          <div className="space-y-4 p-2">
+          // Versión móvil: Tarjetas elegantes
+          <div className="grid grid-cols-1 gap-4 p-4">
             {filteredAndSortedAttendees.length === 0 && !loading ? (
-              <p className="text-center text-muted-foreground">No se encontraron asistentes</p>
+              <div className="text-center py-12 card-glass">
+                <p className="text-blue-100/40 italic">No se encontraron asistentes</p>
+              </div>
             ) : (
               filteredAndSortedAttendees.map((attendee) => (
                 <div
                   key={attendee.id}
-                  className="border rounded p-3 shadow-sm flex flex-col space-y-1"
+                  className="card-glass p-5 flex flex-col space-y-4 border-white/5 shadow-xl relative overflow-hidden group"
                 >
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold">{attendee.firstname} {attendee.lastname}</span>
-                    <Badge>{attendee.attendance_number ? `#${attendee.attendance_number.toString().padStart(3, '0')}` : 'Pendiente'}</Badge>
+                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Users className="h-20 w-20 text-white" />
                   </div>
-                  <div>Email: <span className="font-mono">{attendee.email}</span></div>
-                  <div>Iglesia: {attendee.church}</div>
-                  <div>Sector: {attendee.sector}</div>
-                  <div>Monto: ${attendee.paymentamount}</div>
-                  <div>Debe: <span className="font-bold text-red-600">${900 - (attendee.paymentamount || 0)}</span></div>
-                  <div>Estado: {getPaymentBadge(attendee.paymentstatus)}</div>
-                  <div>Talla: <Badge variant="outline" className={attendee.tshirtsize ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}>{attendee.tshirtsize ? attendee.tshirtsize : 'N/A'}</Badge></div>
-                  <div className="flex space-x-2 mt-2 justify-end">
-                    {attendee.paymentreceipturl && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openModal(attendee, 'receipt')}
-                        className=" bg-blue h-9 px-2"
-                      >
-                        <ImageIcon className="h-8 w-8 text-blue-500" />
-                      </Button>
-                    )}
-                    <Button size="sm" className='bg-blue-900/50' variant="outline" onClick={() => openModal(attendee, 'view')}>
-                      Ver
-                    </Button>
-                    <Button size="sm" className='bg-blue-900/50' variant="outline" onClick={() => openModal(attendee, 'edit')}>
-                      Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        setAttendeeToDelete(attendee);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="text-xs">
-                <TableHead className="text-center w-16 px-1 text-xs">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('attendance_number')}
-                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
-                  >
-                    #
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-center w-28 px-1 text-xs">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('firstname')}
-                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
-                  >
-                    Nombre
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-center w-32 px-1 text-xs">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('email')}
-                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
-                  >
-                    Correo
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-center w-28 px-1 text-xs">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('church')}
-                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
-                  >
-                    Iglesia
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-center w-20 px-1 text-xs">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('sector')}
-                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
-                  >
-                    Sector
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-center w-16 px-1 text-xs">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('paymentamount')}
-                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
-                  >
-                    Monto
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-center w-16 px-1 text-white text-xs">
-                  Debe
-                </TableHead>
-                <TableHead className="text-center w-20 px-1 text-xs">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('paymentstatus')}
-                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
-                  >
-                    Estado
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-center w-20 px-1 text-xs">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('tshirtsize')}
-                    className="flex items-center justify-center gap-1 w-full text-white text-xs px-1"
-                  >
-                    Talla
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-12 text-center text-white text-xs px-1">Comp.</TableHead>
-                <TableHead className="w-12 text-center text-white text-xs px-1">Acc.</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="text-xs">
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="h-24 text-center text-xs px-1">
-                    <div className="flex items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin" />
+
+                  <div className="flex justify-between items-start relative z-10">
+                    <div>
+                      <h4 className="text-xl font-bold text-white tracking-tight">
+                        {attendee.firstname} {attendee.lastname}
+                      </h4>
+                      <p className="text-xs text-blue-100/60 font-mono mt-0.5">{attendee.email}</p>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredAndSortedAttendees.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="h-24 text-center text-xs px-1">
-                    No se encontraron asistentes
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAndSortedAttendees.map((attendee) => (
-                  <TableRow key={attendee.id} className="text-xs">
-                    <TableCell className="text-center w-16 px-1">
-                      {attendee.attendance_number ? (
-                        <Badge 
-                          variant="outline" 
-                          className="bg-primary/10 text-primary font-mono px-2 py-1"
-                        >
-                          #{attendee.attendance_number.toString().padStart(3, '0')}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-xs text-white">Pend.</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center w-28 px-1">{`${attendee.firstname} ${attendee.lastname}`}</TableCell>
-                    <TableCell className="text-center w-32 px-1">{attendee.email}</TableCell>
-                    <TableCell className="text-center w-28 px-1">{attendee.church}</TableCell>
-                    <TableCell className="text-center w-20 px-1">{attendee.sector}</TableCell>
-                    <TableCell className="text-center w-16 px-1">${attendee.paymentamount}</TableCell>
-                    <TableCell className="text-center w-16 px-1">
-                      ${900 - (attendee.paymentamount || 0)}
-                    </TableCell>
-                    <TableCell className="text-center w-20 px-1">{getPaymentBadge(attendee.paymentstatus)}</TableCell>
-                    <TableCell className="text-center w-20 px-1">
-                      <Badge 
-                        variant="outline" 
-                        className={attendee.tshirtsize ? "bg-purple-400 text-purple-900 dark:bg-purple-900 dark:text-purple-300" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}
-                      >
-                        {attendee.tshirtsize ? attendee.tshirtsize : 'N/A'}
+                    <Badge className="bg-[#f4540a]/20 text-[#f4540a] border-0 font-black">
+                      {attendee.attendance_number ? `#${attendee.attendance_number.toString().padStart(3, '0')}` : 'PEND'}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm relative z-10">
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Iglesia / Sector</p>
+                      <p className="text-blue-100 font-medium truncate">{attendee.church}</p>
+                      <p className="text-blue-100/60 text-xs">Sector {attendee.sector}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Pago / Deuda</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-400 font-bold">${attendee.paymentamount}</span>
+                        <span className="text-white/20">|</span>
+                        <span className="text-red-400 font-bold">${900 - (attendee.paymentamount || 0)}</span>
+                      </div>
+                      {getPaymentBadge(attendee.paymentstatus)}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-10">
+                    <div className="flex gap-2">
+                      <Badge variant="outline" className="border-white/10 text-white/60 bg-white/5">
+                        Talla: {attendee.tshirtsize || 'N/A'}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="w-12 text-center px-1">
-                      {attendee.paymentreceipturl ? (
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {attendee.paymentreceipturl && (
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => openModal(attendee, 'receipt')}
-                          className="h-8 w-8 p-0 mx-auto"
+                          className="h-9 w-9 text-blue-400 hover:text-blue-300 hover:bg-white/5"
                         >
-                          <ImageIcon className="h-4 w-4 text-blue-500" />
+                          <ImageIcon className="h-5 w-5" />
                         </Button>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">-</span>
                       )}
-                    </TableCell>
-                    <TableCell className="w-12 text-center px-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 mx-auto">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-white/60">
+                            <MoreHorizontal className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openModal(attendee, 'view')}>
-                            Ver detalles
+                        <DropdownMenuContent align="end" className="card-glass border-white/10">
+                          <DropdownMenuItem onClick={() => openModal(attendee, 'view')} className="text-white hover:bg-white/10">
+                            Ver Detalles
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openModal(attendee, 'edit')}>
-                            Editar
+                          <DropdownMenuItem onClick={() => openModal(attendee, 'edit')} className="text-white hover:bg-white/10">
+                            Editar Info
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="text-destructive"
+                            className="text-red-400 hover:bg-red-500/10"
                             onClick={() => {
                               setAttendeeToDelete(attendee);
                               setIsDeleteDialogOpen(true);
@@ -591,12 +447,163 @@ export default function AttendeesTable() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table className="border-collapse">
+              <TableHeader className="bg-white/5 sticky top-0 bg-blue-950 backdrop-blur-md z-20">
+                <TableRow className="hover:bg-transparent border-white/10">
+                  <TableHead className="text-center w-20 py-5">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('attendance_number')}
+                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                    >
+                      ID <ArrowUpDown className="ml-1 h-3 w-3" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="py-5">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('firstname')}
+                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                    >
+                      ASISTENTE <ArrowUpDown className="ml-1 h-3 w-3" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="py-5">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('church')}
+                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                    >
+                      IGLESIA / SECTOR <ArrowUpDown className="ml-1 h-3 w-3" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-center py-5">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('tshirtsize')}
+                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                    >
+                      TALLA <ArrowUpDown className="ml-1 h-3 w-3" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-center py-5">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('paymentamount')}
+                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                    >
+                      PAGO <ArrowUpDown className="ml-1 h-3 w-3" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-center py-5">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('paymentstatus')}
+                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                    >
+                      ESTADO <ArrowUpDown className="ml-1 h-3 w-3" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right py-5 pr-8">
+                    <span className="text-blue-100/40 font-bold tracking-widest text-[10px] uppercase">ACCIONES</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedAttendees.map((attendee) => (
+                  <TableRow key={attendee.id} className="group hover:bg-white/5 border-white/5 transition-all">
+                    <TableCell className="text-center font-mono text-blue-300 py-4">
+                      {attendee.attendance_number ? (
+                        <span className="font-black text-[#f4540a] bg-[#f4540a]/10 px-2 py-1 rounded">
+                          {attendee.attendance_number.toString().padStart(3, '0')}
+                        </span>
+                      ) : (
+                        <span className="text-blue-100/20">---</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div>
+                        <p className="font-bold text-white text-base">
+                          {attendee.firstname} {attendee.lastname}
+                        </p>
+                        <p className="text-xs text-blue-100/40">{attendee.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div>
+                        <p className="text-blue-100 font-medium">{attendee.church}</p>
+                        <p className="text-[10px] text-blue-100/40 uppercase tracking-widest font-bold">Sector {attendee.sector}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center py-4">
+                      {attendee.tshirtsize && attendee.tshirtsize !== 'NA' ? (
+                        <Badge className="bg-[#f4540a]/20 text-[#f4540a] border-0 font-black px-3 py-1">
+                          {attendee.tshirtsize}
+                        </Badge>
+                      ) : (
+                        <span className="text-blue-100/10 font-black">--</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center py-4">
+                      <div className="inline-flex flex-col items-center">
+                        <span className="text-green-400 font-black">${attendee.paymentamount}</span>
+                        <span className="text-[10px] text-red-400/50">-${900 - (attendee.paymentamount || 0)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center py-4">
+                      {getPaymentBadge(attendee.paymentstatus)}
+                    </TableCell>
+                    <TableCell className="text-right py-4 pr-8">
+                      <div className="flex justify-end items-center gap-2">
+                        {attendee.paymentreceipturl && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openModal(attendee, 'receipt')}
+                            className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-white/10"
+                          >
+                            <ImageIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-white/40 group-hover:text-white transition-colors">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="card-glass border-white/10 min-w-[150px]">
+                            <DropdownMenuItem onClick={() => openModal(attendee, 'view')} className="text-white hover:bg-white/10 cursor-pointer">
+                              Ver Ficha
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openModal(attendee, 'edit')} className="text-white hover:bg-white/10 cursor-pointer">
+                              Editar Datos
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-400 hover:bg-red-500/10 cursor-pointer"
+                              onClick={() => {
+                                setAttendeeToDelete(attendee);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                            >
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
 
@@ -624,7 +631,7 @@ export default function AttendeesTable() {
           <AlertDialogFooter>
             <AlertDialogCancel className='text-black '>
               Cancelar
-              </AlertDialogCancel>
+            </AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               Eliminar
             </AlertDialogAction>

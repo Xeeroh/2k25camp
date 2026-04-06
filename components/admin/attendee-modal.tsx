@@ -34,6 +34,8 @@ import * as z from 'zod';
 import { CHURCHES_DATA } from '@/lib/churches-data';
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { CheckCircle2, XCircle, Image as ImageIcon, Users } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Form schema for editing attendee
 const formSchema = z.object({
@@ -58,6 +60,34 @@ type AttendeeModalProps = {
 };
 
 export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdate }: AttendeeModalProps) {
+  const getPaymentBadge = (status: string) => {
+    const getBadgeStyles = (status: string) => {
+      switch (status) {
+        case 'Pagado': return 'bg-green-500/20 text-green-300 border-green-500/30';
+        case 'Revisado': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+        default: return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+      }
+    };
+
+    const getIcon = (status: string) => {
+      switch (status) {
+        case 'Pagado':
+        case 'Revisado': return <CheckCircle2 className="h-3 w-3 mr-1" />;
+        default: return <XCircle className="h-3 w-3 mr-1" />;
+      }
+    };
+
+    return (
+      <Badge 
+        variant="outline"
+        className={cn("px-2.5 py-0.5 rounded-full font-bold uppercase text-[10px] tracking-wider", getBadgeStyles(status))}
+      >
+        {getIcon(status)}
+        {status}
+      </Badge>
+    );
+  };
+
   const [isLoading, setIsLoading] = useState(false);
   const [sectorValue, setSectorValue] = useState("");
   
@@ -157,62 +187,93 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
     switch (mode) {
       case 'view':
         return (
-          <div className=" dark:bg-zinc-800/60 backdrop-blur-md rounded-xl p-6 shadow-inner space-y-4">
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Nombre</h4>
-                <p>{attendee.firstName} {attendee.lastName}</p>
+          <div className="space-y-6">
+            {/* Header de la Ficha */}
+            <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#f4540a] to-orange-600 flex items-center justify-center text-2xl font-black text-white shadow-lg shadow-orange-950/40">
+                {attendee.firstName?.charAt(0)}{attendee.lastName?.charAt(0)}
               </div>
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
-                <p>{attendee.email}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Iglesia</h4>
-                <p>{attendee.church}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Sector</h4>
-                <p>{attendee.sector}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Monto</h4>
-                <p>${attendee.paymentAmount}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Estado de Pago</h4>
-                <Badge 
-                  variant={attendee.paymentStatus === 'Completado' ? 'success' : 'warning'}
-                >
-                  {attendee.paymentStatus}
-                </Badge>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Fecha de Registro</h4>
-                <p>{formatDate(attendee.registrationdate)}</p>
-              </div>
-              {attendee.tshirtsize && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Talla de Camiseta</h4>
-                  <p>{attendee.tshirtsize}</p>
+                <h4 className="text-2xl font-bold text-white tracking-tight">
+                  {attendee.firstName} {attendee.lastName}
+                </h4>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className="bg-[#f4540a]/20 text-[#f4540a] border-0 text-[10px] font-black uppercase tracking-widest">
+                    ID #{attendee.attendance_number?.toString().padStart(3, '0') || 'PEND'}
+                  </Badge>
+                  {attendee.istest && (
+                    <Badge variant="outline" className="border-blue-400/30 text-blue-300 text-[10px] font-bold bg-blue-500/10">
+                      MODO PRUEBA
+                    </Badge>
+                  )}
                 </div>
-              )}
-              {attendee.istest && (
-                <div>
-                  <Badge variant="outline" className="bg-gray-100">Registro de prueba</Badge>
-                </div>
-              )}
+              </div>
             </div>
+
+            {/* Grid de Información */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Contacto</p>
+                <p className="text-white font-medium">{attendee.email}</p>
+                <p className="text-xs text-blue-100/60 font-mono">{attendee.phone || 'Sin teléfono'}</p>
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Ubicación</p>
+                <p className="text-white font-medium">{attendee.church}</p>
+                <p className="text-xs text-blue-100/60">Sector {attendee.sector}</p>
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Estado Financiero</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-green-400 font-bold text-lg">${attendee.paymentAmount}</span>
+                  <span className="text-white/20">|</span>
+                  <span className="text-red-400 font-medium">Debe: ${900 - (attendee.paymentAmount || 0)}</span>
+                </div>
+                <div className="mt-1">{getPaymentBadge(attendee.paymentStatus)}</div>
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                <p className="text-[10px] uppercase tracking-widest text-[#f4540a] font-bold">Dotación (Camiseta)</p>
+                <div className="flex items-center gap-2 pt-1">
+                  {attendee.tshirtsize && attendee.tshirtsize !== 'NA' ? (
+                    <div className="flex items-center gap-3">
+                      <div className="bg-[#f4540a] text-white font-black px-3 py-1 rounded-lg text-lg shadow-lg shadow-orange-950/20">
+                        {attendee.tshirtsize}
+                      </div>
+                      <p className="text-white font-medium text-sm">Talla confirmada</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white/10 text-white/20 font-black px-3 py-1 rounded-lg text-lg">
+                        --
+                      </div>
+                      <p className="text-blue-100/40 text-xs italic">Sin camiseta asignada</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Fecha de Registro</p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Badge variant="outline" className="bg-white/5 border-white/10 text-white font-mono text-[10px]">
+                    {formatDate(attendee.registrationdate)}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
             {attendee.paymentReceiptUrl && (
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-2">Comprobante de Pago</h4>
+              <div className="pt-2">
                 <Button 
                   variant="outline"
-                  className='bg-blue-900' 
+                  className="w-full bg-blue-500/10 border-blue-500/20 text-blue-300 hover:bg-blue-500/20 hover:text-white rounded-xl h-12 font-bold"
                   onClick={() => window.open(attendee.paymentReceiptUrl, '_blank')}
                 >
-                  Ver Comprobante
+                  <ImageIcon className="mr-2 h-5 w-5" />
+                  Ver Comprobante Original
                 </Button>
               </div>
             )}
@@ -408,15 +469,16 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                 />
               </div>
               
-              <DialogFooter>
+              <DialogFooter className="gap-2 sm:gap-0">
                 <Button 
                   type="button" 
+                  variant="ghost"
                   onClick={onClose}
-                  className='bg-blue-900'
+                  className="text-white hover:bg-white/10"
                 >
                   Cancelar
                 </Button>
-                <Button className='bg-blue-900' type="submit" disabled={isLoading}>
+                <Button variant="tangelo" type="submit" disabled={isLoading} className="font-bold">
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -433,24 +495,35 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
       
       case 'receipt':
         return attendee.paymentReceiptUrl ? (
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative w-full h-96">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="relative w-full aspect-square md:aspect-video rounded-2xl overflow-hidden border-2 border-white/10 bg-white/5 shadow-2xl group">
               <Image 
                 src={attendee.paymentReceiptUrl} 
                 alt="Comprobante de pago" 
                 fill
-                className="object-contain"
+                className="object-contain transition-transform group-hover:scale-105"
               />
             </div>
-            <Button 
-              onClick={() => window.open(attendee.paymentReceiptUrl, '_blank')}
-            >
-              Abrir en nueva pestaña
-            </Button>
+            <div className="flex gap-4 w-full">
+              <Button 
+                variant="outline"
+                className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-white h-12 font-bold rounded-xl"
+                onClick={() => window.open(attendee.paymentReceiptUrl, '_blank')}
+              >
+                Abrir Externo
+              </Button>
+              <Button 
+                className="flex-1 bg-[#f4540a] hover:bg-orange-600 text-white h-12 font-bold rounded-xl shadow-lg shadow-orange-900/20"
+                onClick={onClose}
+              >
+                Cerrar
+              </Button>
+            </div>
           </div>
         ) : (
-          <div className="text-center p-4 text-muted-foreground">
-            No hay comprobante de pago disponible.
+          <div className="text-center py-20 card-glass flex flex-col items-center gap-4">
+            <ImageIcon className="h-20 w-20 text-white/5" />
+            <p className="text-blue-100/40 italic">No hay comprobante disponible</p>
           </div>
         );
       
@@ -472,8 +545,13 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
         </DialogHeader>
         {renderContent()}
         {mode === 'view' && (
-          <DialogFooter>
-            <Button onClick={onClose}>Cerrar</Button>
+          <DialogFooter className="border-t border-white/5 pt-4">
+            <Button 
+              onClick={onClose}
+              className="bg-white/10 hover:bg-white/20 text-white border-0 h-11 px-8 font-bold rounded-xl"
+            >
+              Cerrar Ficha
+            </Button>
           </DialogFooter>
         )}
       </DialogContent>
