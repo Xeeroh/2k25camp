@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, CheckCircle2, XCircle, MoreHorizontal, Loader2, Image as ImageIcon, ArrowUpDown, Users } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, MoreHorizontal, Loader2, Image as ImageIcon, ArrowUpDown, Users, Trash2 } from 'lucide-react';
 import { toast } from "sonner";
 import { cn } from '@/lib/utils';
 import AttendeeModal from "./attendee-modal";
@@ -121,25 +121,31 @@ export default function AttendeesTable() {
     if (!attendeeToDelete) return;
 
     try {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('attendees')
-        .delete()
-        .eq('id', attendeeToDelete.id);
+        .delete({ count: 'exact' })
+        .eq('id', attendeeToDelete.id)
+        .select();
 
       if (error) throw error;
 
+      if (count === 0) {
+        toast.warning("Sin cambios", {
+          description: "El servidor no permitió borrar este registro (revisa permisos RLS)."
+        });
+        return;
+      }
+
       toast.success("Asistente eliminado", {
-        description: "El asistente ha sido eliminado con éxito",
+        description: `${attendeeToDelete.firstname} ha sido removido.`
       });
 
-      // Actualizar la tabla y todas las estadísticas
-      await Promise.all([
-        fetchAttendees(),
-        refreshAll()
-      ]);
-    } catch (error) {
-      toast.error("Error", {
-        description: error instanceof Error ? error.message : "No se pudo eliminar el asistente",
+      await fetchAttendees();
+      if (refreshAll) refreshAll();
+      
+    } catch (error: any) {
+      toast.error("Error al eliminar", {
+        description: error.message || "Error desconocido."
       });
     } finally {
       setIsDeleteDialogOpen(false);
@@ -209,7 +215,8 @@ export default function AttendeesTable() {
         attendance_number: updatedAttendee.attendance_number,
         attendance_confirmed: updatedAttendee.attendance_confirmed,
         attendance_confirmed_at: updatedAttendee.attendance_confirmed_at,
-        tshirtsize: String(updatedAttendee.tshirtsize || '').trim()
+        tshirtsize: String(updatedAttendee.tshirtsize || '').trim(),
+        notes: String(updatedAttendee.notes || '').trim()
       };
 
       const { error: updateError } = await supabase
@@ -437,13 +444,16 @@ export default function AttendeesTable() {
                             Editar Info
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="text-red-400 hover:bg-red-500/10"
-                            onClick={() => {
-                              setAttendeeToDelete(attendee);
-                              setIsDeleteDialogOpen(true);
+                            className="text-red-400 hover:bg-red-500/10 cursor-pointer"
+                            onSelect={() => {
+                              // Pequeño timeout para dejar que el menú cierre
+                              setTimeout(() => {
+                                setAttendeeToDelete(attendee);
+                                setIsDeleteDialogOpen(true);
+                              }, 100);
                             }}
                           >
-                            Eliminar
+                            <Trash2 className="h-4 w-4 mr-2" /> Eliminar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -588,12 +598,14 @@ export default function AttendeesTable() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-400 hover:bg-red-500/10 cursor-pointer"
-                              onClick={() => {
-                                setAttendeeToDelete(attendee);
-                                setIsDeleteDialogOpen(true);
+                              onSelect={() => {
+                                setTimeout(() => {
+                                  setAttendeeToDelete(attendee);
+                                  setIsDeleteDialogOpen(true);
+                                }, 100);
                               }}
                             >
-                              Eliminar
+                              <Trash2 className="h-4 w-4 mr-2" /> Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -629,11 +641,14 @@ export default function AttendeesTable() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className='text-black '>
+            <AlertDialogCancel className="bg-white/10 text-white hover:bg-white/20 border-0">
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Eliminar
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-red-600 hover:bg-red-700 text-white font-bold"
+            >
+              Borrar permanentemente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

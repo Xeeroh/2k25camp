@@ -47,6 +47,7 @@ const formSchema = z.object({
   paymentAmount: z.number().min(0, "El monto no puede ser negativo"),
   paymentStatus: z.enum(['Pendiente', 'Pagado', 'Revisado']),
   tshirtsize: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -102,6 +103,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
       paymentAmount: 0,
       paymentStatus: "Pendiente" as const,
       tshirtsize: "",
+      notes: "",
     },
   });
   
@@ -115,9 +117,10 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
         email: attendee.email || "",
         sector: attendee.sector || "",
         church: attendee.church || "",
-        paymentAmount: attendee.paymentAmount || attendee.paymentamount || 0,
+        paymentAmount: Number(attendee.paymentAmount || attendee.paymentamount || 0),
         paymentStatus: (attendee.paymentStatus || attendee.paymentstatus || "Pendiente") as "Pendiente" | "Pagado" | "Revisado",
         tshirtsize: attendee.tshirtsize || "",
+        notes: attendee.notes || "",
       });
       
       setSectorValue(attendee.sector || "");
@@ -149,6 +152,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
         paymentamount: data.paymentAmount,
         paymentstatus: paymentStatus,
         tshirtsize: data.tshirtsize,
+        notes: data.notes,
         id: attendee.id
       };
       
@@ -263,6 +267,14 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                   </Badge>
                 </div>
               </div>
+
+              {/* Notas del Asistente (Vista de Detalles) */}
+              {attendee.notes && (
+                <div className="md:col-span-2 p-4 bg-[#f4540a]/5 rounded-2xl border border-orange-500/20 space-y-1">
+                  <p className="text-[10px] uppercase tracking-widest text-[#f4540a] font-black">Observaciones / Notas Especiales</p>
+                  <p className="text-white text-sm leading-relaxed italic">"{attendee.notes}"</p>
+                </div>
+              )}
             </div>
 
             {attendee.paymentReceiptUrl && (
@@ -401,9 +413,16 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                   name="paymentAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Monto de Pago</FormLabel>
+                      <FormLabel>Monto Pagado ($)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input 
+                          type="number" 
+                          {...field} 
+                          value={field.value === 0 ? '' : field.value}
+                          onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+                          placeholder="0"
+                          className="bg-white/5 border-white/10 text-white rounded-xl focus:ring-[#f4540a]/30"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -463,6 +482,24 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                           <SelectItem value="XXL">XXL</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Notas y Observaciones</FormLabel>
+                      <FormControl>
+                        <textarea 
+                          {...field} 
+                          className="w-full bg-white/5 border-white/10 text-white rounded-xl h-20 px-4 py-3 focus:ring-[#f4540a]/30 focus:border-[#f4540a] outline-none resize-none"
+                          placeholder="Agregue información relevante aquí..."
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

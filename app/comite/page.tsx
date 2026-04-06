@@ -53,9 +53,10 @@ export default function ComitePage() {
   useEffect(() => {
     if (user) {
       const hasEditorRole = hasRole('editor');
+      const hasComiteRole = user.role === 'comite';
       const hasAdminRole = hasRole('admin');
       
-      if (!hasEditorRole && !hasAdminRole) {
+      if (!hasEditorRole && !hasAdminRole && !hasComiteRole) {
         toast.error('No tienes permisos para acceder a esta página', {duration: 2000});
         router.push('/');
       } else if (!hasShownWelcome) {

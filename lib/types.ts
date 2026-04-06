@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'editor' | 'viewer';
+export type UserRole = 'admin' | 'editor' | 'comite' | 'viewer';
 
 export interface UserProfile {
   id: string;
@@ -30,5 +30,5 @@ export interface Attendee {
   attendance_confirmed_at?: string;
   tshirtsize?: string;
   istest?: boolean;
-  expectedamount?: number;
-} 
+  notes?: string;
+}

@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, Mail, Send } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -31,7 +31,6 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
   
-  // Efecto para manejar el contador de tiempo de espera
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (cooldownTime > 0) {
@@ -72,19 +71,19 @@ export default function ResetPasswordPage() {
       if (error) throw error;
       
       setSuccess(true);
-      toast.success('Se ha enviado un correo con las instrucciones para restablecer tu contraseña');
-    } catch (error: any) {
-      console.error("Error al enviar el correo de restablecimiento:", error);
-      let errorMessage = "Hubo un error al enviar el correo de restablecimiento. Por favor intente de nuevo.";
+      setCooldownTime(60); // Evitar spam
+      toast.success('Se ha enviado el enlace de recuperación');
+    } catch (err: any) {
+      console.error("Error reset:", err);
+      let errorMessage = "Error al enviar el correo. Intenta más tarde.";
       
-      if (error.message?.includes('security purposes')) {
-        // Extraer el tiempo de espera del mensaje de error
-        const waitTime = parseInt(error.message.match(/\d+/)?.[0] || '30');
+      if (err.message?.includes('rate limit') || err.status === 429) {
+        setCooldownTime(60);
+        errorMessage = "Límite de correos excedido. Debes esperar 1 minuto.";
+      } else if (err.message?.includes('security purposes')) {
+        const waitTime = parseInt(err.message.match(/\d+/)?.[0] || '60');
         setCooldownTime(waitTime);
-        errorMessage = `Por razones de seguridad, debes esperar ${waitTime} segundos antes de solicitar otro enlace.`;
-      } else if (error.message?.includes('rate limit')) {
-        setCooldownTime(30);
-        errorMessage = "Demasiados intentos. Por favor, espere 30 segundos antes de intentar de nuevo.";
+        errorMessage = `Por seguridad, espera ${waitTime} segundos.`;
       }
       
       setError(errorMessage);
@@ -95,115 +94,96 @@ export default function ResetPasswordPage() {
   };
   
   return (
-    <div className="bg-try min-h-screen flex flex-col">
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md">
-          <div className="card-glass shadow-lg border border-border rounded-lg p-8">
-            <div className="text-center mb-8">
-              <Link 
-                href="/admin" 
-                className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver al inicio de sesión
-              </Link>
-              
-              <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Mail className="h-6 w-6 text-primary" />
-              </div>
-              
-              <h2 className="text-3xl font-bold tracking-tight mb-2">
-                Restablecer Contraseña
-              </h2>
-              <p className="text-muted-foreground">
-                Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
-              </p>
+    <div className="bg-try min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <Link 
+          href="/admin" 
+          className="inline-flex items-center text-xs font-black text-white/40 hover:text-[#f4540a] mb-6 transition-colors uppercase tracking-widest group"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          Volver al Login
+        </Link>
+        
+        <div className="card-glass p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative">
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+            <div className="h-20 w-20 bg-gradient-to-br from-[#f4540a] to-[#d44808] rounded-3xl flex items-center justify-center shadow-xl">
+               <Mail className="h-10 w-10 text-white" />
             </div>
-            
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg text-sm mb-6">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p>{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {success && (
-              <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg text-sm mb-6">
-                <div className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div className="ml-3">
-                    <p className="font-medium">¡Enlace enviado!</p>
-                    <p className="mt-1">
-                      Se ha enviado un correo electrónico con las instrucciones para restablecer tu contraseña.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
+          </div>
+
+          <div className="text-center mt-8 mb-10 space-y-2">
+            <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
+              Recuperar <span className="text-[#f4540a]">Acceso</span>
+            </h2>
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest leading-relaxed">
+              Ingresa tu correo para recibir un enlace de restauración.
+            </p>
+          </div>
+          
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-2xl text-[10px] font-black mb-8 animate-pulse text-center uppercase tracking-wider">
+              {error}
+            </div>
+          )}
+          
+          {success ? (
+            <div className="py-6 text-center animate-in zoom-in-95 duration-500">
+               <div className="h-16 w-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                 <CheckCircle2 className="h-8 w-8 text-green-500" />
+               </div>
+               <p className="text-xl font-black text-white uppercase italic">¡ENLACE ENVIADO!</p>
+               <p className="text-white/40 text-xs mt-2 font-bold uppercase tracking-widest">
+                 Revisa tu bandeja de entrada y sigue las instrucciones.
+               </p>
+               <div className="mt-8 pt-6 border-t border-white/5">
+                 <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">
+                   Podrás solicitar otro en {cooldownTime}s
+                 </p>
+               </div>
+            </div>
+          ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Correo Electrónico</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-black text-[#f4540a] uppercase tracking-widest ml-1">Correo Electrónico</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="ejemplo@correo.com" 
-                          className="h-11"
-                          {...field} 
-                        />
+                        <div className="relative group">
+                          <Input 
+                            type="email" 
+                            placeholder="tu-email@ejemplo.com" 
+                            className="bg-white/5 border-white/10 rounded-2xl h-14 pl-5 text-white font-black group-focus-within:border-[#f4540a]/50 transition-all uppercase text-xs"
+                            {...field} 
+                          />
+                        </div>
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[10px]" />
                     </FormItem>
                   )}
                 />
                 
                 <Button 
                   type="submit" 
-                  className="w-full h-11 bg-blue-850 hover:bg-blue-850/90 text-white" 
                   disabled={isLoading || cooldownTime > 0}
+                  className="w-full h-16 rounded-[1.5rem] bg-[#f4540a] hover:bg-[#d44808] text-white font-black text-lg transition-transform active:scale-95 shadow-xl shadow-[#f4540a]/20 disabled:opacity-50 disabled:grayscale"
                 >
                   {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enviando...
-                    </>
+                    <Loader2 className="h-6 w-6 animate-spin" />
                   ) : cooldownTime > 0 ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Esperar {cooldownTime} segundos
-                    </>
+                    <span className="text-sm">ESPERAR {cooldownTime}S</span>
                   ) : (
-                    <>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Enviar enlace de restablecimiento
-                    </>
+                    <div className="flex items-center">
+                      <Send size={18} className="mr-2" />
+                      ENVIAR ENLACE
+                    </div>
                   )}
                 </Button>
               </form>
             </Form>
-            
-            <div className="mt-6 text-center">
-              <p className="text-xs text-muted-foreground">
-                ¿Recordaste tu contraseña?{' '}
-                <Link href="/admin" className="text-primary hover:underline">
-                  Iniciar sesión
-                </Link>
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

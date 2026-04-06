@@ -3,8 +3,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User,  QrCode, ShieldCheck, Shirt, AlertTriangle } from 'lucide-react';
+import { User, QrCode, ShieldCheck, Shirt, AlertTriangle, MapPin, Mail, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -96,40 +97,53 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
       </CardHeader>
       
       <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-        <div className="flex justify-center mb-2 sm:mb-4">
-          <div className="p-2 sm:p-3 bg-black/20 rounded-full">
-            <QrCode className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
-          </div>
+        <div className="flex justify-center mb-0">
+          <div className="h-1 bg-gradient-to-r from-transparent via-[#f4540a] to-transparent w-full opacity-30" />
         </div>
         
-        <div className="flex items-center justify-center border-2 border-dashed border-blue-400/50 p-2 rounded-lg mb-2">
-          <div className="flex items-center gap-2">
-            {attendee.attendance_confirmed ? (
-              <>
-                <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
-                <span className="font-medium text-xs sm:text-sm">
-                  Asistencia Confirmada - Número: {attendee.attendance_number}
+        {/* Ficha Visual de Confirmación / Número de Campista */}
+        <div className="relative group">
+          {attendee.attendance_confirmed ? (
+            <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-500/20 to-emerald-600/10 rounded-2xl border border-green-500/30 shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-6 -right-6 opacity-10">
+                <ShieldCheck className="h-24 w-24 text-green-400" />
+              </div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-green-400 font-black mb-2">Asistencia Confirmada</p>
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] text-white/40 uppercase font-bold mb-1">Número Asignado:</span>
+                <span className="text-6xl sm:text-7xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                  #{attendee.attendance_number?.toString().padStart(3, '0')}
                 </span>
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
-                <span className="font-medium text-xs sm:text-sm">Pendiente de Confirmar</span>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-6 bg-yellow-500/10 rounded-2xl border border-yellow-500/20">
+              <AlertTriangle className="h-10 w-10 text-yellow-500 mb-2 animate-pulse" />
+              <p className="text-yellow-500 font-black uppercase tracking-widest text-sm">Pendiente de Confirmar</p>
+            </div>
+          )}
         </div>
 
-        {/* Mostrar si es acreedor a camiseta */}
-        <div className="flex items-center justify-center mb-2">
-          {attendee.tshirtsize ? (
-            <Badge className="bg-purple-600 text-white px-3 py-1 text-xs flex items-center gap-2">
-              <Shirt className="h-4 w-4 mr-1" />
-              Acreedor a camiseta — Talla: <span className="font-bold ml-1">{attendee.tshirtsize}</span>
+        {/* Info de Dotación y Pago (Rápida) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center">
+            <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold mb-1">Talla Camiseta</p>
+            {attendee.tshirtsize && attendee.tshirtsize !== 'NA' ? (
+              <Badge className="bg-[#f4540a] text-white font-black px-4 py-1 text-lg">
+                {attendee.tshirtsize}
+              </Badge>
+            ) : (
+              <span className="text-white/20 font-black">N/A</span>
+            )}
+          </div>
+          <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center">
+            <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold mb-1">Estado Pago</p>
+            <Badge className={cn("px-3 py-1 font-bold",
+              isPaid ? 'bg-green-600/20 text-green-400 border-green-500/30' : 'bg-red-600/20 text-red-400 border-red-500/30'
+            )} variant="outline">
+              {attendee.paymentstatus}
             </Badge>
-          ) : (
-            <Badge className="bg-gray-400 text-white px-3 py-1 text-xs">N/A</Badge>
-          )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 justify-center mx-auto">
@@ -176,10 +190,9 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
         {!attendee.attendance_confirmed && (
           <Button 
             onClick={() => onConfirmAttendance && attendee.id && onConfirmAttendance(attendee.id)}
-            className="w-full mt-4"
-            size="sm"
+            className="w-full bg-[#f4540a] hover:bg-orange-600 text-white font-black py-6 rounded-2xl shadow-xl shadow-orange-900/30 text-lg transition-transform active:scale-95"
           >
-            Confirmar Asistencia
+            CONFIRMAR ASISTENCIA
           </Button>
         )}
       </CardContent>

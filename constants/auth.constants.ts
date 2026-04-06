@@ -3,6 +3,7 @@ import { UserRole } from '@/lib/types';
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   'admin': 3,
   'editor': 2,
+  'comite': 2,
   'viewer': 1
 } as const;
 
