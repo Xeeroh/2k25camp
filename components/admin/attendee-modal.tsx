@@ -42,11 +42,8 @@ const formSchema = z.object({
   email: z.string().email("Correo electrónico no válido"),
   sector: z.string(),
   church: z.string(),
-  paymentAmount: z.coerce.number().min(0, "El monto no puede ser negativo"),
-  paymentStatus: z.enum(['Pendiente', 'Pagado', 'Revisado'], {
-    required_error: "El estado de pago es requerido",
-    invalid_type_error: "Estado de pago no válido",
-  }),
+  paymentAmount: z.number().min(0, "El monto no puede ser negativo"),
+  paymentStatus: z.enum(['Pendiente', 'Pagado', 'Revisado']),
   tshirtsize: z.string().optional(),
 });
 

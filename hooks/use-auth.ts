@@ -17,7 +17,7 @@ export function useAuth() {
     return () => {
       mounted.current = false;
     };
-  }, []); // Mantener un solo punto de control de mounted si es necesario, pero lo simplificaré abajo
+  }, []);
 
   const updateUserState = async (session: any) => {
     if (isUpdating.current) return;
@@ -33,7 +33,7 @@ export function useAuth() {
       }
 
       const profile = await authService.getUserProfile(session.user.id);
-      
+
       if (mounted.current) {
         setUser({
           id: session.user.id,
@@ -56,31 +56,19 @@ export function useAuth() {
 
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
-    mounted.current = true;
 
     const initializeAuth = async () => {
       try {
-        console.log('Iniciando autenticación...');
+        if (!mounted.current) return;
+
         setLoading(true);
-        
-        // Agregar un timeout para no quedarse trabado en redes inestables
-        const sessionPromise = authService.getSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout al obtener sesión')), 5000)
-        );
-
-        const session = await Promise.race([sessionPromise, timeoutPromise]).catch(err => {
-          console.warn('Advertencia:', err.message);
-          return null;
-        }) as any;
-
-        console.log('Sesión obtenida o timeout reached');
-        
+        const session = await authService.getSession();
         await updateUserState(session);
 
+        // Configurar suscripción a cambios de autenticación
         const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('Cambio de autenticación:', event);
-          
+          console.log('Auth state changed:', event);
+
           if (!mounted.current) return;
 
           if (event === 'SIGNED_IN') {
@@ -93,19 +81,18 @@ export function useAuth() {
 
         subscription = authSubscription;
       } catch (err) {
-        console.error('Error en initializeAuth:', err);
-        setError(ERROR_MESSAGES.SESSION_ERROR);
-        setUser(null);
-        setLoading(false);
-      } finally {
-        setLoading(false);
+        console.error('Error al verificar sesión:', err);
+        if (mounted.current) {
+          setError(ERROR_MESSAGES.SESSION_ERROR);
+          setUser(null);
+          setLoading(false);
+        }
       }
     };
 
     initializeAuth();
 
     return () => {
-      mounted.current = false;
       if (subscription) {
         subscription.unsubscribe();
       }
@@ -116,10 +103,10 @@ export function useAuth() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await authService.signInWithPassword(email, password);
       await updateUserState(data);
-      
+
       return data;
     } catch (err: any) {
       console.error('Error al iniciar sesión:', err);
@@ -134,38 +121,43 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      console.log('Iniciando signOut...');
       setLoading(true);
       setError(null);
-      
+
       await authService.signOut();
-      console.log('signOut exitoso');
-      
-      setUser(null);
-      setLoading(false);
-    } catch (err: any) {
-      console.error('Error al cerrar sesión:', err);
-      
-      if (err.message?.includes('Auth session missing') || err.message?.includes('No session')) {
+
+      if (mounted.current) {
         setUser(null);
         setLoading(false);
+      }
+    } catch (err: any) {
+      console.error('Error al cerrar sesión:', err);
+
+      // Si el error es que no hay sesión, no es realmente un error
+      if (err.message?.includes('Auth session missing') || err.message?.includes('No session')) {
+        console.log('Sesión ya cerrada o no existía');
+        if (mounted.current) {
+          setUser(null);
+          setLoading(false);
+        }
         return;
       }
-      
+
       setError(ERROR_MESSAGES.SIGN_OUT_ERROR);
-      setLoading(false);
       throw err;
     } finally {
-      setLoading(false);
+      if (mounted.current) {
+        setLoading(false);
+      }
     }
   };
 
   const hasRole = (requiredRole: UserRole): boolean => {
     if (!user) return false;
-    
+
     const userRoleLevel = ROLE_HIERARCHY[user.role];
     const requiredRoleLevel = ROLE_HIERARCHY[requiredRole];
-    
+
     return userRoleLevel >= requiredRoleLevel;
   };
 

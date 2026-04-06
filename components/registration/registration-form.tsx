@@ -28,8 +28,8 @@ const formSchema = z.object({
     .min(10, "El teléfono debe tener al menos 10 dígitos")
     .max(15, "El teléfono no puede tener más de 15 dígitos")
     .regex(/^[0-9()-\s]+$/, "El teléfono solo puede contener números, paréntesis, guiones y espacios"),
-  sector: z.string({ required_error: "Por favor seleccione un sector" }),
-  church: z.string({ required_error: "Por favor seleccione una iglesia" }),
+  sector: z.string().min(1, "Por favor seleccione un sector"),
+  church: z.string().min(1, "Por favor seleccione una iglesia"),
   tshirtsize: z.string().optional(),
   paymentReceipt: z.custom<File>((val) => val instanceof File || val === null, {
     message: "El comprobante de pago es obligatorio"
