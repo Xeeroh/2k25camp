@@ -9,8 +9,14 @@ import { toast } from 'sonner';
 import { isMobile } from 'react-device-detect';
 
 const SCANNER_CONFIG = {
-  fps: 10,
-  qrbox: { width: 250, height: 250 }
+  fps: 30, // Aumentar FPS para mayor agilidad
+  qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+    const boxSize = Math.floor(minEdge * 0.7); // 70% del borde más corto
+    return { width: boxSize, height: boxSize };
+  },
+  aspectRatio: 1.0,
+  useBarCodeDetectorIfSupported: true // Usar API nativa si está disponible (mucho más rápido)
 };
 
  interface QrScannerProps {
@@ -29,10 +35,10 @@ function QrScanner({ onScan }: QrScannerProps) {
   const [availableCameras, setAvailableCameras] = useState<CameraDevice[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>('');
   const [scanning, setScanning] = useState(false);
-  const [scanAttempts, setScanAttempts] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastScannedCodeRef = useRef<string | null>(null);
+  const lastScanTimeRef = useRef<number>(0);
 
   useEffect(() => {
     Html5Qrcode.getCameras().then(devices => {
@@ -87,9 +93,7 @@ function QrScanner({ onScan }: QrScannerProps) {
       qrScannerRef.current = html5QrCode;
 
       const config = {
-        ...SCANNER_CONFIG,
-        qrbox: isMobile ? { width: 250, height: 250 } : SCANNER_CONFIG.qrbox,
-        fps: 10
+        ...SCANNER_CONFIG
       };
 
       const cameraConfig = isIPhone
@@ -100,21 +104,24 @@ function QrScanner({ onScan }: QrScannerProps) {
         cameraConfig,
         config,
         async (decodedText) => {
+          const now = Date.now();
+          const cleanedQrData = decodedText.trim();
+
+          // Evitar escaneos repetidos del mismo código en un intervalo corto (2 segundos)
+          if (cleanedQrData === lastScannedCodeRef.current && (now - lastScanTimeRef.current) < 2000) {
+            return;
+          }
+
           playSuccessSound();
-          setScanAttempts(prev => prev + 1);
+          lastScannedCodeRef.current = cleanedQrData;
+          lastScanTimeRef.current = now;
 
           try {
-            await stopScanner();
-            let cleanedQrData = decodedText.trim();
-
-            if (cleanedQrData.startsWith('{') && !cleanedQrData.endsWith('}')) {
-              const lastBraceIndex = cleanedQrData.lastIndexOf('}');
-              if (lastBraceIndex > 0) {
-                cleanedQrData = cleanedQrData.substring(0, lastBraceIndex + 1);
-              }
-            }
-
+            // Ya no detenemos el escáner automáticamente para mayor agilidad
+            // Si el proceso de onScan es asíncrono y lento, la UI del padre manejará el estado
             onScan(cleanedQrData);
+            
+            toast.success('Código detectado', { duration: 1000 });
           } catch {
             toast.error('Error al procesar el código QR');
           }
