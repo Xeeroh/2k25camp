@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 
 // Función para verificar si es una solicitud interna
 const isInternalRequest = (request: NextRequest) => {
@@ -9,12 +9,33 @@ const isInternalRequest = (request: NextRequest) => {
   return internalAccess === 'true' || internalHeader === 'true';
 };
 
-// Middleware para proteger rutas
-export async function middleware(request: NextRequest) {
-  console.log('🔍 Middleware iniciado para ruta:', request.nextUrl.pathname);
+// Proxy para proteger rutas
+export async function proxy(request: NextRequest) {
+  console.log('🔍 Proxy iniciado para ruta:', request.nextUrl.pathname);
   
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req: request, res });
+  let res = NextResponse.next({
+    request,
+  })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(keysToSet) {
+          keysToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          res = NextResponse.next({
+            request,
+          })
+          keysToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
   
   // Verificar la ruta actual
   const path = request.nextUrl.pathname;

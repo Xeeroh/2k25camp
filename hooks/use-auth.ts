@@ -13,10 +13,11 @@ export function useAuth() {
   const isUpdating = useRef(false);
 
   useEffect(() => {
+    mounted.current = true;
     return () => {
       mounted.current = false;
     };
-  }, []);
+  }, []); // Mantener un solo punto de control de mounted si es necesario, pero lo simplificaré abajo
 
   const updateUserState = async (session: any) => {
     if (isUpdating.current) return;
@@ -55,18 +56,30 @@ export function useAuth() {
 
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
+    mounted.current = true;
 
     const initializeAuth = async () => {
       try {
-        if (!mounted.current) return;
-        
+        console.log('Iniciando autenticación...');
         setLoading(true);
-        const session = await authService.getSession();
+        
+        // Agregar un timeout para no quedarse trabado en redes inestables
+        const sessionPromise = authService.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout al obtener sesión')), 5000)
+        );
+
+        const session = await Promise.race([sessionPromise, timeoutPromise]).catch(err => {
+          console.warn('Advertencia:', err.message);
+          return null;
+        }) as any;
+
+        console.log('Sesión obtenida o timeout reached');
+        
         await updateUserState(session);
 
-        // Configurar suscripción a cambios de autenticación
         const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('Auth state changed:', event);
+          console.log('Cambio de autenticación:', event);
           
           if (!mounted.current) return;
 
@@ -80,18 +93,19 @@ export function useAuth() {
 
         subscription = authSubscription;
       } catch (err) {
-        console.error('Error al verificar sesión:', err);
-        if (mounted.current) {
-          setError(ERROR_MESSAGES.SESSION_ERROR);
-          setUser(null);
-          setLoading(false);
-        }
+        console.error('Error en initializeAuth:', err);
+        setError(ERROR_MESSAGES.SESSION_ERROR);
+        setUser(null);
+        setLoading(false);
+      } finally {
+        setLoading(false);
       }
     };
 
     initializeAuth();
 
     return () => {
+      mounted.current = false;
       if (subscription) {
         subscription.unsubscribe();
       }
@@ -120,34 +134,29 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
+      console.log('Iniciando signOut...');
       setLoading(true);
       setError(null);
       
       await authService.signOut();
+      console.log('signOut exitoso');
       
-      if (mounted.current) {
-        setUser(null);
-        setLoading(false);
-      }
+      setUser(null);
+      setLoading(false);
     } catch (err: any) {
       console.error('Error al cerrar sesión:', err);
       
-      // Si el error es que no hay sesión, no es realmente un error
       if (err.message?.includes('Auth session missing') || err.message?.includes('No session')) {
-        console.log('Sesión ya cerrada o no existía');
-        if (mounted.current) {
-          setUser(null);
-          setLoading(false);
-        }
+        setUser(null);
+        setLoading(false);
         return;
       }
       
       setError(ERROR_MESSAGES.SIGN_OUT_ERROR);
+      setLoading(false);
       throw err;
     } finally {
-      if (mounted.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 

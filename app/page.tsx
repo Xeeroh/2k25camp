@@ -9,9 +9,7 @@ import Navbar from '@/components/shared/navbar';
 
 export default function Home() {
   return (
-    <main className="flex flex-col min-h-screen relative h-screen bg-cover bg-center bg-no-repeat"
-    style={{backgroundImage: "url('https://res.cloudinary.com/dmjdrou6a/image/upload/v1749485060/Fondo_1_czgmbm.png')",}}
-    >
+    <main className="flex flex-col min-h-screen relative h-screen">
       <Navbar showInternalLinks={false} />
 
        {/* Logo centra */}

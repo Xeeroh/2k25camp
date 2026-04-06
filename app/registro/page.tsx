@@ -32,9 +32,10 @@ export default function RegistroPage() {
     // Fecha límite: 15 de julio de 2025, 23:59:59
     const fechaLimite = new Date('2025-07-15T23:59:59');
     const ahora = new Date();
-    if (ahora > fechaLimite) {
-      setRegistroCerrado(true);
-    }
+    // BLOQUEO POR FECHA DESACTIVADO PARA PRUEBAS
+    // if (ahora > fechaLimite) {
+    //   setRegistroCerrado(true);
+    // }
   }, []);
 
   const handleSuccessfulSubmission = (data: AttendeeData, qrCode: string) => {
@@ -94,8 +95,8 @@ export default function RegistroPage() {
             ) : (
               <>
                 <div className="text-center mb-10 ">
-                  <h1 className="text-3xl md:text-4xl font-bold mb-4">
-                    Registro Campamento 2025 "Alfa y Omega"
+                  <h1 className="text-3xl md:text-4xl font-bold mb-4 text-blue-100">
+                    Registro Convención 2026
                   </h1>
                   <p className="text-lg text-muted-foreground ">
                     Complete el formulario para registrarse

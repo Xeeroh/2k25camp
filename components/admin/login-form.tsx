@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
   const router = useRouter();
-  
+
   // Initialize form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -42,43 +42,43 @@ export default function LoginForm() {
       password: "",
     },
   });
-  
+
   const onSubmit = async (data: FormValues) => {
     try {
       setIsLoading(true);
-      
+
       const result = await signIn(data.email, data.password);
-      
+
       if (result?.user) {
         toast.success('Inicio de sesión exitoso');
-        // Esperar un momento antes de redirigir para asegurar que el estado se actualice
-        setTimeout(() => {
-          router.replace('/admin');
-        }, 100);
+        // Recargar la página actual para que el servidor procese las nuevas cookies SSR
+        //setTimeout(() => {
+        //  window.location.reload();
+        //}, 100);
       }
     } catch (err: any) {
       console.error('Error al iniciar sesión:', err);
-      
+
       let errorMessage = 'Error al iniciar sesión';
-      
+
       if (err.message?.includes('Invalid login credentials')) {
         errorMessage = 'Credenciales inválidas';
       } else if (err.message?.includes('Email not confirmed')) {
         errorMessage = 'Email no confirmado';
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="card-glass p-6 rounded-lg shadow-sm border border-border">
       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
         <Shield className="h-6 w-6 text-primary" />
       </div>
-      
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -88,10 +88,10 @@ export default function LoginForm() {
               <FormItem>
                 <FormLabel>Correo Electrónico</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="email" 
-                    placeholder="ejemplo@correo.com" 
-                    {...field} 
+                  <Input
+                    type="email"
+                    placeholder="ejemplo@correo.com"
+                    {...field}
                     disabled={isLoading}
                   />
                 </FormControl>
@@ -99,7 +99,7 @@ export default function LoginForm() {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="password"
@@ -108,10 +108,10 @@ export default function LoginForm() {
                 <FormLabel>Contraseña</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Input 
+                    <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••" 
-                      {...field} 
+                      placeholder="••••••••"
+                      {...field}
                       disabled={isLoading}
                     />
                     <Button
@@ -134,20 +134,20 @@ export default function LoginForm() {
               </FormItem>
             )}
           />
-          
+
           <div className="text-right">
-            <Link 
-              href="/admin/reset-password" 
+            <Link
+              href="/admin/reset-password"
               className="text-sm text-primary hover:underline"
             >
               <Lock className="h-4 w-4 inline mr-1" />
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full mt-2" 
+
+          <Button
+            type="submit"
+            className="w-full mt-2"
             disabled={isLoading}
           >
             {isLoading ? (

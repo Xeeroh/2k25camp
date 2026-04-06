@@ -43,7 +43,7 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
       
       await signOut();
       toast.success('Sesión cerrada correctamente');
-      router.push('/');
+      window.location.href = '/';
     } catch (error: any) {
       console.error('Error al cerrar sesión:', error);
       // Solo mostrar error si no es el error de sesión faltante

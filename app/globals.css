@@ -31,7 +31,7 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 221 83% 53%;
+    --primary: var(--tangelo);
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
@@ -58,7 +58,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 221 83% 53%;
+    --primary: var(--tangelo);
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
@@ -92,7 +92,8 @@
      padding: 0;
  
     /* Applied background gradient using the new palette */
-    background: linear-gradient(180deg, var(--federal-blue), var(--yinmn-blue));
+    background: linear-gradient(180deg, hsl(var(--federal-blue)), hsl(var(--yinmn-blue)));
+    background-attachment: fixed;
     color: #ffffff; /* Ensure text is readable on dark background */
   }
 }
