@@ -29,38 +29,22 @@ export const authService = {
 
   async signOut() {
     try {
-      // Verificar si hay una sesión activa antes de intentar cerrar
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Intentando cerrar sesión en Supabase...');
+      // Intentar cerrar sesión en el servidor (esto puede fallar si no hay sesión)
+      await supabase.auth.signOut().catch(err => console.log('Error silenciado en signOut de Supabase:', err));
       
-      if (!session) {
-        console.log('No hay sesión activa para cerrar');
-        // Limpiar el almacenamiento local de todas formas
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('mdpnoroeste.auth.token');
-          sessionStorage.clear();
-        }
-        return;
-      }
-
-      // Si hay sesión, proceder con el cierre
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error al cerrar sesión:', error);
-        // Aún así, limpiar el almacenamiento local
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('mdpnoroeste.auth.token');
-          sessionStorage.clear();
-        }
-        throw error;
+      // Limpiar TODO rastro local de todas formas
+      if (typeof window !== 'undefined') {
+        console.log('Limpiando rastro local de autenticación...');
+        localStorage.clear();
+        sessionStorage.clear();
+        // Intentar borrar cookies de auth manualmente por si acaso
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
       }
     } catch (error) {
-      console.error('Error en signOut:', error);
-      // Asegurar que el almacenamiento se limpie incluso si hay error
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('mdpnoroeste.auth.token');
-        sessionStorage.clear();
-      }
-      throw error;
+      console.error('Error crítico en signOut service:', error);
     }
   }
 }; 

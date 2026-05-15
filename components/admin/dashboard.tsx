@@ -49,40 +49,45 @@ function DashboardContent() {
 export default function Dashboard({ onLogout }: DashboardProps) {
   return (
     <RefreshProvider>
-      <div className="bg-try max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Panel de Administración</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+          <div>
+            <h1 className="text-4xl md:text-6xl font-black bg-gradient-to-br from-white via-white to-blue-300 bg-clip-text text-transparent tracking-tighter">
+              ADMIN DASHBOARD
+            </h1>
+            <p className="text-blue-200/60 mt-2 font-light tracking-widest text-sm">SISTEMA CENTRAL DE CONTROL 2K26</p>
+          </div>
           <Button 
-            variant="outline" 
+            variant="ghost" 
             onClick={onLogout}
-            className="bg-blue-850/50 hover:text-black hover:bg-clear flex items-center gap-2"
+            className="text-white hover:bg-white/10 flex items-center gap-2 border border-white/10 rounded-full px-6"
           >
             <LogOut className="h-4 w-4" />
-            Cerrar sesión
+            Cerrar panel
           </Button>
         </div>
         
         <DashboardContent />
         
-        <Tabs defaultValue="attendees" className="mt-8">
-          <TabsList className="grid grid-cols-3 md:w-[600px] mb-8">
+        <Tabs defaultValue="attendees" className="mt-12">
+          <TabsList className="grid grid-cols-3 md:w-[700px] mb-8 bg-white/5 border border-white/10 p-1.5 h-auto rounded-2xl backdrop-blur-md">
             <TabsTrigger 
               value="attendees"
-              className="text-black data-[state=active]:bg-slate-500/80 data-[state=active]:text-slate-900"
+              className="rounded-xl py-3 data-[state=active]:bg-[#f4540a] data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-bold tracking-tight"
             >
-              Asistentes
+              ASISTENTES
             </TabsTrigger>
             <TabsTrigger 
               value="payments"
-              className="text-black data-[state=active]:bg-slate-500/80 data-[state=active]:text-slate-900"
+              className="rounded-xl py-3 data-[state=active]:bg-[#f4540a] data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-bold tracking-tight"
             >
-              Pagos y Estadísticas
+              ESTADÍSTICAS
             </TabsTrigger>
             <TabsTrigger 
               value="reports"
-              className="text-black data-[state=active]:bg-slate-500/80 data-[state=active]:text-slate-900"
+              className="rounded-xl py-3 data-[state=active]:bg-[#f4540a] data-[state=active]:text-white data-[state=active]:shadow-xl transition-all font-bold tracking-tight"
             >
-              Reportes
+              REPORTES
             </TabsTrigger>
           </TabsList>
           

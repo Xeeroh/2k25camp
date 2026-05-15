@@ -13,6 +13,7 @@ export function useAuth() {
   const isUpdating = useRef(false);
 
   useEffect(() => {
+    mounted.current = true;
     return () => {
       mounted.current = false;
     };
@@ -32,7 +33,7 @@ export function useAuth() {
       }
 
       const profile = await authService.getUserProfile(session.user.id);
-      
+
       if (mounted.current) {
         setUser({
           id: session.user.id,
@@ -59,7 +60,7 @@ export function useAuth() {
     const initializeAuth = async () => {
       try {
         if (!mounted.current) return;
-        
+
         setLoading(true);
         const session = await authService.getSession();
         await updateUserState(session);
@@ -67,7 +68,7 @@ export function useAuth() {
         // Configurar suscripción a cambios de autenticación
         const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           console.log('Auth state changed:', event);
-          
+
           if (!mounted.current) return;
 
           if (event === 'SIGNED_IN') {
@@ -102,10 +103,10 @@ export function useAuth() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await authService.signInWithPassword(email, password);
       await updateUserState(data);
-      
+
       return data;
     } catch (err: any) {
       console.error('Error al iniciar sesión:', err);
@@ -122,16 +123,16 @@ export function useAuth() {
     try {
       setLoading(true);
       setError(null);
-      
+
       await authService.signOut();
-      
+
       if (mounted.current) {
         setUser(null);
         setLoading(false);
       }
     } catch (err: any) {
       console.error('Error al cerrar sesión:', err);
-      
+
       // Si el error es que no hay sesión, no es realmente un error
       if (err.message?.includes('Auth session missing') || err.message?.includes('No session')) {
         console.log('Sesión ya cerrada o no existía');
@@ -141,7 +142,7 @@ export function useAuth() {
         }
         return;
       }
-      
+
       setError(ERROR_MESSAGES.SIGN_OUT_ERROR);
       throw err;
     } finally {
@@ -153,10 +154,10 @@ export function useAuth() {
 
   const hasRole = (requiredRole: UserRole): boolean => {
     if (!user) return false;
-    
+
     const userRoleLevel = ROLE_HIERARCHY[user.role];
     const requiredRoleLevel = ROLE_HIERARCHY[requiredRole];
-    
+
     return userRoleLevel >= requiredRoleLevel;
   };
 

@@ -28,8 +28,8 @@ const formSchema = z.object({
     .min(10, "El teléfono debe tener al menos 10 dígitos")
     .max(15, "El teléfono no puede tener más de 15 dígitos")
     .regex(/^[0-9()-\s]+$/, "El teléfono solo puede contener números, paréntesis, guiones y espacios"),
-  sector: z.string({ required_error: "Por favor seleccione un sector" }),
-  church: z.string({ required_error: "Por favor seleccione una iglesia" }),
+  sector: z.string().min(1, "Por favor seleccione un sector"),
+  church: z.string().min(1, "Por favor seleccione una iglesia"),
   tshirtsize: z.string().optional(),
   paymentReceipt: z.custom<File>((val) => val instanceof File || val === null, {
     message: "El comprobante de pago es obligatorio"
@@ -108,7 +108,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   }
   
   return (
-    <div className="card-glass p-6 rounded-lg shadow-sm border border-border">
+    <div className="card-glass p-8 overflow-hidden mb-20 animate-fade-in animation-delay-200">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <PersonalInfoFields 
@@ -157,14 +157,14 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
           
           <Button 
             type="submit" 
-            variant="outline"
-            className="bg-blue-600/50 w-full" 
+            variant="tangelo"
+            className="w-full text-lg h-12 font-bold" 
             disabled={isLoading || isSubmitting}
           >
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Procesando...
+                <Loader2 className="mr-2 h-5 w-4 animate-spin" />
+                Registrando...
               </>
             ) : (
               "Completar Registro"

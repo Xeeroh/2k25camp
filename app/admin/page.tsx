@@ -34,17 +34,11 @@ export default function AdminPage() {
     try {
       console.log('Forzando cierre de sesión...');
       await signOut();
-      console.log('Sesión cerrada correctamente');
-      window.location.reload();
     } catch (err: any) {
       console.error('Error al forzar cierre de sesión:', err);
-      // Si el error es que no hay sesión, recargar de todas formas
-      if (err?.message?.includes('Auth session missing')) {
-        console.log('Sesión ya no existe, recargando...');
-        window.location.reload();
-      } else {
-        toast.error('Error al cerrar sesión');
-      }
+    } finally {
+      console.log('Recargando para limpiar estado...');
+      window.location.reload();
     }
   };
   

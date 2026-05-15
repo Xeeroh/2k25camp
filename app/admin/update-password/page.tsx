@@ -52,15 +52,11 @@ export default function UpdatePasswordPage() {
     },
   });
 
-  // Función para determinar la ruta de redirección según el rol
   const getRedirectPath = () => {
-    if (hasRole('admin')) {
-      return '/admin';
-    } else if (hasRole('editor')) {
-      return '/comite';
-    } else {
-      return '/';
-    }
+    if (!user) return '/admin';
+    if (hasRole('admin')) return '/admin';
+    if (hasRole('editor') || user.role === 'comite') return '/comite';
+    return '/';
   };
   
   useEffect(() => {
@@ -68,223 +64,142 @@ export default function UpdatePasswordPage() {
       try {
         setIsValidating(true);
         
-        // Verificar si hay errores en la URL
         const searchParams = new URLSearchParams(window.location.search);
-        const error = searchParams.get('error');
+        const errorParam = searchParams.get('error');
         const errorCode = searchParams.get('error_code');
         const fromReset = searchParams.get('from_reset');
 
-        if (error === 'access_denied' && errorCode === 'otp_expired') {
-          toast.error('El enlace de restablecimiento ha expirado. Por favor, solicite uno nuevo.');
+        if (errorParam === 'access_denied' && errorCode === 'otp_expired') {
+          toast.error('El enlace ha expirado. Por favor solicita uno nuevo.');
           router.push('/admin/reset-password');
           return;
         }
 
-        // Verificar si ya hay una sesión activa
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Error al verificar sesión:', sessionError);
-          toast.error('Error al verificar la sesión');
-          router.push('/admin');
-          return;
-        }
-
-        // Verificar si venimos de un enlace de restablecimiento
+        const { data: { session } } = await supabase.auth.getSession();
         const hash = window.location.hash;
-        const searchType = searchParams.get('type');
-        const searchToken = searchParams.get('token');
-        
-        const isFromResetLink = hash || (searchType && searchToken) || fromReset === 'true';
+        const type = searchParams.get('type');
+        const isRecovery = hash.includes('type=recovery') || type === 'recovery' || fromReset === 'true';
 
-        // Si hay una sesión activa pero NO venimos de un enlace de restablecimiento
-        if (session && !isFromResetLink) {
-          const redirectPath = getRedirectPath();
-          router.push(redirectPath);
+        if (session && !isRecovery) {
+          router.push(getRedirectPath());
           return;
         }
 
-        // Si hay una sesión activa Y venimos de un enlace de restablecimiento
-        if (session && isFromResetLink) {
-          setIsValidating(false);
-          return;
-        }
-
-        // Si no hay sesión, mostrar el formulario (modo desarrollo)
         setIsValidating(false);
-        
-      } catch (error) {
-        console.error('Error al validar token:', error);
-        toast.error('Error al validar el enlace de restablecimiento');
-        router.push('/admin');
+      } catch (err) {
+        console.error('Error validation:', err);
+        setIsValidating(false);
       }
     };
     
-    // Solo ejecutar una vez al montar el componente
     validateResetToken();
-  }, []); // Sin dependencias para evitar loops
-  
+  }, [user]);
+
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     setError("");
     setSuccess(false);
     
     try {
-      // Intentar actualizar la contraseña directamente
-      // Supabase manejará automáticamente la sesión
       const { error: updateError } = await supabase.auth.updateUser({
         password: data.password
       });
       
-      if (updateError) {
-        console.error('Error al actualizar contraseña:', updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
       
       setSuccess(true);
-      toast.success('Contraseña actualizada exitosamente');
+      toast.success('¡Contraseña actualizada con éxito!');
       
-      // Esperar un momento para que se actualice el estado de autenticación
       setTimeout(() => {
-        const redirectPath = getRedirectPath();
-        router.push(redirectPath);
+        router.push(getRedirectPath());
       }, 2000);
       
-    } catch (error: any) {
-      console.error("Error al actualizar la contraseña:", error);
-      let errorMessage = "Hubo un error al actualizar la contraseña. Por favor intente de nuevo.";
-      
-      // Manejar errores específicos de Supabase
-      if (error.message?.includes('Invalid recovery token')) {
-        errorMessage = "Token de recuperación inválido. Necesitas un enlace válido de restablecimiento.";
-        toast.error(errorMessage);
-        setTimeout(() => {
-          router.push('/admin/reset-password');
-        }, 2000);
-      } else if (error.message?.includes('User not found')) {
-        errorMessage = "Usuario no encontrado. Debes estar autenticado o tener un token válido.";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } else if (error.message?.includes('expired')) {
-        errorMessage = "El enlace de restablecimiento ha expirado. Por favor, solicite un nuevo enlace.";
-        toast.error(errorMessage);
-        setTimeout(() => {
-          router.push('/admin/reset-password');
-        }, 2000);
-      } else {
-        setError(errorMessage);
-        toast.error(errorMessage);
-      }
+    } catch (err: any) {
+      console.error("Error al actualizar:", err);
+      const msg = err.message?.includes('expired') 
+        ? "El enlace ha expirado. Solicita otro."
+        : "No se pudo actualizar la contraseña. Intenta de nuevo.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Mostrar loading mientras se valida el token
   if (isValidating) {
     return (
-      <div className="bg-try min-h-screen flex flex-col">
-        <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-          <div className="w-full max-w-md">
-            <div className="card-glass shadow-lg border border-border rounded-lg p-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                <Lock className="h-8 w-8 text-primary" />
-              </div>
-              
-              <h2 className="text-2xl font-bold tracking-tight mb-4">
-                Validando Enlace
-              </h2>
-              
-              <div className="flex items-center justify-center mb-6">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-              
-              <p className="text-muted-foreground">
-                Validando enlace de restablecimiento...
-              </p>
-            </div>
+      <div className="bg-try min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="card-glass p-12 rounded-[2rem] text-center space-y-6 max-w-sm w-full">
+          <div className="h-16 w-16 bg-[#f4540a]/20 rounded-2xl flex items-center justify-center mx-auto">
+            <Lock className="h-8 w-8 text-[#f4540a] animate-pulse" />
           </div>
+          <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Verificando Seguridad...</h2>
+          <Loader2 className="h-8 w-8 animate-spin text-[#f4540a] mx-auto" />
         </div>
       </div>
     );
   }
   
   return (
-    <div className="bg-try min-h-screen flex flex-col">
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md">
-          <div className="card-glass shadow-lg border border-border rounded-lg p-8">
-            <div className="text-center mb-8">
-              <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Lock className="h-6 w-6 text-primary" />
-              </div>
-              
-              <h2 className="text-3xl font-bold tracking-tight mb-2">
-                Actualizar Contraseña
-              </h2>
-              <p className="text-muted-foreground">
-                {user ? 
-                  "Tu sesión ha sido restaurada. Ahora puedes establecer tu nueva contraseña." :
-                  "Ingresa tu nueva contraseña. Asegúrate de que sea segura y fácil de recordar."
-                }
-              </p>
+    <div className="bg-try min-h-screen flex flex-col py-12 px-4 overflow-y-auto">
+      <div className="max-w-md mx-auto w-full pt-10">
+        <div className="card-glass p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative">
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+            <div className="h-20 w-20 bg-gradient-to-br from-[#f4540a] to-[#d44808] rounded-3xl flex items-center justify-center shadow-xl">
+               <Lock className="h-10 w-10 text-white" />
             </div>
-            
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg text-sm mb-6">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p>{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {success && (
-              <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg text-sm mb-6">
-                <div className="flex items-start">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div className="ml-3">
-                    <p className="font-medium">¡Contraseña actualizada!</p>
-                    <p className="mt-1">
-                      Contraseña actualizada exitosamente. Redirigiendo...
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
+          </div>
+
+          <div className="text-center mt-8 mb-10 space-y-2">
+            <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">
+              Nueva <span className="text-[#f4540a]">Contraseña</span>
+            </h2>
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest leading-relaxed">
+              Establezca una clave segura para su cuenta de acceso.
+            </p>
+          </div>
+          
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-2xl text-xs font-bold mb-8 animate-pulse text-center">
+              {error}
+            </div>
+          )}
+          
+          {success ? (
+            <div className="py-10 text-center animate-in zoom-in-95 duration-500">
+               <div className="h-20 w-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                 <CheckCircle2 className="h-10 w-10 text-green-500" />
+               </div>
+               <p className="text-xl font-black text-white">¡ACTUALIZADO!</p>
+               <p className="text-white/40 text-sm mt-1">Redirigiendo a tu panel...</p>
+            </div>
+          ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="password"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Nueva Contraseña</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-black text-[#f4540a] uppercase tracking-widest ml-1">Nueva Contraseña</FormLabel>
                       <FormControl>
-                        <div className="relative">
+                        <div className="relative group">
                           <Input 
                             type={showPassword ? "text" : "password"} 
                             placeholder="••••••••" 
-                            className="h-11 pr-10"
+                            className="bg-white/5 border-white/10 rounded-2xl h-14 pl-5 pr-12 text-white font-black group-focus-within:border-[#f4540a]/50 transition-all"
                             {...field} 
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-[#f4540a]"
                           >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                           </button>
                         </div>
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[10px]" />
                     </FormItem>
                   )}
                 />
@@ -293,62 +208,40 @@ export default function UpdatePasswordPage() {
                   control={form.control}
                   name="confirmPassword"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Confirmar Contraseña</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-black text-[#f4540a] uppercase tracking-widest ml-1">Confirmar Clave</FormLabel>
                       <FormControl>
-                        <div className="relative">
+                        <div className="relative group">
                           <Input 
                             type={showConfirmPassword ? "text" : "password"} 
                             placeholder="••••••••" 
-                            className="h-11 pr-10"
+                             className="bg-white/5 border-white/10 rounded-2xl h-14 pl-5 pr-12 text-white font-black group-focus-within:border-[#f4540a]/50 transition-all"
                             {...field} 
                           />
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-[#f4540a]"
                           >
-                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                           </button>
                         </div>
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-[10px]" />
                     </FormItem>
                   )}
                 />
                 
                 <Button 
                   type="submit" 
-                  className="w-full h-11 bg-blue-850 hover:bg-blue-850/90 text-white" 
                   disabled={isLoading}
+                  className="w-full h-16 rounded-[1.5rem] bg-[#f4540a] hover:bg-[#d44808] text-white font-black text-lg transition-transform active:scale-95 shadow-xl shadow-[#f4540a]/20"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Actualizando...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="mr-2 h-4 w-4" />
-                      Actualizar Contraseña
-                    </>
-                  )}
+                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "ACTUALIZAR CONTRASEÑA"}
                 </Button>
               </form>
             </Form>
-            
-            <div className="mt-6 text-center">
-              <p className="text-xs text-muted-foreground">
-                ¿Necesitas ayuda?{' '}
-                <button 
-                  onClick={() => router.push('/admin/reset-password')}
-                  className="text-primary hover:underline"
-                >
-                  Solicitar nuevo enlace
-                </button>
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

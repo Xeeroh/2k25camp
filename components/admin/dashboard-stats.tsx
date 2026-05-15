@@ -4,39 +4,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, DollarSign, Church, CheckSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { CHURCHES_DATA } from '@/lib/churches-data';
 import { useRefresh } from './refresh-context';
-
 
 export default function DashboardStats() {
   const initialStats = [
     {
       title: "Total de Asistentes",
       value: "...",
-      icon: <Users className="h-5 w-5 text-muted-foreground " />,
+      icon: <Users className="h-5 w-5 text-blue-100/60" />,
       change: "Cargando...",
-      changeType: "neutral"
     },
     {
       title: "Total Recaudado",
       value: "...",
-      icon: <DollarSign className="h-5 w-5 text-muted-foreground" />,
+      icon: <DollarSign className="h-5 w-5 text-blue-100/60" />,
       change: "Cargando...",
-      changeType: "neutral"
     },
     {
       title: "Iglesias Participantes",
       value: "...",
-      icon: <Church className="h-5 w-5 text-muted-foreground" />,
+      icon: <Church className="h-5 w-5 text-blue-100/60" />,
       change: "Cargando...",
-      changeType: "neutral"
     },
     {
       title: "Confirmados",
       value: "...",
-      icon: <CheckSquare className="h-5 w-5 text-muted-foreground" />,
+      icon: <CheckSquare className="h-5 w-5 text-blue-100/60" />,
       change: "Cargando...",
-      changeType: "neutral"
     }
   ];
   
@@ -51,7 +45,7 @@ export default function DashboardStats() {
       const { data: attendees, error: attendeesError } = await supabase
         .from('attendees')
         .select('*')
-        .not('istest', 'eq', true); // Excluir registros de prueba
+        .not('istest', 'eq', true);
 
       if (attendeesError) throw attendeesError;
 
@@ -64,30 +58,26 @@ export default function DashboardStats() {
         {
           title: "Total de Asistentes",
           value: totalAttendees.toString(),
-          icon: <Users className="h-5 w-5 text-muted-foreground" />,
+          icon: <Users className="h-5 w-5 text-blue-100/60" />,
           change: "Total registrados",
-          changeType: "neutral"
         },
         {
           title: "Total Recaudado",
           value: `$${totalAmount.toLocaleString()}`,
-          icon: <DollarSign className="h-5 w-5 text-muted-foreground" />,
+          icon: <DollarSign className="h-5 w-5 text-blue-100/60" />,
           change: "Monto total",
-          changeType: "neutral"
         },
         {
           title: "Iglesias Participantes",
           value: uniqueChurches.toString(),
-          icon: <Church className="h-5 w-5 text-muted-foreground" />,
+          icon: <Church className="h-5 w-5 text-blue-100/60" />,
           change: "Total de iglesias",
-          changeType: "neutral"
         },
         {
           title: "Confirmados",
           value: confirmedAttendees.toString(),
-          icon: <CheckSquare className="h-5 w-5 text-muted-foreground" />,
+          icon: <CheckSquare className="h-5 w-5 text-blue-100/60" />,
           change: "Asistentes confirmados",
-          changeType: "neutral"
         }
       ]);
     } catch (err) {
@@ -99,7 +89,9 @@ export default function DashboardStats() {
   };
 
   useEffect(() => {
-    registerRefreshCallback(fetchStats);
+    if (registerRefreshCallback) {
+      registerRefreshCallback(fetchStats);
+    }
   }, [registerRefreshCallback]);
 
   useEffect(() => {
@@ -108,28 +100,30 @@ export default function DashboardStats() {
 
   if (error) {
     return (
-      <div className="text-center text-destructive p-4">
+      <div className="text-center text-destructive p-4 card-glass">
         {error}
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat, index) => (
-        <Card key={index} className="card-clear shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-white">
+        <Card key={index} className="card-glass hover:shadow-2xl hover:shadow-blue-900/20 transition-all duration-300 border-white/5 group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-bold tracking-widest text-blue-100/60 uppercase">
               {stat.title}
             </CardTitle>
-            {stat.icon}
+            <div className="p-2 bg-white/5 rounded-lg group-hover:bg-[#f4540a]/20 transition-colors">
+              {stat.icon}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-3xl font-black text-white tracking-tighter">
               {loading ? "..." : stat.value}
             </div>
-            <p className="text-xs text-muted-foreground text-white">
-              {loading ? "Cargando..." : stat.change}
+            <p className="text-xs text-blue-100/40 mt-1 font-medium italic">
+              {loading ? "Sincronizando..." : stat.change}
             </p>
           </CardContent>
         </Card>

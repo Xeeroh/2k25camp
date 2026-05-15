@@ -115,27 +115,22 @@ export const useRegistration = () => {
 
       // Enviar correo de confirmación
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        if (supabaseUrl && supabaseAnonKey) {
-          await fetch(`${supabaseUrl}/functions/v1/send-confirmation-email`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseAnonKey}`
-            },
-            body: JSON.stringify({
-              firstName: data.firstName,
-              lastName: data.lastName,
-              email: data.email,
-              church: data.church,
-              sector: data.sector,
-              qrData: qrValue,
-              receivesTshirt: attendeeData.receives_tshirt,
-              tshirtSize: attendeeData.tshirtsize
-            })
-          });
+        const { data: invokeData, error: invokeError } = await supabase.functions.invoke('send-confirmation-email', {
+          body: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            church: data.church,
+            sector: data.sector,
+            qrData: qrValue,
+            receivesTshirt: attendeeData.receives_tshirt,
+            tshirtSize: attendeeData.tshirtsize
+          }
+        });
+        if (invokeError) {
+          console.error("❌ Error desde Supabase Edge Function:", invokeError);
+        } else {
+          console.log("✅ Correo enviado desde el cliente:", invokeData);
         }
       } catch (emailError) {
         console.error('Error al enviar correo:', emailError);

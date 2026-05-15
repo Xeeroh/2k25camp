@@ -50,15 +50,15 @@ export const PaymentReceiptField = ({
 
   return (
     <FormItem>
-      <FormLabel>Comprobante de Pago *</FormLabel>
+      <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Comprobante de Pago *</FormLabel>
       <FormControl>
         <div className="flex flex-col space-y-2">
           {isMobileDevice ? (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-4">
               <Button
                 type="button"
-                variant="outline"
-                className="bg-blue-600/50 flex items-center justify-center text-sm p-2 h-auto space-y-1 flex-col py-3"
+                variant="tangelo"
+                className="flex items-center justify-center text-sm p-4 h-auto space-y-2 flex-col py-5 rounded-2xl shadow-xl shadow-orange-950/20"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
@@ -74,16 +74,16 @@ export const PaymentReceiptField = ({
                 }}
                 disabled={isLoading || isSubmitting}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span>Tomar Foto</span>
+                <span className="font-bold">Tomar Foto</span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className="bg-blue-600/50 flex items-center justify-center text-sm p-2 h-auto space-y-1 flex-col py-3"
+                className="bg-white/5 border-white/10 hover:bg-white/10 text-white flex items-center justify-center text-sm p-4 h-auto space-y-2 flex-col py-5 rounded-2xl backdrop-blur-xl"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
@@ -98,22 +98,24 @@ export const PaymentReceiptField = ({
                 }}
                 disabled={isLoading || isSubmitting}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span>Galería</span>
+                <span className="font-medium">Galería</span>
               </Button>
             </div>
           ) : (
             <div className="w-full">
               <label className="block">
-                <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md p-4 hover:border-primary cursor-pointer transition-colors">
-                  <div className="flex flex-col items-center space-y-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="flex items-center justify-center border-2 border-dashed border-white/10 rounded-2xl p-8 hover:border-[#f4540a]/50 bg-white/5 cursor-pointer transition-all hover:bg-white/10 backdrop-blur-xl group">
+                  <div className="flex flex-col items-center space-y-3 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-300 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span className="text-sm text-gray-600">Haz clic para seleccionar una imagen</span>
-                    <span className="text-xs text-gray-500">PNG, JPG, GIF (máx. 10MB)</span>
+                    <div>
+                      <span className="text-blue-100 font-medium block">Haz clic para seleccionar imagen</span>
+                      <span className="text-blue-100/40 text-xs mt-1 block uppercase tracking-widest text-[10px]">Formatos aceptados: PNG, JPG (máx. 10MB)</span>
+                    </div>
                   </div>
                   <Input 
                     type="file" 

@@ -60,21 +60,14 @@ async function main() {
   console.log('📧 Enviando correo de confirmación...');
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-confirmation-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify(payload)
+    const { data: result, error: invokeError } = await supabase.functions.invoke('send-confirmation-email', {
+      body: payload
     });
     
-    const result = await res.json();
-    
-    if (res.ok) {
+    if (!invokeError) {
       console.log(`✅ Correo reenviado exitosamente a: ${attendee.email}`);
     } else {
-      console.error(`❌ Error al reenviar:`, result.error || result);
+      console.error(`❌ Error al reenviar:`, invokeError);
     }
   } catch (err) {
     console.error(`❌ Error de red:`, err);

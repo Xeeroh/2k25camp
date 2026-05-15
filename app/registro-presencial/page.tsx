@@ -8,6 +8,23 @@ import { supabase } from '@/lib/supabase';
 import { CHURCHES_DATA } from '@/lib/churches-data';
 import { toast } from 'sonner';
 import { getNextAttendanceNumber } from '@/lib/utils';
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Church, 
+  UserSquare2, 
+  DollarSign, 
+  StickyNote, 
+  ArrowRight, 
+  RotateCcw,
+  CheckCircle2,
+  Trash2,
+  PlusCircle
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const ROLES = [
   { label: 'Campista', value: 'campista', monto: 900 },
@@ -32,7 +49,6 @@ export default function RegistroPresencial() {
   });
   const [monto, setMonto] = useState(ROLES[0].monto);
   const [numeroCampista, setNumeroCampista] = useState<number | null>(null);
-  const [registros, setRegistros] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sector, setSector] = useState('');
   const [ultimoId, setUltimoId] = useState<string | null>(null);
@@ -44,12 +60,12 @@ export default function RegistroPresencial() {
   // Spinner de carga
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-try">
+      <div className="min-h-screen flex flex-col bg-blue-950">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex justify-center items-center">
           <div className="text-center">
-            <div className="w-8 h-8 border-4 border-primary border-r-transparent rounded-full animate-spin inline-block" />
-            <p className="mt-2 text-muted-foreground">Cargando...</p>
+            <div className="w-8 h-8 border-4 border-[#f4540a] border-r-transparent rounded-full animate-spin inline-block" />
+            <p className="mt-2 text-blue-100/60 font-medium">Cargando acceso...</p>
           </div>
         </div>
       </div>
@@ -59,11 +75,11 @@ export default function RegistroPresencial() {
   // Si no hay usuario, mostrar login
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-try">
+      <div className="min-h-screen flex flex-col bg-blue-950">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center p-4">
-          <div className="card-glass border rounded-lg shadow p-6 w-full max-w-md">
-            <h1 className="text-2xl font-bold mb-6">Iniciar sesión</h1>
+          <div className="card-glass p-8 w-full max-w-md rounded-[32px] border border-white/5 shadow-2xl">
+            <h1 className="text-2xl font-black text-white mb-6 uppercase tracking-tight italic">Acceso <span className="text-[#f4540a]">Comité</span></h1>
             <LoginForm />
           </div>
         </div>
@@ -74,12 +90,12 @@ export default function RegistroPresencial() {
   // Si el usuario no tiene permisos
   if (!hasRole('admin') && !hasRole('editor')) {
     return (
-      <div className="min-h-screen flex flex-col bg-try">
+      <div className="min-h-screen flex flex-col bg-blue-950">
         <Navbar showInternalLinks={true} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="bg-destructive/10 text-destructive p-4 rounded-lg max-w-md text-center">
-            <h2 className="text-xl font-semibold mb-2">Sin permisos</h2>
-            <p>No tienes permisos para acceder a esta página.</p>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-8 rounded-[32px] max-w-md text-center shadow-2xl">
+            <h2 className="text-2xl font-black mb-2 uppercase italic">Acceso Denegado</h2>
+            <p className="text-red-200/60">No tienes permisos para realizar registros presenciales.</p>
           </div>
         </div>
       </div>
@@ -113,7 +129,6 @@ export default function RegistroPresencial() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'telefono') {
-      // Solo permitir números y máximo 10 dígitos
       const soloNumeros = value.replace(/\D/g, '').slice(0, 10);
       setForm(prev => ({ ...prev, telefono: soloNumeros }));
       return;
@@ -130,27 +145,17 @@ export default function RegistroPresencial() {
     }
   };
 
-  // Insertar en la base de datos
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Validar teléfono
-      if (!isTelefonoValido(form.telefono)) {
+      if (form.telefono && !isTelefonoValido(form.telefono)) {
         toast.error('El teléfono debe tener exactamente 10 dígitos.');
         setIsSubmitting(false);
         return;
       }
-      // Validar duplicados
-      const existe = await checkDuplicate();
-      /*if (existe) {
-        toast.error('Ya existe un registro con ese nombre o teléfono.');
-        setIsSubmitting(false);
-        return;
-      }*/
       const nuevoNumero = await getNextAttendanceNumber();
       setNumeroCampista(nuevoNumero);
-      // Insertar registro
       const { data: insertData, error: insertError } = await supabase.from('attendees').insert({
         firstname: form.nombre,
         lastname: form.apellido,
@@ -160,16 +165,14 @@ export default function RegistroPresencial() {
         phone: form.telefono,
         notes: form.notas,
         paymentamount: 0,
-        expectedamount: monto,
         paymentstatus: 'Pendiente',
         attendance_number: nuevoNumero,
         registrationdate: new Date().toISOString(),
       }).select('id').single();
-      console.log('insert attendee:', { insertData, insertError });
+      
       if (insertError) throw insertError;
       setUltimoId(insertData?.id || null);
       toast.success('¡Registro exitoso!');
-      // No limpiar aquí, para mostrar botones de acción
     } catch (error: any) {
       toast.error('Error al registrar campista: ' + (error?.message || error));
     } finally {
@@ -177,7 +180,6 @@ export default function RegistroPresencial() {
     }
   };
 
-  // Marcar como pagado
   const marcarComoPagado = async () => {
     if (!ultimoId) return;
     const { error } = await supabase.from('attendees').update({ paymentstatus: 'Pagado', paymentamount: monto }).eq('id', ultimoId);
@@ -191,137 +193,169 @@ export default function RegistroPresencial() {
     }
   };
 
-  // Responsive y botones más compactos
-  const inputClass = "w-full text-sm text-black border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80";
-  const buttonClass = "w-full sm:w-auto px-4 py-2 rounded text-sm font-semibold";
+  const labelClass = "flex items-center gap-2 font-bold text-blue-100/60 text-[10px] uppercase tracking-widest mb-1.5 ml-1";
+  const inputClass = "w-full bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:ring-[#f4540a]/30 focus:border-[#f4540a] rounded-xl h-11 px-4 transition-all outline-none";
+  const selectClass = "w-full bg-white/5 border-white/10 text-white focus:ring-[#f4540a]/30 focus:border-[#f4540a] rounded-xl h-11 px-4 transition-all outline-none appearance-none";
 
   return (
-    <div className="min-h-screen flex flex-col bg-try">
+    <div className="min-h-screen flex flex-col bg-blue-950 selection:bg-[#f4540a]/30">
       <Navbar showInternalLinks={true} />
-      <div className="flex-1 py-12 bg-muted/30 bg-try flex justify-center items-center">
-        <div className="max-w-xl mx-auto p-6 card-glass rounded shadow">
-          <h1 className="text-2xl font-bold mb-4 text-blue-100 text-center">Registro Presencial de Campistas</h1>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-medium text-blue-400 text-sm mb-1">Nombre(s) <span className="text-red-600">*</span></label>
-                <input name="nombre" value={form.nombre} onChange={handleChange} required className={inputClass} autoFocus tabIndex={1} />
-              </div>
-              <div>
-                <label className="block font-medium text-blue-400 text-sm mb-1">Apellido(s) <span className="text-red-600">*</span></label>
-                <input name="apellido" value={form.apellido} onChange={handleChange} required className={inputClass} tabIndex={2} />
-              </div>
+      
+      <main className="flex-1 py-12 px-4 relative overflow-hidden">
+        {/* Background Accents */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] -mr-64 -mt-64" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#f4540a]/5 rounded-full blur-[120px] -ml-64 -mb-64" />
+
+        <div className="max-w-xl mx-auto relative z-10">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">
+              Registro <span className="text-[#f4540a]">Presencial</span>
+            </h1>
+            <p className="text-blue-100/40 text-sm font-medium uppercase tracking-[0.2em]">Campamento 2K26 · Walk-in</p>
+          </div>
+
+          {!numeroCampista ? (
+            <div className="card-glass border border-white/5 p-8 rounded-[32px] shadow-2xl">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className={labelClass}><User className="h-3 w-3" /> Nombre(s)</label>
+                    <input name="nombre" value={form.nombre} onChange={handleChange} required className={inputClass} placeholder="Ej. Juan" autoFocus />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelClass}><User className="h-3 w-3" /> Apellido(s)</label>
+                    <input name="apellido" value={form.apellido} onChange={handleChange} required className={inputClass} placeholder="Ej. Pérez" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className={labelClass}><Mail className="h-3 w-3" /> Email (Opcional)</label>
+                    <input 
+                      name="email" 
+                      type="email" 
+                      value={form.email} 
+                      onChange={handleChange} 
+                      className={inputClass}
+                      placeholder="juan@ejemplo.com"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelClass}><Phone className="h-3 w-3" /> Teléfono (Emergencia)</label>
+                    <input 
+                      name="telefono" 
+                      type="tel" 
+                      value={form.telefono} 
+                      onChange={handleChange} 
+                      className={inputClass}
+                      placeholder="10 dígitos (Opcional)"
+                      maxLength={10} 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className={labelClass}><MapPin className="h-3 w-3" /> Sector</label>
+                    <select name="sector" value={sector} onChange={handleChange} className={selectClass} required>
+                      <option value="" className="bg-blue-950 text-white/40">Seleccionar</option>
+                      {[1, 2, 3, 4, 5, 'Foráneo'].map(s => (
+                        <option key={s} value={s} className="bg-blue-950">Sector {s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelClass}><Church className="h-3 w-3" /> Iglesia</label>
+                    <select name="iglesia" value={form.iglesia} onChange={handleChange} className={selectClass} required disabled={!sector}>
+                      <option value="" className="bg-blue-950 text-white/40">{sector ? 'Seleccionar' : 'Primero sector'}</option>
+                      {filteredChurches.map((church) => (
+                        <option key={`${church.sector}-${church.name}`} value={church.name} className="bg-blue-950 text-white">{church.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className={labelClass}><UserSquare2 className="h-3 w-3" /> Rol</label>
+                    <select name="rol" value={form.rol} onChange={handleChange} className={selectClass} required>
+                      {ROLES.map((role) => (
+                        <option key={role.value} value={role.value} className="bg-blue-950">{role.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className={labelClass}><DollarSign className="h-3 w-3" /> Monto</label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#f4540a] font-black">$</div>
+                      <input value={monto} disabled readOnly className={cn(inputClass, "pl-8 bg-blue-900/20 border-blue-500/10 text-[#f4540a] font-black text-xl shadow-inner")} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className={labelClass}><StickyNote className="h-3 w-3" /> Notas Adicionales</label>
+                  <textarea name="notas" value={form.notas} onChange={handleChange} className={cn(inputClass, "h-20 py-3 resize-none")} placeholder="Observaciones..." />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                  <Button type="button" variant="ghost" className="h-12 rounded-xl text-white/40 hover:text-white hover:bg-white/5 font-bold" onClick={limpiarFormulario} disabled={isSubmitting}>
+                    <RotateCcw className="h-4 w-4 mr-2" /> Limpiar
+                  </Button>
+                  <Button type="submit" variant="tangelo" className="h-12 rounded-xl font-black italic uppercase tracking-tight shadow-xl shadow-orange-900/20" disabled={isSubmitting}>
+                    {isSubmitting ? '...' : <>REGISTRAR <ArrowRight className="h-4 w-4 ml-2" /></>}
+                  </Button>
+                </div>
+              </form>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-medium text-blue-400 text-sm mb-1">Correo electrónico <span className="text-red-600">*</span></label>
-                <input name="email" type="email" value={form.email} onChange={handleChange} required className={inputClass} tabIndex={3} />
+          ) : (
+            <div className="space-y-4 animate-in zoom-in-95 duration-300">
+              <div className="card-glass border border-white/5 p-8 rounded-[32px] shadow-2xl flex flex-col items-center text-center">
+                <div className="h-16 w-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle2 className="h-8 w-8 text-green-400" />
+                </div>
+                
+                <h2 className="text-xl font-black text-white mb-2 uppercase tracking-wide italic">¡ÉXITO EN REGISTRO!</h2>
+                <p className="text-blue-100/40 text-sm mb-6">Entrega el número asignado:</p>
+
+                <div className="bg-gradient-to-br from-blue-500/10 to-transparent p-8 rounded-3xl border border-white/5 w-full mb-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <PlusCircle className="h-24 w-24 text-white" />
+                  </div>
+                  <p className="text-[10px] uppercase font-black tracking-[0.3em] text-[#f4540a] mb-2 font-mono">ID CAMPISTA</p>
+                  <span className="text-8xl font-black text-white tracking-tighter drop-shadow-[0_0_20px_rgba(244,84,10,0.4)]">
+                    #{numeroCampista?.toString().padStart(3, '0')}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-3 w-full">
+                  <Button 
+                    onClick={limpiarFormulario} 
+                    className="h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-lg shadow-xl shadow-blue-900/40"
+                  >
+                    <PlusCircle className="mr-2 h-5 w-5" /> SIGUIENTE REGISTRO
+                  </Button>
+                  
+                  <Button 
+                    onClick={marcarComoPagado} 
+                    variant="tangelo" 
+                    className="h-12 rounded-xl font-bold uppercase text-sm opacity-90 hover:opacity-100"
+                    disabled={!ultimoId}
+                  >
+                    <DollarSign className="mr-2 h-4 w-4" /> Marcar como Pagado en Caja
+                  </Button>
+                </div>
               </div>
-              <div>
-                <label className="block font-medium text-blue-400 text-sm mb-1">Teléfono <span className="text-red-600">*</span></label>
-                <input name="telefono" type="tel" value={form.telefono} onChange={handleChange} required className={inputClass} tabIndex={4} maxLength={10} />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-medium text-blue-400 text-sm mb-1">Sector <span className="text-red-600">*</span></label>
-                <select
-                  name="sector"
-                  value={sector}
-                  onChange={handleChange}
-                  className={inputClass}
-                  required
-                  tabIndex={5}
-                >
-                  <option value="">Seleccione un sector</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="Foráneo">Foráneo</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-medium text-blue-400 text-sm mb-1">Iglesia <span className="text-red-600">*</span></label>
-                <select
-                  name="iglesia"
-                  value={form.iglesia}
-                  onChange={handleChange}
-                  className={inputClass}
-                  required
-                  disabled={!sector}
-                  tabIndex={6}
-                >
-                  <option value="">{sector ? 'Seleccione una iglesia' : 'Primero seleccione un sector'}</option>
-                  {filteredChurches.map((church) => (
-                    <option key={`${church.sector}-${church.name}`} value={church.name}>{church.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-medium text-blue-400 text-sm mb-1">Rol <span className="text-red-600">*</span></label>
-                <select
-                  name="rol"
-                  value={form.rol}
-                  onChange={handleChange}
-                  className={inputClass}
-                  required
-                  tabIndex={7}
-                >
-                  {ROLES.map((role) => (
-                    <option key={role.value} value={role.value}>{role.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block font-medium text-blue-400 text-sm mb-1">Monto a pagar <span className="text-red-600">*</span></label>
-                <input
-                  value={`$${monto}`}
-                  disabled
-                  readOnly
-                  className={inputClass + ' bg-gray-100'}
-                  tabIndex={8}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block font-medium text-blue-400 text-sm mb-1">Notas</label>
-              <textarea name="notas" value={form.notas} onChange={handleChange} className={inputClass} tabIndex={9} />
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 mt-4 justify-center items-center w-full">
-              <button type="submit" className={buttonClass + ' bg-blue-600 text-white'} disabled={isSubmitting} tabIndex={10}>
-                {isSubmitting ? 'Registrando...' : 'Registrar y pasar a caja'}
-              </button>
-              <button type="button" className={buttonClass + ' bg-gray-300 text-black'} onClick={limpiarFormulario} disabled={isSubmitting} tabIndex={11}>
-                Limpiar formulario
-              </button>
-            </div>
-          </form>
-          {numeroCampista && (
-            <div className="mt-6 p-4 bg-green-100 rounded text-green-800 font-semibold flex flex-col gap-4 items-center">
-              ¡Registro exitoso! Número de campista asignado: {numeroCampista}
-              <div className="flex flex-col sm:flex-row gap-2 w-full justify-center mt-2">
-                <button
-                  className={buttonClass + ' bg-green-600 text-white'}
-                  onClick={marcarComoPagado}
-                  disabled={!ultimoId}
-                >
-                  Marcar como pagado
-                </button>
-                <button
-                  className={buttonClass + ' bg-blue-500 text-white'}
-                  onClick={limpiarFormulario}
-                >
-                  Registrar otro campista
-                </button>
+
+              <div className="flex justify-center">
+                <Button variant="ghost" className="text-red-400/50 hover:text-red-400 hover:bg-red-400/5 transition-colors" onClick={limpiarFormulario}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Descartar y volver
+                </Button>
               </div>
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

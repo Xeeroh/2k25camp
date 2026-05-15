@@ -116,13 +116,14 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
       <Button 
         type="submit" 
-        className="w-full"
+        variant="tangelo"
+        className="w-full text-lg h-11"
         disabled={isLoading}
       >
         {isLoading ? (
           <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Iniciando sesión...
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            Verificando...
           </>
         ) : (
           "Iniciar sesión"
