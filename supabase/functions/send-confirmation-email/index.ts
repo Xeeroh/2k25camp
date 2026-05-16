@@ -7,17 +7,26 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-interface EmailData {
+interface AttendeeInfo {
   firstName: string
   lastName: string
+  receivesTshirt?: boolean
+  tshirtSize?: string
+}
+
+interface EmailData {
+  firstName?: string
+  lastName?: string
   email: string
   church: string
   sector: string
-  paymentAmount: number
+  paymentAmount?: number
   qrData: string
   receivesTshirt?: boolean
   tshirtSize?: string
   isResend?: boolean
+  isGroup?: boolean
+  attendees?: AttendeeInfo[]
 }
 
 serve(async (req) => {
@@ -40,11 +49,15 @@ serve(async (req) => {
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(body.qrData)}`;
     const fromEmail = 'MDP Tijuana <noreply@mdptijuana.com>';
 
-    const tshirtMessage = body.receivesTshirt 
+    const someoneGotShirt = body.isGroup 
+      ? body.attendees?.some(a => a.receivesTshirt)
+      : body.receivesTshirt;
+
+    const tshirtMessage = someoneGotShirt 
       ? `
         <div style="background-color: #dbeafe; border-radius: 8px; padding: 15px; margin: 20px 0; border-left: 4px solid #2563eb;">
           <h3 style="color: #1e40af; margin-top: 0;">¡FELICITACIONES! 🎉</h3>
-          <p style="margin-bottom: 0;">Por ser uno de los primeros 100 registrados, <strong>has ganado una camiseta exclusiva talla ${body.tshirtSize || 'seleccionada'}</strong>. ¡No olvides recogerla durante el evento!</p>
+          <p style="margin-bottom: 0;">${body.isGroup ? '<strong>Hay camisetas aseguradas en este registro</strong>. Revisa los detalles abajo.' : `Por ser uno de los primeros 100 registrados, <strong>has ganado una camiseta exclusiva talla ${body.tshirtSize || 'seleccionada'}</strong>.`} ¡No olviden recogerlas durante el evento!</p>
         </div>
       ` 
       : '';
@@ -69,7 +82,7 @@ serve(async (req) => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
         <h1 style="color: #2563eb; text-align: center; margin-bottom: 20px;">${headerTitle}</h1>
 
-        <p style="text-align: center; margin-bottom: 20px;">Hola ${body.firstName},</p>
+        <p style="text-align: center; margin-bottom: 20px;">Hola ${body.isGroup ? 'Líder / Responsable' : body.firstName},</p>
 
         <p style="text-align: center; margin-bottom: 20px;">${introMessage}</p>
 
@@ -80,10 +93,18 @@ serve(async (req) => {
         <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
           <h2 style="color: #2563eb; margin-bottom: 15px;">Detalles del Registro:</h2>
           <ul style="list-style: none; padding: 0; margin: 0; display: inline-block; text-align: left;">
-            <li style="margin-bottom: 8px;"><strong>Nombre:</strong> ${body.firstName} ${body.lastName}</li>
             <li style="margin-bottom: 8px;"><strong>Iglesia:</strong> ${body.church}</li>
-            <li style="margin-bottom: 8px;"><strong>Sector:</strong> ${body.sector}</li>
-            ${body.receivesTshirt && body.tshirtSize ? `<li style="margin-bottom: 8px;"><strong>Talla de Camiseta:</strong> ${body.tshirtSize}</li>` : ''}
+            <li style="margin-bottom: 15px;"><strong>Sector:</strong> ${body.sector}</li>
+            ${body.isGroup ? `<li style="margin-bottom: 8px; color: #f4540a; font-weight: bold;">Registro Grupal (${body.attendees?.length} personas)</li>` : ''}
+            ${body.isGroup && body.attendees ? body.attendees.map((a, i) => `
+              <li style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                <strong>${i + 1}. ${a.firstName} ${a.lastName}</strong>
+                ${a.receivesTshirt && a.tshirtSize ? `<br><span style="font-size: 12px; color: #1e40af;">👕 Talla: ${a.tshirtSize}</span>` : ''}
+              </li>
+            `).join('') : `
+              <li style="margin-bottom: 8px;"><strong>Nombre:</strong> ${body.firstName} ${body.lastName}</li>
+              ${body.receivesTshirt && body.tshirtSize ? `<li style="margin-bottom: 8px;"><strong>Talla de Camiseta:</strong> ${body.tshirtSize}</li>` : ''}
+            `}
           </ul>
         </div>
 

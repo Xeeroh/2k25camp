@@ -26,12 +26,7 @@ export const useEmailValidation = (form: UseFormReturn<any>, watchedEmail: strin
           const exists = count !== null && count > 0;
           setEmailExists(exists);
           
-          if (exists) {
-            form.setError("email", { 
-              type: "manual", 
-              message: "Este correo electrónico ya está registrado" 
-            });
-          } else {
+          if (!exists) {
             form.clearErrors("email");
           }
         } catch (error) {

@@ -42,7 +42,7 @@ interface AttendeeData {
 export default function ComitePage() {
   const { user, loading, error, signOut, hasRole } = useAuth();
   const router = useRouter();
-  const [attendee, setAttendee] = useState<AttendeeData | null>(null);
+  const [attendees, setAttendees] = useState<AttendeeData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastScannedQR, setLastScannedQR] = useState<string | null>(null);
   const [scanCount, setScanCount] = useState(0);
@@ -84,7 +84,7 @@ export default function ComitePage() {
 
     // Limpiar estado anterior
     setIsLoading(true);
-    setAttendee(null);
+    setAttendees([]);
     setLastScannedQR(result);
     setScanCount(prev => prev + 1);
 
@@ -93,43 +93,51 @@ export default function ComitePage() {
     toast.loading('Escaneando código QR...', { id: toastId });
 
     try {
-      // Extraer el ID del asistente del QR
-      const attendeeId = extractAttendeeId(result);
+      let queryData = null;
       
-      if (!attendeeId) {
-        toast.error('No se pudo extraer un ID válido del QR', { id: toastId });
-        setIsLoading(false);
-        setAttendee(null);
-        return;
-      }
-      
-      // Consultar la base de datos con el ID extraído
-      const { data, error } = await supabase
-        .from('attendees')
-        .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize')
-        .eq('id', attendeeId)
-        .single();
+      if (result.startsWith('group:')) {
+        const groupId = result.substring(6);
+        const { data, error } = await supabase
+          .from('attendees')
+          .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize')
+          .eq('group_id', groupId);
+          
+        if (error) throw error;
+        queryData = data;
+      } else {
+        // Extraer el ID del asistente del QR (individual)
+        const attendeeId = extractAttendeeId(result);
         
-      if (error) {
-        console.error('Error al consultar la base de datos:', error);
-        toast.error('Error al consultar la base de datos', { id: toastId });
+        if (!attendeeId) {
+          toast.error('No se pudo extraer un ID válido del QR', { id: toastId });
+          setIsLoading(false);
+          setAttendees([]);
+          return;
+        }
+        
+        const { data, error } = await supabase
+          .from('attendees')
+          .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize')
+          .eq('id', attendeeId)
+          .single();
+          
+        if (error) throw error;
+        if (data) queryData = [data];
+      }
+      
+      if (!queryData || queryData.length === 0) {
+        toast.error('No se encontraron asistentes en la base de datos', { id: toastId });
         setIsLoading(false);
-        setAttendee(null);
+        setAttendees([]);
         return;
       }
       
-      if (!data) {
-        toast.error('No se encontró el asistente en la base de datos', { id: toastId });
-        setIsLoading(false);
-        setAttendee(null);
-        return;
-      }
-      
-      setAttendee(data as AttendeeData);
-      toast.success('Información cargada correctamente', { id: toastId });
+      setAttendees(queryData as AttendeeData[]);
+      toast.success(queryData.length > 1 ? `Grupo cargado: ${queryData.length} personas` : 'Información cargada correctamente', { id: toastId });
 
-      // Validar que los datos estén completos
-      if (!data.firstname || !data.lastname || !data.email) {
+      // Validar que los datos estén completos (sólo mostramos warning si es uno, o para el grupo en general)
+      const incomplete = queryData.some(d => !d.firstname || !d.lastname || !d.email);
+      if (incomplete) {
         toast.warning('Algunos datos del asistente están incompletos', { 
           id: 'incomplete-data-warning',
           duration: 3000 
@@ -139,7 +147,7 @@ export default function ComitePage() {
     } catch (err) {
       console.error('Error al procesar el QR:', err);
       toast.error('Error al procesar el código QR', { id: toastId });
-      setAttendee(null);
+      setAttendees([]);
     } finally {
       setIsLoading(false);
     }
@@ -245,7 +253,8 @@ export default function ComitePage() {
 
       if (updateError) throw updateError;
 
-      toast.success(`Asistencia confirmada para ${attendee?.firstname || ''} ${attendee?.lastname || ''} - Número: ${nextAttendanceNumber}`, {
+      const targetAttendee = attendees.find(a => a.id === id);
+      toast.success(`Asistencia confirmada para ${targetAttendee?.firstname || ''} ${targetAttendee?.lastname || ''} - Número: ${nextAttendanceNumber}`, {
         id: 'attendance-confirmed',
         duration: 4000
       });
@@ -258,7 +267,7 @@ export default function ComitePage() {
         .single();
 
       if (!error && data) {
-        setAttendee(data);
+        setAttendees(prev => prev.map(a => a.id === id ? data as AttendeeData : a));
       }
     } catch (error) {
       console.error('Error al confirmar asistencia:', error);
@@ -349,12 +358,18 @@ export default function ComitePage() {
                   </Suspense>
                 </div>
                 
-                <div className="mt-4 md:mt-0">
+                <div className="mt-4 md:mt-0 space-y-4 max-h-[80vh] overflow-y-auto pb-8 pr-2 custom-scrollbar">
                   <Suspense fallback={<LoadingFallback />}>
-                    <AttendeeInfo 
-                      attendee={attendee} 
-                      onConfirmAttendance={confirmAttendance} 
-                    />
+                    {attendees.map(att => (
+                      <AttendeeInfo 
+                        key={att.id}
+                        attendee={att} 
+                        onConfirmAttendance={confirmAttendance} 
+                      />
+                    ))}
+                    {attendees.length === 0 && (
+                      <AttendeeInfo attendee={null} />
+                    )}
                   </Suspense>
                 </div>
               </div>

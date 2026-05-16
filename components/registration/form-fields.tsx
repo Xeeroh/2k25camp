@@ -14,45 +14,50 @@ interface FormFieldsProps {
   sectorValue: string;
   shirtAvailable: boolean | null;
   checkingShirts: boolean;
+  isGroup?: boolean;
 }
 
-export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists, isCheckingEmail }: FormFieldsProps) => (
+export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists, isCheckingEmail, isGroup }: FormFieldsProps) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <FormField
-      control={form.control}
-      name="firstName"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Nombre(s)</FormLabel>
-          <FormControl>
-            <Input 
-              placeholder="Ingrese su nombre(s)" 
-              {...field} 
-              disabled={isLoading || isSubmitting}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-    
-    <FormField
-      control={form.control}
-      name="lastName"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Apellido(s)</FormLabel>
-          <FormControl>
-            <Input 
-              placeholder="Ingrese su apellido(s)" 
-              {...field} 
-              disabled={isLoading || isSubmitting}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    {!isGroup && (
+      <>
+        <FormField
+          control={form.control}
+          name="firstName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Nombre(s)</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Ingrese su nombre(s)" 
+                  {...field} 
+                  disabled={isLoading || isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="lastName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Apellido(s)</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Ingrese su apellido(s)" 
+                  {...field} 
+                  disabled={isLoading || isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </>
+    )}
 
     <FormField
       control={form.control}
@@ -185,7 +190,9 @@ export const ChurchFields = ({ form, isLoading, isSubmitting, sectorValue }: For
   );
 };
 
-export const ShirtField = ({ form, isLoading, isSubmitting, shirtAvailable, checkingShirts }: FormFieldsProps) => {
+export const ShirtField = ({ form, isLoading, isSubmitting, shirtAvailable, checkingShirts, isGroup }: FormFieldsProps) => {
+  if (isGroup) return null;
+
   if (shirtAvailable === false) {
     return (
       <div className="rounded-xl border border-red-500/20 p-4 bg-red-500/10 backdrop-blur-md">

@@ -3,15 +3,19 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import imageCompression from 'browser-image-compression';
 
-export interface RegistrationData {
+export interface AttendeeInput {
   firstName: string;
   lastName: string;
+  tshirtsize?: string;
+}
+
+export interface RegistrationData {
   email: string;
   phone: string;
   church: string;
   sector: string;
-  tshirtsize?: string;
   paymentReceipt: File | null;
+  attendees: AttendeeInput[];
 }
 
 export const useRegistration = () => {
@@ -87,44 +91,63 @@ export const useRegistration = () => {
         .from('attendees')
         .select('*', { count: 'exact', head: true });
       
-      const canReceiveTshirt = count !== null && count < 100;
-
-      const registrationData = {
-        firstname: data.firstName,
-        lastname: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        church: data.church,
-        sector: data.sector,
-        registrationdate: new Date().toISOString(),
-        tshirtsize: data.tshirtsize || null,
-        receives_tshirt: canReceiveTshirt,
-        paymentreceipturl: receiptUrl,
-        paymentamount: 0,
-      };
+      let currentCount = count || 0;
       
-      const { data: attendeeData, error } = await supabase
+      // Generate a group_id if there are multiple people, or even for 1 to keep it consistent
+      const groupId = crypto.randomUUID();
+      const isGroup = data.attendees.length > 1;
+
+      const registrationRecords = data.attendees.map(att => {
+        const canReceiveTshirt = currentCount < 100;
+        currentCount++;
+        
+        return {
+          firstname: att.firstName,
+          lastname: att.lastName,
+          email: data.email,
+          phone: data.phone,
+          church: data.church,
+          sector: data.sector,
+          registrationdate: new Date().toISOString(),
+          tshirtsize: att.tshirtsize || null,
+          receives_tshirt: canReceiveTshirt,
+          paymentreceipturl: receiptUrl,
+          paymentamount: 0,
+          group_id: groupId,
+        };
+      });
+      
+      const { data: insertedAttendees, error } = await supabase
         .from('attendees')
-        .insert([registrationData])
-        .select()
-        .single();
+        .insert(registrationRecords)
+        .select();
 
       if (error) throw error;
 
-      const qrValue = `id:${attendeeData.id}`;
+      // The QR code for the group will be group:groupId if it's a group, or id:id if it's single
+      // To keep it simple, we can always use group:groupId or stick to id:id for single.
+      const qrValue = isGroup ? `group:${groupId}` : `id:${insertedAttendees[0].id}`;
 
-      // Enviar correo de confirmación
+      // We need to send an email. For groups, we send a single email.
       try {
         const { data: invokeData, error: invokeError } = await supabase.functions.invoke('send-confirmation-email', {
           body: {
-            firstName: data.firstName,
-            lastName: data.lastName,
             email: data.email,
             church: data.church,
             sector: data.sector,
             qrData: qrValue,
-            receivesTshirt: attendeeData.receives_tshirt,
-            tshirtSize: attendeeData.tshirtsize
+            isGroup: isGroup,
+            attendees: insertedAttendees.map(a => ({
+              firstName: a.firstname,
+              lastName: a.lastname,
+              receivesTshirt: a.receives_tshirt,
+              tshirtSize: a.tshirtsize
+            })),
+            // Fallback for single email template
+            firstName: insertedAttendees[0].firstname,
+            lastName: insertedAttendees[0].lastname,
+            receivesTshirt: insertedAttendees[0].receives_tshirt,
+            tshirtSize: insertedAttendees[0].tshirtsize
           }
         });
         if (invokeError) {
@@ -136,23 +159,21 @@ export const useRegistration = () => {
         console.error('Error al enviar correo:', emailError);
       }
 
-      toast.success("¡Registro completado con éxito!");
+      toast.success(isGroup ? "¡Registro grupal completado con éxito!" : "¡Registro completado con éxito!");
       
       if ((window as any).gtag) {
         (window as any).gtag('event', 'sign_up', {
           method: 'form',
           event_category: 'engagement',
-          event_label: 'Registration Success',
+          event_label: isGroup ? 'Group Registration Success' : 'Registration Success',
           email: data.email,
-          firstName: data.firstName,
-          lastName: data.lastName,
           church: data.church,
           sector: data.sector,
           qrData: qrValue
         });
       }
 
-      return { attendeeData, qrValue };
+      return { attendeeData: insertedAttendees[0], qrValue };
     } catch (error: any) {
       setError(error.message || 'Ha ocurrido un error al procesar tu registro.');
       toast.error("Error al guardar el registro");
