@@ -197,7 +197,19 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
 
           {isGroup && (
             <div className="space-y-4 pt-6 border-t border-white/10 mt-6">
-              <h3 className="text-xl font-black text-white mb-4 italic uppercase">Integrantes del Grupo</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <h3 className="text-xl font-black text-white italic uppercase">Integrantes del Grupo</h3>
+                {shirtAvailable === false ? (
+                  <div className="px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-[10px] font-bold text-red-400 uppercase tracking-tight">Camisetas Agotadas</p>
+                  </div>
+                ) : (
+                  <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-tight">Camisetas para los primeros 100</p>
+                  </div>
+                )}
+              </div>
+
               {fields.map((field, index) => (
                 <div key={field.id} className="p-5 rounded-2xl border border-white/10 bg-black/20 relative shadow-inner">
                   {fields.length > 1 && (
@@ -248,6 +260,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                               </SelectContent>
                             </Select>
                             <FormMessage />
+                            <p className="text-[9px] text-blue-500/60 mt-1">* Sujeto a disponibilidad (Top 100)</p>
                           </FormItem>
                         )}
                       />
