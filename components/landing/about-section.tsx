@@ -4,11 +4,11 @@ export default function AboutSection() {
       <div className="grid md:grid-cols-2 gap-12 items-center">
         <div>
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Sobre MDP Noroeste
+            Sobre MDP Tijuana
           </h2>
           <p className="text-lg text-muted-foreground mb-6">
-            MDP Noroeste es una organización religiosa dedicada a fortalecer la comunidad
-            cristiana en la región noroeste. Nuestra visión es crear un espacio de encuentro,
+            MDP Tijuana es una organización religiosa dedicada a fortalecer la comunidad
+            cristiana en la región de Tijuana. Nuestra visión es crear un espacio de encuentro,
             crecimiento espiritual y servicio a la comunidad.
           </p>
           <p className="text-lg text-muted-foreground">
@@ -26,7 +26,7 @@ export default function AboutSection() {
           
           <div className="bg-muted rounded-lg p-6 transition-transform hover:scale-105">
             <h3 className="text-xl font-semibold mb-2">Visión</h3>
-            <p>Ser un referente de fe, esperanza y amor en la región noroeste.</p>
+            <p>Ser un referente de fe, esperanza y amor en la región de Tijuana.</p>
           </div>
           
           <div className="bg-muted rounded-lg p-6 transition-transform hover:scale-105">

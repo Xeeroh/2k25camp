@@ -22,15 +22,15 @@ export default function Footer() {
           <div className="md:text-right space-y-4">
             <h3 className="text-xl font-bold text-white tracking-widest uppercase text-sm">Contáctanos</h3>
             <address className="not-italic text-blue-100/60 space-y-2">
-              <p className="hover:text-white transition-colors cursor-pointer">soporte@mdpnoroeste.org</p>
-              <p className="text-[10px] tracking-widest text-[#f4540a] font-black">MDP NOROESTE</p>
+              <p className="hover:text-white transition-colors cursor-pointer">soporte@mdptijuana.com</p>
+              <p className="text-[10px] tracking-widest text-[#f4540a] font-black">MDP TIJUANA</p>
             </address>
           </div>
         </div>
         
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-[10px] text-blue-100/30 font-bold tracking-widest uppercase">
-            &copy; {currentYear} MDP Noroeste • Todos los derechos reservados
+            &copy; {currentYear} MDP Tijuana • Todos los derechos reservados
           </p>
           <p className="text-[10px] text-blue-100/30 font-bold tracking-widest uppercase flex items-center gap-2">
             DESIGNED FOR <span className="text-[#f4540a]">2026 EXPERIENCE</span> <Heart size={10} className="text-[#f4540a] fill-[#f4540a]" />

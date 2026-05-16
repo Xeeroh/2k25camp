@@ -27,14 +27,14 @@ export default function FooterL() {
           </p>
           
           <p className="text-sm text-muted-foreground">
-            &copy; {currentYear} MDP Noroeste. Todos los derechos reservados.
+            &copy; {currentYear} MDP Tijuana. Todos los derechos reservados.
           </p>
 
           <h6 className="text-sm font-semibold text-muted-foreground">
             Contacto
             <address className="italic text-muted-foreground">
-            <a href="mailto:soporte@mdpnoroeste.org" className="hover:text-primary">
-                soporte@mdpnoroeste.org
+            <a href="mailto:soporte@mdptijuana.com" className="hover:text-primary">
+                soporte@mdptijuana.com
               </a>
             </address>
           </h6>

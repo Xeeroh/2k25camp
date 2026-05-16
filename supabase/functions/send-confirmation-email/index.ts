@@ -38,7 +38,7 @@ serve(async (req) => {
     const body = await req.json() as EmailData;
 
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(body.qrData)}`;
-    const fromEmail = 'MDP Noroeste <noreply@mdpnoroeste.com>';
+    const fromEmail = 'MDP Tijuana <noreply@mdptijuana.com>';
 
     const tshirtMessage = body.receivesTshirt 
       ? `
@@ -50,8 +50,8 @@ serve(async (req) => {
       : '';
 
     const subject = body.isResend
-      ? '🔁 Reenvío de Confirmación - Nuevo QR para tu registro al MDP Noroeste'
-      : '✅ Confirmación de Registro - MDP Noroeste';
+      ? '🔁 Reenvío de Confirmación - Nuevo QR para tu registro al MDP Tijuana'
+      : '✅ Confirmación de Registro - MDP Tijuana';
 
     const headerTitle = body.isResend 
       ? '🔁 Nuevo Código QR Generado'
@@ -59,7 +59,7 @@ serve(async (req) => {
 
     const introMessage = body.isResend
       ? 'Te enviamos nuevamente tu correo de confirmación con un nuevo código QR actualizado para tu ingreso al Campamento Alfa y Omega.'
-      : 'Gracias por registrarte al Campamento Alfa y Omega Distrito Noroeste. Tu registro ha sido procesado exitosamente.';
+      : 'Gracias por registrarte al Campamento Alfa y Omega Distrito Tijuana. Tu registro ha sido procesado exitosamente.';
 
     const resendNote = body.isResend 
       ? `<p style="color: #ef4444; font-size: 14px; margin-top: 10px;"><strong>Nota:</strong> Este QR reemplaza al anterior. Por favor, usa este nuevo código para ingresar al evento.</p>`
@@ -99,7 +99,7 @@ serve(async (req) => {
 
         <p style="margin-top: 30px; text-align: center;">
           Saludos,<br>
-          <strong>Equipo MDP Noroeste</strong>
+          <strong>Equipo MDP Tijuana</strong>
         </p>
       </div>
     `;

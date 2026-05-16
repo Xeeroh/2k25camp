@@ -16,7 +16,7 @@ if (typeof window !== 'undefined') {
     try {
       isHandlingAuth = true;
       if (event === 'SIGNED_OUT') {
-        localStorage.removeItem('mdpnoroeste.auth.token');
+        localStorage.removeItem('mdptijuana.auth.token');
         sessionStorage.clear();
       }
     } finally {
