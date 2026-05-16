@@ -406,7 +406,7 @@ export default function AttendeesTable() {
                       <div className="flex items-center gap-2">
                         <span className="text-green-400 font-bold">${attendee.paymentamount}</span>
                         <span className="text-white/20">|</span>
-                        <span className="text-red-400 font-bold">${900 - (attendee.paymentamount || 0)}</span>
+                        <span className="text-red-400 font-bold">${650 - (attendee.paymentamount || 0)}</span>
                       </div>
                       {getPaymentBadge(attendee.paymentstatus)}
                     </div>
@@ -565,7 +565,7 @@ export default function AttendeesTable() {
                     <TableCell className="text-center py-4">
                       <div className="inline-flex flex-col items-center">
                         <span className="text-green-400 font-black">${attendee.paymentamount}</span>
-                        <span className="text-[10px] text-red-400/50">-${900 - (attendee.paymentamount || 0)}</span>
+                        <span className="text-[10px] text-red-400/50">-${650 - (attendee.paymentamount || 0)}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center py-4">

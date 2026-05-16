@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const ROLES = [
-  { label: 'Campista', value: 'campista', monto: 900 },
+  { label: 'Campista', value: 'campista', monto: 650 },
   { label: 'Pastor', value: 'pastor', monto: 0 },
   { label: 'Esposa de Pastor', value: 'esposa', monto: 600 },
   { label: 'Ujier', value: 'ujier', monto: 700 },

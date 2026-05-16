@@ -69,7 +69,7 @@ export default function CajaHistorial() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
       {logs.map((log) => {
         const montoCobrado = log.monto_actual - log.monto_anterior;
-        const isTotal = log.monto_actual >= 900;
+        const isTotal = log.monto_actual >= 650;
 
         return (
           <div 

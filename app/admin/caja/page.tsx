@@ -62,7 +62,7 @@ export default function CajaPage() {
 
   useEffect(() => {
     if (attendee && montoRecibido !== '') {
-      const deuda = 900 - (attendee.paymentamount || 0);
+      const deuda = 650 - (attendee.paymentamount || 0);
       const res = Number(montoRecibido) - deuda;
       setCambio(res > 0 ? res : 0);
     } else {
@@ -125,8 +125,8 @@ export default function CajaPage() {
     if (!attendee) return;
     
     const anterior = attendee.paymentamount || 0;
-    const deuda = 900 - anterior;
-    const nuevoTotal = 900;
+    const deuda = 650 - anterior;
+    const nuevoTotal = 650;
 
     const { error: updateError } = await supabase
       .from('attendees')
@@ -185,7 +185,7 @@ export default function CajaPage() {
     );
   }
 
-  const deuda = 900 - (attendee?.paymentamount || 0);
+  const deuda = 650 - (attendee?.paymentamount || 0);
 
   return (
     <div className="min-h-screen flex flex-col bg-try">
@@ -359,7 +359,7 @@ export default function CajaPage() {
                         onClick={() => handlePago()}
                         className="w-full h-20 rounded-3xl bg-[#f4540a] hover:bg-[#d44808] text-white font-black text-xl shadow-2xl shadow-[#f4540a]/20"
                       >
-                        LIQUIDAR $900 AHORA
+                        LIQUIDAR $650 AHORA
                         <CheckCircle2 className="ml-3 h-6 w-6" />
                       </Button>
                     </div>

@@ -233,7 +233,7 @@ export default function AttendeeModal({ isOpen, onClose, attendee, mode, onUpdat
                 <div className="flex items-center gap-3">
                   <span className="text-green-400 font-bold text-lg">${attendee.paymentAmount}</span>
                   <span className="text-white/20">|</span>
-                  <span className="text-red-400 font-medium">Debe: ${900 - (attendee.paymentAmount || 0)}</span>
+                  <span className="text-red-400 font-medium">Debe: ${650 - (attendee.paymentAmount || 0)}</span>
                 </div>
                 <div className="mt-1">{getPaymentBadge(attendee.paymentStatus)}</div>
               </div>
