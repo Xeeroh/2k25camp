@@ -16,8 +16,8 @@ export default function Home() {
        <div className="absolute inset-0 flex justify-center items-center z-10">
         <Link href="/registro">
           <img
-            src="https://res.cloudinary.com/dmjdrou6a/image/upload/v1749238690/Alfa_y_Omega_lj3vsb.png"
-            alt="Alfa y Omega"
+            src="/logo_soberano.png"
+            alt="Soberano"
             className="w-[300px] md:w-[500px] hover:scale-105 transition-transform duration-300 cursor-pointer"
           />
         </Link>

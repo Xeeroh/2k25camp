@@ -37,6 +37,7 @@ interface AttendeeData {
   attendance_number: number;
   attendance_confirmed: boolean;
   attendance_confirmed_at: string;
+  paymentreceipturl?: string;
 }
 
 export default function ComitePage() {
@@ -99,7 +100,7 @@ export default function ComitePage() {
         const groupId = result.substring(6);
         const { data, error } = await supabase
           .from('attendees')
-          .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize')
+          .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize, paymentreceipturl')
           .eq('group_id', groupId);
           
         if (error) throw error;
@@ -117,7 +118,7 @@ export default function ComitePage() {
         
         const { data, error } = await supabase
           .from('attendees')
-          .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize')
+          .select('id, firstname, lastname, email, church, sector, paymentamount, paymentstatus, created_at, attendance_number, attendance_confirmed, attendance_confirmed_at, tshirtsize, paymentreceipturl')
           .eq('id', attendeeId)
           .single();
           
@@ -326,16 +327,16 @@ export default function ComitePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
             <div>
-              <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-br from-white via-white to-blue-300 bg-clip-text text-transparent tracking-tighter">
+              <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-br from-white via-white to-orange-300 bg-clip-text text-transparent tracking-tighter">
                 PANEL DEL COMITÉ
               </h1>
-              <p className="text-sm text-blue-200/60 mt-2 font-light">
+              <p className="text-sm text-white/40 mt-2 font-light">
                 Escaneos realizados: <span className="font-bold text-orange-400">{scanCount}</span> | Rol: <span className="uppercase tracking-widest text-xs font-bold">{user.role}</span>
               </p>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto bg-white/5 p-2 rounded-full px-4 border border-white/10 backdrop-blur-md">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs font-medium text-blue-100/80 truncate">{user.email}</span>
+              <span className="text-xs font-medium text-white/70 truncate">{user.email}</span>
             </div>
           </div>
           

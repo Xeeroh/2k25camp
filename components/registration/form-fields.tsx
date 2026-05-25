@@ -26,7 +26,7 @@ export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists,
           name="firstName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Nombre(s)</FormLabel>
+              <FormLabel className="text-white/80 font-semibold mb-2 block">Nombre(s)</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="Ingrese su nombre(s)" 
@@ -44,7 +44,7 @@ export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists,
           name="lastName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Apellido(s)</FormLabel>
+              <FormLabel className="text-white/80 font-semibold mb-2 block">Apellido(s)</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="Ingrese su apellido(s)" 
@@ -64,7 +64,7 @@ export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists,
       name="email"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Correo Electrónico</FormLabel>
+          <FormLabel className="text-white/80 font-semibold mb-2 block">Correo Electrónico</FormLabel>
           <div className="relative">
             <FormControl>
               <Input 
@@ -91,7 +91,7 @@ export const PersonalInfoFields = ({ form, isLoading, isSubmitting, emailExists,
       name="phone"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Teléfono</FormLabel>
+          <FormLabel className="text-white/80 font-semibold mb-2 block">Teléfono</FormLabel>
           <FormControl>
             <Input 
               type="tel" 
@@ -124,14 +124,14 @@ export const ChurchFields = ({ form, isLoading, isSubmitting, sectorValue }: For
         name="sector"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Sector</FormLabel>
+            <FormLabel className="text-white/80 font-semibold mb-2 block">Sector</FormLabel>
             <Select 
               onValueChange={(value) => {
                 field.onChange(value);
                 form.setValue("church", "");
               }}
               value={field.value}
-              disabled={isLoading || isSubmitting}
+              disabled={isLoading || isSubmitting || undefined}
             >
               <FormControl>
                 <SelectTrigger>
@@ -156,11 +156,11 @@ export const ChurchFields = ({ form, isLoading, isSubmitting, sectorValue }: For
         name="church"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Iglesia</FormLabel>
+            <FormLabel className="text-white/80 font-semibold mb-2 block">Iglesia</FormLabel>
             <Select 
               onValueChange={field.onChange}
               value={field.value}
-              disabled={!sectorValue || isLoading || isSubmitting}
+              disabled={(!sectorValue || isLoading || isSubmitting) || undefined}
             >
               <FormControl>
                 <SelectTrigger>
@@ -213,7 +213,7 @@ export const ShirtField = ({ form, isLoading, isSubmitting, shirtAvailable, chec
         name="tshirtsize"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-blue-100/80 font-semibold mb-2 block">
+            <FormLabel className="text-white/80 font-semibold mb-2 block">
               Talla de Camiseta *
               {checkingShirts && (
                 <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin text-muted-foreground" />
@@ -222,7 +222,7 @@ export const ShirtField = ({ form, isLoading, isSubmitting, shirtAvailable, chec
             <Select 
               onValueChange={field.onChange}
               value={field.value}
-              disabled={isLoading || isSubmitting}
+              disabled={isLoading || isSubmitting || undefined}
             >
               <FormControl>
                 <SelectTrigger>
@@ -245,7 +245,7 @@ export const ShirtField = ({ form, isLoading, isSubmitting, shirtAvailable, chec
                 : "* Disponible para los primeros 100 asistentes *"
               }
             </p>
-            <p className="text-xs text-blue-500 mt-1">
+            <p className="text-xs text-orange-500 mt-1">
               Talla actual: {field.value || "No seleccionada"}
             </p>
           </FormItem>

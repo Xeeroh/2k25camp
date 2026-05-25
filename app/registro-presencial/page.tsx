@@ -8,16 +8,16 @@ import { supabase } from '@/lib/supabase';
 import { CHURCHES_DATA } from '@/lib/churches-data';
 import { toast } from 'sonner';
 import { getNextAttendanceNumber } from '@/lib/utils';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Church, 
-  UserSquare2, 
-  DollarSign, 
-  StickyNote, 
-  ArrowRight, 
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Church,
+  UserSquare2,
+  DollarSign,
+  StickyNote,
+  ArrowRight,
   RotateCcw,
   CheckCircle2,
   Trash2,
@@ -29,10 +29,10 @@ import { cn } from '@/lib/utils';
 const ROLES = [
   { label: 'Campista', value: 'campista', monto: 650 },
   { label: 'Pastor', value: 'pastor', monto: 0 },
-  { label: 'Esposa de Pastor', value: 'esposa', monto: 600 },
-  { label: 'Ujier', value: 'ujier', monto: 700 },
-  { label: 'Multimedia', value: 'multimedia', monto: 700 },
-  { label: 'Registro', value: 'registro', monto: 700 },
+  { label: 'Esposa de Pastor', value: 'esposa', monto: 650 },
+  { label: 'Ujier', value: 'ujier', monto: 650 },
+  { label: 'Multimedia', value: 'multimedia', monto: 650 },
+  { label: 'Registro', value: 'registro', monto: 650 },
   { label: 'Comite', value: 'comite', monto: 0 },
 ];
 
@@ -60,12 +60,12 @@ export default function RegistroPresencial() {
   // Spinner de carga
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-blue-950">
+      <div className="min-h-screen flex flex-col bg-try">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex justify-center items-center">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-[#f4540a] border-r-transparent rounded-full animate-spin inline-block" />
-            <p className="mt-2 text-blue-100/60 font-medium">Cargando acceso...</p>
+            <p className="mt-2 text-white/60 font-medium">Cargando acceso...</p>
           </div>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function RegistroPresencial() {
   // Si no hay usuario, mostrar login
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-blue-950">
+      <div className="min-h-screen flex flex-col bg-try">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="card-glass p-8 w-full max-w-md rounded-[32px] border border-white/5 shadow-2xl">
@@ -90,7 +90,7 @@ export default function RegistroPresencial() {
   // Si el usuario no tiene permisos
   if (!hasRole('admin') && !hasRole('editor')) {
     return (
-      <div className="min-h-screen flex flex-col bg-blue-950">
+      <div className="min-h-screen flex flex-col bg-try">
         <Navbar showInternalLinks={true} />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-8 rounded-[32px] max-w-md text-center shadow-2xl">
@@ -169,7 +169,7 @@ export default function RegistroPresencial() {
         attendance_number: nuevoNumero,
         registrationdate: new Date().toISOString(),
       }).select('id').single();
-      
+
       if (insertError) throw insertError;
       setUltimoId(insertData?.id || null);
       toast.success('¡Registro exitoso!');
@@ -193,17 +193,17 @@ export default function RegistroPresencial() {
     }
   };
 
-  const labelClass = "flex items-center gap-2 font-bold text-blue-100/60 text-[10px] uppercase tracking-widest mb-1.5 ml-1";
+  const labelClass = "flex items-center gap-2 font-bold text-white/60 text-[10px] uppercase tracking-widest mb-1.5 ml-1";
   const inputClass = "w-full bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:ring-[#f4540a]/30 focus:border-[#f4540a] rounded-xl h-11 px-4 transition-all outline-none";
   const selectClass = "w-full bg-white/5 border-white/10 text-white focus:ring-[#f4540a]/30 focus:border-[#f4540a] rounded-xl h-11 px-4 transition-all outline-none appearance-none";
 
   return (
-    <div className="min-h-screen flex flex-col bg-blue-950 selection:bg-[#f4540a]/30">
+    <div className="min-h-screen flex flex-col bg-try selection:bg-[#f4540a]/30">
       <Navbar showInternalLinks={true} />
-      
+
       <main className="flex-1 py-12 px-4 relative overflow-hidden">
         {/* Background Accents */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] -mr-64 -mt-64" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#f4540a]/5 rounded-full blur-[120px] -mr-64 -mt-64" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#f4540a]/5 rounded-full blur-[120px] -ml-64 -mb-64" />
 
         <div className="max-w-xl mx-auto relative z-10">
@@ -211,7 +211,7 @@ export default function RegistroPresencial() {
             <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">
               Registro <span className="text-[#f4540a]">Presencial</span>
             </h1>
-            <p className="text-blue-100/40 text-sm font-medium uppercase tracking-[0.2em]">Campamento 2K26 · Walk-in</p>
+            <p className="text-white/40 text-sm font-medium uppercase tracking-[0.2em]">Campamento 2K26 · Walk-in</p>
           </div>
 
           {!numeroCampista ? (
@@ -231,25 +231,25 @@ export default function RegistroPresencial() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className={labelClass}><Mail className="h-3 w-3" /> Email (Opcional)</label>
-                    <input 
-                      name="email" 
-                      type="email" 
-                      value={form.email} 
-                      onChange={handleChange} 
+                    <input
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
                       className={inputClass}
                       placeholder="juan@ejemplo.com"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className={labelClass}><Phone className="h-3 w-3" /> Teléfono (Emergencia)</label>
-                    <input 
-                      name="telefono" 
-                      type="tel" 
-                      value={form.telefono} 
-                      onChange={handleChange} 
+                    <input
+                      name="telefono"
+                      type="tel"
+                      value={form.telefono}
+                      onChange={handleChange}
                       className={inputClass}
                       placeholder="10 dígitos (Opcional)"
-                      maxLength={10} 
+                      maxLength={10}
                     />
                   </div>
                 </div>
@@ -258,18 +258,18 @@ export default function RegistroPresencial() {
                   <div className="space-y-1">
                     <label className={labelClass}><MapPin className="h-3 w-3" /> Sector</label>
                     <select name="sector" value={sector} onChange={handleChange} className={selectClass} required>
-                      <option value="" className="bg-blue-950 text-white/40">Seleccionar</option>
+                      <option value="" className="bg-black text-white/40">Seleccionar</option>
                       {[1, 2, 3, 4, 5, 'Foráneo'].map(s => (
-                        <option key={s} value={s} className="bg-blue-950">Sector {s}</option>
+                        <option key={s} value={s} className="bg-black">Sector {s}</option>
                       ))}
                     </select>
                   </div>
                   <div className="space-y-1">
                     <label className={labelClass}><Church className="h-3 w-3" /> Iglesia</label>
                     <select name="iglesia" value={form.iglesia} onChange={handleChange} className={selectClass} required disabled={!sector}>
-                      <option value="" className="bg-blue-950 text-white/40">{sector ? 'Seleccionar' : 'Primero sector'}</option>
+                      <option value="" className="bg-black text-white/40">{sector ? 'Seleccionar' : 'Primero sector'}</option>
                       {filteredChurches.map((church) => (
-                        <option key={`${church.sector}-${church.name}`} value={church.name} className="bg-blue-950 text-white">{church.name}</option>
+                        <option key={`${church.sector}-${church.name}`} value={church.name} className="bg-black text-white">{church.name}</option>
                       ))}
                     </select>
                   </div>
@@ -280,7 +280,7 @@ export default function RegistroPresencial() {
                     <label className={labelClass}><UserSquare2 className="h-3 w-3" /> Rol</label>
                     <select name="rol" value={form.rol} onChange={handleChange} className={selectClass} required>
                       {ROLES.map((role) => (
-                        <option key={role.value} value={role.value} className="bg-blue-950">{role.label}</option>
+                        <option key={role.value} value={role.value} className="bg-black">{role.label}</option>
                       ))}
                     </select>
                   </div>
@@ -288,7 +288,7 @@ export default function RegistroPresencial() {
                     <label className={labelClass}><DollarSign className="h-3 w-3" /> Monto</label>
                     <div className="relative">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#f4540a] font-black">$</div>
-                      <input value={monto} disabled readOnly className={cn(inputClass, "pl-8 bg-blue-900/20 border-blue-500/10 text-[#f4540a] font-black text-xl shadow-inner")} />
+                      <input value={monto} disabled readOnly className={cn(inputClass, "pl-8 bg-black/20 border-white/5 text-[#f4540a] font-black text-xl shadow-inner")} />
                     </div>
                   </div>
                 </div>
@@ -314,11 +314,11 @@ export default function RegistroPresencial() {
                 <div className="h-16 w-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
                   <CheckCircle2 className="h-8 w-8 text-green-400" />
                 </div>
-                
-                <h2 className="text-xl font-black text-white mb-2 uppercase tracking-wide italic">¡ÉXITO EN REGISTRO!</h2>
-                <p className="text-blue-100/40 text-sm mb-6">Entrega el número asignado:</p>
 
-                <div className="bg-gradient-to-br from-blue-500/10 to-transparent p-8 rounded-3xl border border-white/5 w-full mb-8 relative overflow-hidden group">
+                <h2 className="text-xl font-black text-white mb-2 uppercase tracking-wide italic">¡ÉXITO EN REGISTRO!</h2>
+                <p className="text-white/40 text-sm mb-6">Entrega el número asignado:</p>
+
+                <div className="bg-gradient-to-br from-[#f4540a]/10 to-transparent p-8 rounded-3xl border border-white/5 w-full mb-8 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <PlusCircle className="h-24 w-24 text-white" />
                   </div>
@@ -329,16 +329,16 @@ export default function RegistroPresencial() {
                 </div>
 
                 <div className="flex flex-col gap-3 w-full">
-                  <Button 
-                    onClick={limpiarFormulario} 
-                    className="h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-lg shadow-xl shadow-blue-900/40"
+                  <Button
+                    onClick={limpiarFormulario}
+                    className="h-14 bg-white/10 hover:bg-white/15 text-white rounded-2xl font-black uppercase text-lg shadow-xl shadow-black/40 border border-white/10"
                   >
                     <PlusCircle className="mr-2 h-5 w-5" /> SIGUIENTE REGISTRO
                   </Button>
-                  
-                  <Button 
-                    onClick={marcarComoPagado} 
-                    variant="tangelo" 
+
+                  <Button
+                    onClick={marcarComoPagado}
+                    variant="tangelo"
                     className="h-12 rounded-xl font-bold uppercase text-sm opacity-90 hover:opacity-100"
                     disabled={!ultimoId}
                   >

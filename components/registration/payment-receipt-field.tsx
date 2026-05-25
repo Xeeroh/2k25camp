@@ -40,17 +40,12 @@ export const PaymentReceiptField = ({
     const file = e.target.files?.[0];
     if (file) {
       onFileChange(file);
-      form.setValue('paymentReceipt', file, { 
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true 
-      });
     }
   };
 
   return (
     <FormItem>
-      <FormLabel className="text-blue-100/80 font-semibold mb-2 block">Comprobante de Pago *</FormLabel>
+      <FormLabel className="text-white/80 font-semibold mb-2 block">Comprobante de Pago *</FormLabel>
       <FormControl>
         <div className="flex flex-col space-y-2">
           {isMobileDevice ? (
@@ -72,7 +67,7 @@ export const PaymentReceiptField = ({
                   };
                   input.click();
                 }}
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || undefined}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -96,9 +91,9 @@ export const PaymentReceiptField = ({
                   };
                   input.click();
                 }}
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || undefined}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span className="font-medium">Galería</span>
@@ -109,20 +104,19 @@ export const PaymentReceiptField = ({
               <label className="block">
                 <div className="flex items-center justify-center border-2 border-dashed border-white/10 rounded-2xl p-8 hover:border-[#f4540a]/50 bg-white/5 cursor-pointer transition-all hover:bg-white/10 backdrop-blur-xl group">
                   <div className="flex flex-col items-center space-y-3 text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-300 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-orange-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <div>
-                      <span className="text-blue-100 font-medium block">Haz clic para seleccionar imagen</span>
-                      <span className="text-blue-100/40 text-xs mt-1 block uppercase tracking-widest text-[10px]">Formatos aceptados: PNG, JPG (máx. 10MB)</span>
+                      <span className="text-white font-medium block">Haz clic para seleccionar imagen</span>
+                      <span className="text-white/40 text-xs mt-1 block uppercase tracking-widest text-[10px]">Formatos aceptados: PNG, JPG (máx. 10MB)</span>
                     </div>
                   </div>
                   <Input 
                     type="file" 
                     accept="image/*"
                     onChange={handleFileChange}
-                    disabled={isLoading || isSubmitting}
-                    required
+                    disabled={isLoading || isSubmitting || undefined}
                     className="hidden"
                   />
                 </div>
@@ -146,7 +140,6 @@ export const PaymentReceiptField = ({
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
                   onClick={() => {
                     onFileChange(null);
-                    form.setValue('paymentReceipt', null);
                   }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -6,7 +6,7 @@ const slides = [
   {
     id: 1,
     image: "https://images.pexels.com/photos/32069316/pexels-photo-32069316.png",
-    title: "Alfa y Omega",
+    title: "Soberano",
     description: "Campamento 2025",
     accent: "Transformando vidas"
   },
@@ -171,7 +171,7 @@ export default function ModernHeroSlider() {
           {/* Progress bar */}
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-40">
             <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-blue-425 transition-all duration-200 ease-linear"
+              className="h-full bg-gradient-to-r from-[#f4540a] to-[#ff7d45] transition-all duration-200 ease-linear"
               style={{
                 width: `${((currentSlide + 1) / slides.length) * 100}%`
               }}
@@ -189,11 +189,11 @@ export default function ModernHeroSlider() {
             >
               <div className={`w-12 h-1 rounded-full transition-all duration-300 ${
                 currentSlide === index 
-                  ? 'bg-black' 
-                  : 'bg-gray-300 group-hover:bg-gray-400'
+                  ? 'bg-[#f4540a]' 
+                  : 'bg-white/20 group-hover:bg-white/40'
               }`} />
               {currentSlide === index && (
-                <div className="absolute inset-0 w-12 h-1 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full animate-pulse" />
+                <div className="absolute inset-0 w-12 h-1 bg-gradient-to-r from-[#f4540a] to-[#ff7d45] rounded-full animate-pulse" />
               )}
             </button>
           ))}

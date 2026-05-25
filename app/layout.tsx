@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Campamento • Registro',
-  description: 'Sistema de registro para campamento Alfa y Omega MDP Tijuana 2026',
-  themeColor: '#0d6efd',
+  description: 'Sistema de registro para campamento Soberano MDP Tijuana 2026',
+  themeColor: '#f4540a',
   icons: {
     icon: [
       { url: '/icons/favicon.ico', sizes: 'any' },

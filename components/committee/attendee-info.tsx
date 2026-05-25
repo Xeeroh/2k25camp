@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User, QrCode, ShieldCheck, Shirt, AlertTriangle, MapPin, Mail, DollarSign } from 'lucide-react';
+import { User, QrCode, ShieldCheck, Shirt, AlertTriangle, MapPin, Mail, DollarSign, Eye, EyeOff, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -24,6 +24,7 @@ interface AttendeeData {
   attendance_number?: number;
   attendance_confirmed?: boolean;
   attendance_confirmed_at?: string;
+  paymentreceipturl?: string;
 }
 
 interface AttendeeInfoProps {
@@ -32,6 +33,7 @@ interface AttendeeInfoProps {
 }
 
 export default function AttendeeInfo({ attendee, onConfirmAttendance }: AttendeeInfoProps) {
+  const [showReceipt, setShowReceipt] = useState(false);
   // Si no hay datos, mostrar mensaje para escanear QR
   if (!attendee) {
     return (
@@ -127,7 +129,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
         {/* Info de Dotación y Pago (Rápida) */}
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center">
-            <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold mb-1">Talla Camiseta</p>
+            <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold mb-1">Talla Camiseta</p>
             {attendee.tshirtsize && attendee.tshirtsize !== 'NA' ? (
               <Badge className="bg-[#f4540a] text-white font-black px-4 py-1 text-lg">
                 {attendee.tshirtsize}
@@ -137,7 +139,7 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
             )}
           </div>
           <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center">
-            <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold mb-1">Estado Pago</p>
+            <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold mb-1">Estado Pago</p>
             <Badge className={cn("px-3 py-1 font-bold",
               isPaid ? 'bg-green-600/20 text-green-400 border-green-500/30' : 'bg-red-600/20 text-red-400 border-red-500/30'
             )} variant="outline">
@@ -148,22 +150,22 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 justify-center mx-auto">
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-blue-400/70 ">Email</p>
+            <p className="text-xs sm:text-sm text-white/50">Email</p>
             <p className="text-sm sm:text-base text-white font-medium break-all">{attendee.email || 'No disponible'}</p>
           </div>
           
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm  text-blue-400/70 ">Iglesia</p>
+            <p className="text-xs sm:text-sm text-white/50">Iglesia</p>
             <p className="text-sm sm:text-base text-white font-medium">{attendee.church || 'No disponible'}</p>
           </div>
           
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm  text-blue-400/70 ">Sector</p>
+            <p className="text-xs sm:text-sm text-white/50">Sector</p>
             <p className="text-sm sm:text-base text-white font-medium">{attendee.sector || 'No disponible'}</p>
           </div>
           
           <div className='space-y-1'>
-          <p className="text-xs sm:text-sm  text-blue-400/70 ">Estado</p>
+          <p className="text-xs sm:text-sm text-white/50">Estado</p>
           <p className="text-sm sm:text-base text-white font-medium">
             {attendee.paymentstatus ? (
               <Badge className={
@@ -180,12 +182,43 @@ export default function AttendeeInfo({ attendee, onConfirmAttendance }: Attendee
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm t text-blue-400/70 ">Monto</p>
+            <p className="text-xs sm:text-sm text-white/50">Monto</p>
             <p className="text-sm sm:text-base text-white font-medium">
               {attendee.paymentamount ? `$${attendee.paymentamount}` : 'No disponible'}
             </p>
           </div>
         </div>
+
+        {/* Botón toggle recibo de pago */}
+        {attendee.paymentreceipturl && (
+          <div className="space-y-3">
+            <Button
+              variant="ghost"
+              onClick={() => setShowReceipt(prev => !prev)}
+              className="w-full h-11 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold uppercase tracking-widest text-[11px] transition-all gap-2"
+            >
+              {showReceipt ? (
+                <><EyeOff className="h-4 w-4" /> Ocultar Recibo</>
+              ) : (
+                <><Eye className="h-4 w-4" /> Ver Recibo de Pago</>
+              )}
+            </Button>
+
+            {showReceipt && (
+              <div className="rounded-2xl overflow-hidden border border-white/10 shadow-xl animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border-b border-white/10">
+                  <Receipt className="h-3.5 w-3.5 text-[#f4540a]" />
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-white/50">Comprobante de Pago</span>
+                </div>
+                <img
+                  src={attendee.paymentreceipturl}
+                  alt="Recibo de pago"
+                  className="w-full object-contain max-h-[400px] bg-black/40"
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {!attendee.attendance_confirmed && (
           <Button 

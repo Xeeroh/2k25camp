@@ -16,6 +16,7 @@ import { SuccessMessage } from './success-message';
 import { useRegistration } from '@/hooks/useRegistration';
 import { useEmailValidation } from '@/hooks/useEmailValidation';
 import { useShirtAvailability } from '@/hooks/useShirtAvailability';
+import { toast } from 'sonner';
 
 // Form schema with validation
 const formSchema = z.object({
@@ -29,12 +30,10 @@ const formSchema = z.object({
     .regex(/^[0-9()-\s]+$/, "El teléfono solo puede contener números, paréntesis, guiones y espacios"),
   sector: z.string().min(1, "Por favor seleccione un sector"),
   church: z.string().min(1, "Por favor seleccione una iglesia"),
-  paymentReceipt: z.custom<File>((val) => val instanceof File || val === null, {
-    message: "El comprobante de pago es obligatorio"
-  }),
+  // paymentReceipt se maneja fuera de Zod con useState (los File objects no pueden ser defaultValues)
   attendees: z.array(z.object({
-    firstName: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(50, "El nombre no puede tener más de 50 caracteres"),
-    lastName: z.string().min(2, "El apellido debe tener al menos 2 caracteres").max(50, "El apellido no puede tener más de 50 caracteres"),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
     tshirtsize: z.string().optional(),
   })).optional()
 });
@@ -89,6 +88,10 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
 
   const onSubmit = async (data: FormValues) => {
     try {
+      if (!paymentReceiptFile) {
+        toast.error('El comprobante de pago es obligatorio');
+        return;
+      }
       if (!isGroup && (!data.firstName || !data.lastName)) {
         form.setError("firstName", { type: "manual", message: "Campo obligatorio" });
         form.setError("lastName", { type: "manual", message: "Campo obligatorio" });
@@ -96,6 +99,21 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       }
       if (isGroup && (!data.attendees || data.attendees.length === 0)) {
         return;
+      }
+
+      if (isGroup && data.attendees) {
+        let hasError = false;
+        data.attendees.forEach((att, index) => {
+          if (!att.firstName || att.firstName.trim().length < 2) {
+            form.setError(`attendees.${index}.firstName` as any, { type: "manual", message: "Mínimo 2 caracteres" });
+            hasError = true;
+          }
+          if (!att.lastName || att.lastName.trim().length < 2) {
+            form.setError(`attendees.${index}.lastName` as any, { type: "manual", message: "Mínimo 2 caracteres" });
+            hasError = true;
+          }
+        });
+        if (hasError) return;
       }
       
       const payloadAttendees = isGroup 
@@ -204,8 +222,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                     <p className="text-[10px] font-bold text-red-400 uppercase tracking-tight">Camisetas Agotadas</p>
                   </div>
                 ) : (
-                  <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-tight">Camisetas para los primeros 100</p>
+                  <div className="px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                    <p className="text-[10px] font-bold text-orange-400 uppercase tracking-tight">Camisetas para los primeros 100</p>
                   </div>
                 )}
               </div>
@@ -224,8 +242,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                       name={`attendees.${index}.firstName`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-blue-100/80 text-xs uppercase font-bold">Nombre(s)</FormLabel>
-                          <FormControl><Input placeholder="Juan" {...field} className="bg-white/5 border-white/10 text-white" disabled={isLoading || isSubmitting} /></FormControl>
+                          <FormLabel className="text-white/80 text-xs uppercase font-bold">Nombre(s)</FormLabel>
+                          <FormControl><Input placeholder="Juan" {...field} className="bg-white/5 border-white/10 text-white" disabled={isLoading || isSubmitting || undefined} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -235,8 +253,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                       name={`attendees.${index}.lastName`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-blue-100/80 text-xs uppercase font-bold">Apellido(s)</FormLabel>
-                          <FormControl><Input placeholder="Pérez" {...field} className="bg-white/5 border-white/10 text-white" disabled={isLoading || isSubmitting} /></FormControl>
+                          <FormLabel className="text-white/80 text-xs uppercase font-bold">Apellido(s)</FormLabel>
+                          <FormControl><Input placeholder="Pérez" {...field} className="bg-white/5 border-white/10 text-white" disabled={isLoading || isSubmitting || undefined} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -247,8 +265,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                         name={`attendees.${index}.tshirtsize`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-blue-100/80 text-xs uppercase font-bold">Talla (Opcional)</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || isSubmitting}>
+                            <FormLabel className="text-white/80 text-xs uppercase font-bold">Talla (Opcional)</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || isSubmitting || undefined}>
                               <FormControl><SelectTrigger className="bg-white/5 border-white/10 text-white"><SelectValue placeholder="Talla" /></SelectTrigger></FormControl>
                               <SelectContent>
                                 <SelectItem value="XS">XS</SelectItem>
@@ -260,7 +278,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                               </SelectContent>
                             </Select>
                             <FormMessage />
-                            <p className="text-[9px] text-blue-500/60 mt-1">* Sujeto a disponibilidad (Top 100)</p>
+                            <p className="text-[9px] text-orange-500/60 mt-1">* Sujeto a disponibilidad (Top 100)</p>
                           </FormItem>
                         )}
                       />
@@ -268,7 +286,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" onClick={() => append({ firstName: '', lastName: '', tshirtsize: '' })} className="w-full border-dashed border-2 border-white/20 text-white hover:bg-white/10 h-14 rounded-2xl" disabled={isLoading || isSubmitting}>
+              <Button type="button" variant="outline" onClick={() => append({ firstName: '', lastName: '', tshirtsize: '' })} className="w-full border-dashed border-2 border-white/20 text-white hover:bg-white/10 h-14 rounded-2xl" disabled={isLoading || isSubmitting || undefined}>
                 <Plus className="mr-2 h-5 w-5" /> Añadir otro asistente
               </Button>
             </div>
@@ -278,9 +296,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             type="submit" 
             variant="tangelo"
             className="w-full text-lg h-12 font-bold" 
-            disabled={isLoading || isSubmitting}
+            disabled={isLoading || isSubmitting || undefined}
           >
-            {isLoading ? (
+            {(isLoading || isSubmitting) ? (
               <>
                 <Loader2 className="mr-2 h-5 w-4 animate-spin" />
                 Registrando...

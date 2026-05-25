@@ -1,6 +1,6 @@
 {
-  "name": "Campamento Alfa y Omega MDP Tijuana 2026",
-  "short_name": "Campamento 2025",
+  "name": "Campamento Soberano MDP Tijuana 2026",
+  "short_name": "Campamento Soberano",
   "start_url":"/",
   "icons": [
     {
@@ -16,7 +16,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#0d6efd",
-  "background_color": "#ffffff",
+  "theme_color": "#f4540a",
+  "background_color": "#000000",
   "display": "standalone"
 }

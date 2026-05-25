@@ -80,7 +80,7 @@ export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
   return (
     <div className="card-glass p-10 overflow-hidden animate-fade-in text-center max-w-2xl mx-auto border-white/5 shadow-2xl relative">
       <div className="absolute -top-24 -left-24 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-orange-600/20 rounded-full blur-3xl animate-pulse" />
 
       <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl rotate-12 flex items-center justify-center mx-auto mb-8 shadow-lg shadow-green-900/40">
         <CheckCircle2 className="h-12 w-12 text-white -rotate-12" />
@@ -89,14 +89,14 @@ export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
       <h2 className="text-4xl font-black mb-4 bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">¡REGISTRO EXITOSO!</h2>
       
       <p className="text-muted-foreground mb-6">
-        Gracias por registrarse al Campamento Alfa y Omega. Su registro ha sido procesado exitosamente.<br /><br />
+        Gracias por registrarse al Campamento Soberano. Su registro ha sido procesado exitosamente.<br /><br />
         <strong>
           Hemos enviado un correo de confirmación a su dirección de correo registrada. Si no lo encuentra en su bandeja de entrada, por favor revise su carpeta de spam o correo no deseado.
         </strong>
       </p>
       
       <div className="card-glass border-white/10 p-8 mb-8 backdrop-blur-xl bg-white/5">
-        <h3 className="text-xl font-bold mb-6 text-blue-100">TU ACCESO QR</h3>
+        <h3 className="text-xl font-bold mb-6 text-orange-400">TU ACCESO QR</h3>
         
         <div className="flex justify-center mb-6" ref={qrRef}>
           <div className="bg-white p-6 rounded-3xl shadow-2xl shadow-black/50">
@@ -112,9 +112,9 @@ export const SuccessMessage = ({ qrData, onReset }: SuccessMessageProps) => {
           </div>
         </div>
         
-        <p className="text-blue-100/60 mb-6 text-sm">
+        <p className="text-white/60 mb-6 text-sm">
           Presente este código al ingresar al evento.<br />
-          <span className="font-bold text-blue-100">ID: {attendeeId}</span>
+          <span className="font-bold text-white">ID: {attendeeId}</span>
         </p>
         
         <Button

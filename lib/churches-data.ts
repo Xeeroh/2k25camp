@@ -9,6 +9,7 @@ export const CHURCHES_DATA: Church[] = [
   // Distrito Tijuana
   { sector: 1, name: "Antioquia la hermosa", district: "Distrito Tijuana", pastor: "Alvaro García Almazan" },
   { sector: 1, name: "Cristo Centro de la Familia", district: "Distrito Tijuana", pastor: "Alfredo Felix" },
+  { sector: 1, name: "El Faro", district: "Distrito Tijuana", pastor: "" },
   { sector: 1, name: "Iglesia Fuente Inagotable", district: "Distrito Tijuana", pastor: "Hilario Montoya" },
   { sector: 1, name: "Iglesia San Angel", district: "Distrito Tijuana", pastor: "Juan Montoya" },
   { sector: 1, name: "Luz y Salvación", district: "Distrito Tijuana", pastor: "Eduardo Bohorquez" },

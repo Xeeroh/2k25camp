@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import Image from 'next/image';
 
 // Constantes
-const LOGO_URL = "https://res.cloudinary.com/dmjdrou6a/image/upload/v1749238690/Logo_hqvgxr.png";
+const LOGO_URL = "/logo_soberano.png";
 const ADMIN_ONLY_PATHS = ['/admin'];
 
 // Opciones para configurar qué enlaces mostrar
@@ -266,14 +266,14 @@ export default function Navbar({ showInternalLinks = false }: NavbarProps) {
           <div className="hidden md:flex items-center space-x-8">
             <Link 
               href={user ? createInternalLink('/') : '/'} 
-              className="text-blue-100/60 hover:text-white transition-all font-medium tracking-wide hover:scale-105 active:scale-95"
+              className="text-white/60 hover:text-white transition-all font-medium tracking-wide hover:scale-105 active:scale-95"
               onClick={() => handleNavigation('/')}
             >
               Inicio
             </Link>
             <Link 
               href={user ? createInternalLink('/registro') : '/registro'} 
-              className="text-blue-100/60 hover:text-white transition-all font-medium tracking-wide hover:scale-105 active:scale-95"
+              className="text-white/60 hover:text-white transition-all font-medium tracking-wide hover:scale-105 active:scale-95"
               onClick={() => handleNavigation('/registro')}
             >
               Registro

@@ -71,8 +71,8 @@ serve(async (req) => {
       : '✅ ¡Registro Completado!';
 
     const introMessage = body.isResend
-      ? 'Te enviamos nuevamente tu correo de confirmación con un nuevo código QR actualizado para tu ingreso al Campamento Alfa y Omega.'
-      : 'Gracias por registrarte al Campamento Alfa y Omega Distrito Tijuana. Tu registro ha sido procesado exitosamente.';
+      ? 'Te enviamos nuevamente tu correo de confirmación con un nuevo código QR actualizado para tu ingreso al Campamento Soberano.'
+      : 'Gracias por registrarte al Campamento Soberano Distrito Tijuana. Tu registro ha sido procesado exitosamente.';
 
     const resendNote = body.isResend 
       ? `<p style="color: #ef4444; font-size: 14px; margin-top: 10px;"><strong>Nota:</strong> Este QR reemplaza al anterior. Por favor, usa este nuevo código para ingresar al evento.</p>`

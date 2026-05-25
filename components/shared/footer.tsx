@@ -11,17 +11,17 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
           <div className="space-y-4">
-            <h3 className="text-2xl font-black bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent tracking-tighter">
+            <h3 className="text-2xl font-black bg-gradient-to-r from-white to-orange-200 bg-clip-text text-transparent tracking-tighter">
               CAMPAMENTO 2026
             </h3>
-            <p className="text-blue-100/60 max-w-sm font-light">
-              Uniendo generaciones en fe y propósito. Sistema oficial de registro para el Campamento Alfa y Omega.
+            <p className="text-white/60 max-w-sm font-light">
+              Uniendo generaciones en fe y propósito. Sistema oficial de registro para el Campamento Soberano.
             </p>
           </div>
           
           <div className="md:text-right space-y-4">
             <h3 className="text-xl font-bold text-white tracking-widest uppercase text-sm">Contáctanos</h3>
-            <address className="not-italic text-blue-100/60 space-y-2">
+            <address className="not-italic text-white/60 space-y-2">
               <p className="hover:text-white transition-colors cursor-pointer">soporte@mdptijuana.com</p>
               <p className="text-[10px] tracking-widest text-[#f4540a] font-black">MDP TIJUANA</p>
             </address>
@@ -29,10 +29,10 @@ export default function Footer() {
         </div>
         
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-[10px] text-blue-100/30 font-bold tracking-widest uppercase">
+          <p className="text-[10px] text-white/30 font-bold tracking-widest uppercase">
             &copy; {currentYear} MDP Tijuana • Todos los derechos reservados
           </p>
-          <p className="text-[10px] text-blue-100/30 font-bold tracking-widest uppercase flex items-center gap-2">
+          <p className="text-[10px] text-white/30 font-bold tracking-widest uppercase flex items-center gap-2">
             DESIGNED FOR <span className="text-[#f4540a]">2026 EXPERIENCE</span> <Heart size={10} className="text-[#f4540a] fill-[#f4540a]" />
           </p>
         </div>

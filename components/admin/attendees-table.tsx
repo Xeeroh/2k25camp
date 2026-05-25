@@ -308,7 +308,7 @@ export default function AttendeesTable() {
         case 'Pagado':
           return 'bg-green-500/20 text-green-300 border-green-500/30';
         case 'Revisado':
-          return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+          return 'bg-[#f4540a]/20 text-[#f4540a] border-[#f4540a]/30';
         default:
           return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
       }
@@ -355,12 +355,12 @@ export default function AttendeesTable() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full max-w-md group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-100/40 group-focus-within:text-[#f4540a] transition-colors" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-[#f4540a] transition-colors" />
           <Input
             placeholder="Buscar por nombre, correo o iglesia..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-white/5 border-white/10 pl-10 h-12 rounded-2xl text-blue-100 placeholder:text-blue-100/30 focus:ring-1 focus:ring-[#f4540a]/50 focus:border-[#f4540a]/50 backdrop-blur-xl transition-all"
+            className="bg-white/5 border-white/10 pl-10 h-12 rounded-2xl text-white placeholder:text-white/30 focus:ring-1 focus:ring-[#f4540a]/50 focus:border-[#f4540a]/50 backdrop-blur-xl transition-all"
           />
         </div>
       </div>
@@ -371,7 +371,7 @@ export default function AttendeesTable() {
           <div className="grid grid-cols-1 gap-4 p-4">
             {filteredAndSortedAttendees.length === 0 && !loading ? (
               <div className="text-center py-12 card-glass">
-                <p className="text-blue-100/40 italic">No se encontraron asistentes</p>
+                <p className="text-white/40 italic">No se encontraron asistentes</p>
               </div>
             ) : (
               filteredAndSortedAttendees.map((attendee) => (
@@ -388,7 +388,7 @@ export default function AttendeesTable() {
                       <h4 className="text-xl font-bold text-white tracking-tight">
                         {attendee.firstname} {attendee.lastname}
                       </h4>
-                      <p className="text-xs text-blue-100/60 font-mono mt-0.5">{attendee.email}</p>
+                      <p className="text-xs text-white/60 font-mono mt-0.5">{attendee.email}</p>
                     </div>
                     <Badge className="bg-[#f4540a]/20 text-[#f4540a] border-0 font-black">
                       {attendee.attendance_number ? `#${attendee.attendance_number.toString().padStart(3, '0')}` : 'PEND'}
@@ -397,12 +397,12 @@ export default function AttendeesTable() {
 
                   <div className="grid grid-cols-2 gap-4 text-sm relative z-10">
                     <div className="space-y-1">
-                      <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Iglesia / Sector</p>
-                      <p className="text-blue-100 font-medium truncate">{attendee.church}</p>
-                      <p className="text-blue-100/60 text-xs">Sector {attendee.sector}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Iglesia / Sector</p>
+                      <p className="text-white font-medium truncate">{attendee.church}</p>
+                      <p className="text-white/60 text-xs">Sector {attendee.sector}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Pago / Deuda</p>
+                      <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Pago / Deuda</p>
                       <div className="flex items-center gap-2">
                         <span className="text-green-400 font-bold">${attendee.paymentamount}</span>
                         <span className="text-white/20">|</span>
@@ -425,7 +425,7 @@ export default function AttendeesTable() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openModal(attendee, 'receipt')}
-                          className="h-9 w-9 text-blue-400 hover:text-blue-300 hover:bg-white/5"
+                          className="h-9 w-9 text-white/60 hover:text-white hover:bg-white/5"
                         >
                           <ImageIcon className="h-5 w-5" />
                         </Button>
@@ -466,13 +466,13 @@ export default function AttendeesTable() {
         ) : (
           <div className="overflow-x-auto">
             <Table className="border-collapse">
-              <TableHeader className="bg-white/5 sticky top-0 bg-blue-950 backdrop-blur-md z-20">
+              <TableHeader className="bg-white/5 sticky top-0 bg-black/60 backdrop-blur-md z-20">
                 <TableRow className="hover:bg-transparent border-white/10">
                   <TableHead className="text-center w-20 py-5">
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('attendance_number')}
-                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                      className="text-white/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
                     >
                       ID <ArrowUpDown className="ml-1 h-3 w-3" />
                     </Button>
@@ -481,7 +481,7 @@ export default function AttendeesTable() {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('firstname')}
-                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                      className="text-white/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
                     >
                       ASISTENTE <ArrowUpDown className="ml-1 h-3 w-3" />
                     </Button>
@@ -490,7 +490,7 @@ export default function AttendeesTable() {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('church')}
-                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                      className="text-white/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
                     >
                       IGLESIA / SECTOR <ArrowUpDown className="ml-1 h-3 w-3" />
                     </Button>
@@ -499,7 +499,7 @@ export default function AttendeesTable() {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('tshirtsize')}
-                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                      className="text-white/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
                     >
                       TALLA <ArrowUpDown className="ml-1 h-3 w-3" />
                     </Button>
@@ -508,7 +508,7 @@ export default function AttendeesTable() {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('paymentamount')}
-                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                      className="text-white/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
                     >
                       PAGO <ArrowUpDown className="ml-1 h-3 w-3" />
                     </Button>
@@ -517,26 +517,26 @@ export default function AttendeesTable() {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('paymentstatus')}
-                      className="text-blue-100/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
+                      className="text-white/60 font-bold tracking-widest text-[10px] uppercase hover:text-white"
                     >
                       ESTADO <ArrowUpDown className="ml-1 h-3 w-3" />
                     </Button>
                   </TableHead>
                   <TableHead className="text-right py-5 pr-8">
-                    <span className="text-blue-100/40 font-bold tracking-widest text-[10px] uppercase">ACCIONES</span>
+                     <span className="text-white/40 font-bold tracking-widest text-[10px] uppercase">ACCIONES</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndSortedAttendees.map((attendee) => (
                   <TableRow key={attendee.id} className="group hover:bg-white/5 border-white/5 transition-all">
-                    <TableCell className="text-center font-mono text-blue-300 py-4">
+                    <TableCell className="text-center font-mono text-white/80 py-4">
                       {attendee.attendance_number ? (
                         <span className="font-black text-[#f4540a] bg-[#f4540a]/10 px-2 py-1 rounded">
                           {attendee.attendance_number.toString().padStart(3, '0')}
                         </span>
                       ) : (
-                        <span className="text-blue-100/20">---</span>
+                        <span className="text-white/20">---</span>
                       )}
                     </TableCell>
                     <TableCell className="py-4">
@@ -544,13 +544,13 @@ export default function AttendeesTable() {
                         <p className="font-bold text-white text-base">
                           {attendee.firstname} {attendee.lastname}
                         </p>
-                        <p className="text-xs text-blue-100/40">{attendee.email}</p>
+                        <p className="text-xs text-white/40">{attendee.email}</p>
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
                       <div>
-                        <p className="text-blue-100 font-medium">{attendee.church}</p>
-                        <p className="text-[10px] text-blue-100/40 uppercase tracking-widest font-bold">Sector {attendee.sector}</p>
+                        <p className="text-white font-medium">{attendee.church}</p>
+                        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Sector {attendee.sector}</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-center py-4">
@@ -559,7 +559,7 @@ export default function AttendeesTable() {
                           {attendee.tshirtsize}
                         </Badge>
                       ) : (
-                        <span className="text-blue-100/10 font-black">--</span>
+                        <span className="text-white/20 font-black">--</span>
                       )}
                     </TableCell>
                     <TableCell className="text-center py-4">
@@ -578,7 +578,7 @@ export default function AttendeesTable() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openModal(attendee, 'receipt')}
-                            className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-white/10"
+                            className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
                           >
                             <ImageIcon className="h-4 w-4" />
                           </Button>
