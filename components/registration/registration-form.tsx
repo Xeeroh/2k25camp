@@ -117,7 +117,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       }
       
       const payloadAttendees = isGroup 
-        ? data.attendees || [] 
+        ? (data.attendees || []).map(a => ({ firstName: a.firstName || '', lastName: a.lastName || '', tshirtsize: a.tshirtsize }))
         : [{ firstName: data.firstName || '', lastName: data.lastName || '', tshirtsize: data.tshirtsize }];
 
       const { attendeeData, qrValue } = await submitRegistration({
