@@ -11,15 +11,15 @@ export const metadata: Metadata = {
   themeColor: '#f4540a',
   icons: {
     icon: [
-      { url: '/icons/favicon.ico', sizes: 'any' },
-      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/icons/favicon.ico?v=2', sizes: 'any' },
+      { url: '/icons/icon-192x192.png?v=2', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png?v=2', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icons/icon-192x192.png' }
+      { url: '/icons/icon-192x192.png?v=2' }
     ]
   },
-  manifest: '/manifest.json'
+  manifest: '/manifest.json?v=2'
 };
 
 export default function RootLayout({
