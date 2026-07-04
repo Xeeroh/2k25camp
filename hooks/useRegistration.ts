@@ -87,6 +87,10 @@ export const useRegistration = () => {
         throw new Error("Error al subir el comprobante de pago. Por favor intenta de nuevo.");
       }
 
+      // Límite de tiempo: 3 de Julio, 2026 a las 10:00 PM hora Tijuana (UTC-7) -> 4 de Julio, 2026 05:00:00 UTC
+      const deadline = new Date('2026-07-04T05:00:00Z').getTime();
+      const isBeforeDeadline = Date.now() < deadline;
+
       const { count } = await supabase
         .from('attendees')
         .select('*', { count: 'exact', head: true });
@@ -98,7 +102,7 @@ export const useRegistration = () => {
       const isGroup = data.attendees.length > 1;
 
       const registrationRecords = data.attendees.map(att => {
-        const canReceiveTshirt = currentCount < 100;
+        const canReceiveTshirt = isBeforeDeadline && currentCount < 100;
         currentCount++;
         
         return {
